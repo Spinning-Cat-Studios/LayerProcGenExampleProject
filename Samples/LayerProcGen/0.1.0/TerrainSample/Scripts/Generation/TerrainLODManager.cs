@@ -123,26 +123,28 @@ public partial class TerrainLODManager : Node
                 VisualizationManager.BeginDebugDraw(layers[i].layer, 0);
                 foreach (var kvp in layers[i].chunks)
                 {
-                    // TerrainInfo info = kvp.Value;
-                    // Image terrain = info.terrain;
-                    // bool active = terrain.Visible;
-                    // if (active || (VisualizationManager.instance != null && VisualizationManager.instance.debugSeparate.visible)
-                    // ) {
-                    // 	Vector2 pos = terrain.Position.xz();
-                    // 	var terrainNode = terrain.FindChildren("*", nameof(Terrain3D), owned:false).FirstOrDefault();
-                    // 	if (terrainNode == null) continue;
-                    // 	int regionSize = (int)new Terrain3D(terrainNode).Storage.RegionSize;
-                    // 	Vector2 size = new Vector2(regionSize, regionSize);//terrain.terrainData.size.xz() * 0.5f;
-                    //
-                    // 	// Draw rect.
-                    // 	if (active)
-                    // 		DebugDrawer.DrawRect(pos, pos + size * 2, 0, levelColors[i]);
-                    //
-                    // 	// Draw cross in LOD color.
-                    // 	Vector3 center = (pos + size).xoy();
-                    // 	float crossSize = size.X * (active ? 1f : 0.3f);
-                    // 	DebugDrawer.DrawCross(center, crossSize, levelColors[i]);
-                    // }
+                    TerrainInfo info = kvp.Value;
+                    Image terrain = info.heightMap;
+                    bool active = !terrain.IsInvisible();
+                    if (active || (VisualizationManager.instance != null && VisualizationManager.instance.debugSeparate.visible)
+                    )
+                    {
+                        Vector2 pos = kvp.Key * layers[i].layer.chunkSize;
+                        if (layers[i].layer is IGodotInstance godotLayer)
+                        {
+                            Node? terrainNode = godotLayer.LayerRoot();
+                            if (terrainNode == null) continue;
+                            Vector2 size = new Vector2(layers[i].layer.chunkW * .5f, layers[i].layer.chunkH * .5f); //terrain.terrainData.size.xz() * 0.5f;
+                            // Draw rect.
+                            if (active)
+                                DebugDrawer.DrawRect(pos, pos + size * 2, 0, levelColors[i]);
+
+                            // Draw cross in LOD color.
+                            Vector3 center = (pos + size).xoy();
+                            float crossSize = size.X * (active ? 1f : 0.3f);
+                            DebugDrawer.DrawCross(center, crossSize, levelColors[i]);
+                        }
+                    }
                 }
                 VisualizationManager.EndDebugDraw();
             }

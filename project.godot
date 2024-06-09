@@ -23,13 +23,18 @@ CallbackHub="*res://addons/LayerProcGen/Godot/Common/CallbackHub.cs"
 
 settings/3d/volumetric_defaults/thickness=5.0
 
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+
 [dotnet]
 
 project/assembly_name="LayerProcGen"
 
 [editor]
 
-movie_writer/movie_file="/media/data/Syd/Videos/LayerProcGen/MountainBug.avi"
+movie_writer/movie_file="/media/data/Syd/Videos/LayerProcGen/MountainGen.avi"
 
 [editor_plugins]
 

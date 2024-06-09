@@ -6,6 +6,7 @@
 using Godot;
 using Godot.Collections;
 using System;
+using System.Collections.Generic;
 
 namespace Terrain3DBindings
 {
@@ -96,7 +97,7 @@ namespace Terrain3DBindings
         public Terrain3D(GodotObject _instance) : base(_instance)
         {
         }
-        
+
         public Terrain3D() : base(ClassDB.Instantiate(nameof(Terrain3D)).AsGodotObject())
         {
         }
@@ -130,6 +131,8 @@ namespace Terrain3DBindings
         private const string CONTROLMAPS_PROPERTY_NAME = "control_maps";
         private const string HEIGHTMAPS_PROPERTY_NAME = "height_maps";
         private const string SETHEIGHT_FUNCTION_NAME = "set_height";
+        private const string GETCONTROL_FUNCTION_NAME = "get_control";
+        private const string SETCONTROL_FUNCTION_NAME = "set_control";
         private const string FORCE_UPDATE_MAPS_FUNCTION_NAME = "force_update_maps";
 
         private Resource _asResource => Instance as Resource;
@@ -184,6 +187,14 @@ namespace Terrain3DBindings
             _asResource.Call(FORCE_UPDATE_MAPS_FUNCTION_NAME, (int)mapType);
         }
 
+        public int GetControl(Vector3 globalPosition)
+        {
+            return _asResource.Call(GETCONTROL_FUNCTION_NAME, globalPosition).AsInt32();
+        }
+        public void SetControl(Vector3 globalPosition, int control)
+        {
+            _asResource.Call(SETCONTROL_FUNCTION_NAME, globalPosition, control);
+        }
     }
 
     public class Terrain3DTexture : _Terrain3DInstanceWrapper_
@@ -233,6 +244,25 @@ namespace Terrain3DBindings
     {
         public Terrain3DMaterial(GodotObject _instance) : base(_instance)
         {
+        }
+    }
+
+    public static class Terrain3DUtil
+    {
+
+        /// <summary>
+        /// https://terrain3d.readthedocs.io/en/latest/docs/controlmap_format.html
+        /// </summary>
+        /// <param name="globalPosition"></param>
+        /// <param name="terrainStorage"></param>
+        /// <param name="slice"></param>
+        public static void ControlMasking(Vector3 globalPosition, Terrain3DStorage terrainStorage, int[] slice)
+        {
+            int control = terrainStorage.GetControl(globalPosition);
+            control |= (slice[0] & 0x1F) << 27;
+            control |= (slice[1] & 0x1F) << 22;
+            control |= (slice[2] & 0xFF) << 14;
+            terrainStorage.SetControl(globalPosition, control);
         }
     }
 }

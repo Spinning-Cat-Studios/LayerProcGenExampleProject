@@ -1,8 +1,11 @@
 using Godot;
+using Godot.Util;
 using Runevision.Common;
 using Runevision.LayerProcGen;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
@@ -25,7 +28,7 @@ public struct QueuedTerrainCallback<L, C> : IQueuedAction
     where C : LandscapeChunk<L, C>, new()
 {
     public float[,] heightmap;
-    public float[,,] splatmap;
+    public int[,,] splatmap;
     public int[,] detailMap;
     public MeshInstance3D[] treeInstances; //there is no TreeInstance in Godot, but we can use Meshinstance, should be as powerful
     public Vector3 position;
@@ -35,7 +38,7 @@ public struct QueuedTerrainCallback<L, C> : IQueuedAction
 
     public QueuedTerrainCallback(
         float[,] heightmap,
-        float[,,] splatmap,
+        int[,,] splatmap,
         int[,] detailMap,
         MeshInstance3D[] treeInstances,
         TransformWrapper chunkParent,
@@ -164,23 +167,27 @@ public struct QueuedTerrainCallback<L, C> : IQueuedAction
             {
                 for (int x = 0; x < res; x++)
                 {
+                    Vector3 globalPosition = new Vector3(x + (index.x * (res - 1)), 0, (z + offset) + (index.y * (res - 1)));
                     // slice[z, x] = heightmap[z + offset, x];
-                    terrain.Storage.SetHeight(new Vector3(x + (index.x * (res - 1)), 0, (z + offset) + (index.y * (res - 1))), heightmap[z + offset, x]);
-                    //TODO: setting single pixels is very slow and we should instead make the heightmap array an image
+                    Terrain3DUtil.ControlMasking(globalPosition, terrain.Storage, splatmap.Slice(z + offset, x).ToArray());
+                    terrain.Storage.SetHeight(globalPosition, heightmap[z + offset, x]);
+                    // terrain.Storage.SetColor()
+                    //TODO: setting single pixels is very slow and we should instead make the heightmap array an image or something.
+                    // anything really. like seriously the above is a pure mess it allocates 420mb of garbage which is thrown away later.
                 }
             }
-            Console.Write("|");
-            Console.Write($"{0 + index.x * (res - 1)};{(0 + offset) + (index.y * (res - 1))};");
-            Console.Write($"{(res - 1) + index.x * (res - 1)};{((sliceSize) + offset) + (index.y * (res - 1))}");
-            Console.WriteLine();
+            // Console.Write("|");
+            // Console.Write($"{0 + index.x * (res - 1)};{(0 + offset) + (index.y * (res - 1))};");
+            // Console.Write($"{(res - 1) + index.x * (res - 1)};{((sliceSize) + offset) + (index.y * (res - 1))}");
+            // Console.WriteLine();
 
             // Profiler.EndSample();
             // Profiler.BeginSample("SetHeightsDelayLOD");
             // data.SetHeightsDelayLOD(0, offset, slice);
             // Profiler.EndSample();
-            terrain.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
-            yield return null;
         }
+        terrain.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
+        yield return null;
         // Profiler.BeginSample("SyncHeightmap");
         // Profiler.EndSample();
 
@@ -257,7 +264,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
     public Vector3[,] dists;
     public Vector4[,] splats;
     float[,] heightsArray;
-    float[,,] splatsArray;
+    int[,,] splatsArray;
     int[,] detailMap;
 
     public LandscapeChunk()
@@ -266,7 +273,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
         dists = new Vector3[layer.gridResolution + 1, layer.gridResolution + 1];
         splats = new Vector4[layer.gridResolution + 1, layer.gridResolution + 1];
         heightsArray = new float[layer.gridResolution + 1, layer.gridResolution + 1];
-        splatsArray = new float[layer.gridResolution + 1, layer.gridResolution + 1, 3];
+        splatsArray = new int[layer.gridResolution + 1, layer.gridResolution + 1, 3];
         detailMap = new int[layer.gridResolution, layer.gridResolution];
         LayerManager.instance.abort += Dispose;
     }
@@ -308,8 +315,8 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
 
     const int GridOffset = 4;
 
-    // static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(128);
-    // static ListPool<PathSpec> pathSpecListPool = new ListPool<PathSpec>(128);
+    static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(128);
+    static ListPool<PathSpec> pathSpecListPool = new ListPool<PathSpec>(128);
 
     void Build()
     {
@@ -329,26 +336,29 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
         {
             // Apply deformation from locations.
             ph = SimpleProfiler.Begin(phc, "Deform-Locations");
-            // List<LocationSpec> locationSpecs = locationSpecListPool.Get();
-            // LocationLayer.instance.GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
-            // TerrainDeformation.ApplySpecs(
-            // 	heightsNA, distsNA, splatsNA,
-            // 	index * layer.chunkResolution - Point.one * GridOffset,
-            // 	Point.one * (layer.gridResolution + 1),
-            // 	((Vector2)layer.chunkSize) / layer.chunkResolution,
-            // 	locationSpecs,
-            // 	(SpecPoint p) => {
-            // 		p.centerElevation = 0;
-            // 		return p;
-            // 	});
-            // locationSpecListPool.Return(ref locationSpecs);
+            List<LocationSpec> locationSpecs = locationSpecListPool.Get();
+            LocationLayer.instance.GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
+            var heightsNA = heights.AsSpan();
+            var distsNA = dists.AsSpan();
+            var splatsNA = splats.AsSpan();
+            TerrainDeformation.ApplySpecs(
+            	ref heightsNA,ref distsNA, ref splatsNA,
+            	index * layer.chunkResolution - Point.one * GridOffset,
+            	Point.one * (layer.gridResolution + 1),
+            	((Vector2)layer.chunkSize) / layer.chunkResolution,
+            	locationSpecs,
+            	(SpecPoint p) => {
+                    p.centerElevation = 0;
+                    return p;
+                });
+            locationSpecListPool.Return(ref locationSpecs);
             SimpleProfiler.End(ph);
 
             if (layer.lodLevel < 2)
             {
                 // Apply deformation from paths.
                 ph = SimpleProfiler.Begin(phc, "Deform-Paths");
-                // List<PathSpec> pathSpecs = pathSpecListPool.Get();
+                List<PathSpec> pathSpecs = pathSpecListPool.Get();
                 // CultivationLayer.instance.GetPathsOverlappingBounds(this, pathSpecs, bounds);
                 // TerrainDeformation.ApplySpecs(
                 // 	heightsNA, distsNA, splatsNA,
@@ -356,7 +366,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
                 // 	Point.one * (layer.gridResolution + 1),
                 // 	((Vector2)layer.chunkSize) / layer.chunkResolution,
                 // 	pathSpecs);
-                // pathSpecListPool.Return(ref pathSpecs);
+                pathSpecListPool.Return(ref pathSpecs);
                 SimpleProfiler.End(ph);
             }
         }
@@ -385,8 +395,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
         SimpleProfiler.End(ph);
 
         ph = SimpleProfiler.Begin(phc, "Copy Splats");
-        // var splatsPointerArray = new Array3D<float>(splatsArray);
-        // CopySplats(layer.gridResolution, splats, ref splatsPointerArray);
+        CopySplats(layer.gridResolution, splats.AsReadOnlySpan(), ref splatsArray);
         SimpleProfiler.End(ph);
 
         if (layer.lodLevel < 1)
@@ -414,14 +423,12 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
         ref float[,] heights, ref Vector3[,] dists
     )
     {
-        float totalHeight = Mathf.Abs(terrainHeight.X) + terrainHeight.Y;
-        float min = Math.Abs(terrainHeight.X);
-        for (var zRes = 0; zRes < gridResolution; zRes++)
+        for (var zRes = 0; zRes <= gridResolution; zRes++)
         {
-            for (var xRes = 0; xRes < gridResolution; xRes++)
+            for (var xRes = 0; xRes <= gridResolution; xRes++)
             {
                 var p = (Vector2)(terrainOrigin + new Point(xRes, zRes) * cellSize);
-                heights[zRes, xRes] = LandscapeLayer<L, C>.TerrainNoise.GetNoise2Dv(p) * (totalHeight - min) + min;
+                heights[zRes, xRes] = TerrainNoise.Get(p);
                 dists[zRes, xRes] = new Vector3(0f, 0f, 1000f);
             }
         }
@@ -516,18 +523,15 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
     // [BurstCompile]
     static void CopySplats(
         int resolution,
-        in Vector4[,] splats,
-        ref float[,,] splatsArray
+        in ReadOnlySpan<Vector4> splats,
+        ref int[,,] splatsArray
     )
     {
-        for (var zRes = 0; zRes < resolution + 1; zRes++)
+        for (int i = 0; i < splats.Length; i++)
         {
-            for (var xRes = 0; xRes < resolution + 1; xRes++)
-            {
-                splatsArray[zRes, xRes, 0] = splats[zRes, xRes].X;
-                splatsArray[zRes, xRes, 1] = splats[zRes, xRes].Y;
-                splatsArray[zRes, xRes, 2] = splats[zRes, xRes].Z;
-            }
+            splatsArray[i % splatsArray.GetLength(0), i % splatsArray.GetLength(1), 0] = (int)splats[i].X;
+            splatsArray[i % splatsArray.GetLength(0), i % splatsArray.GetLength(1), 1] = (int)splats[i].Y;
+            splatsArray[i % splatsArray.GetLength(0), i % splatsArray.GetLength(1), 2] = (int)splats[i].Z;
         }
     }
 
@@ -568,7 +572,6 @@ public abstract class LandscapeLayer<L, C> : ChunkBasedDataLayer<L, C>, IGodotIn
     where L : LandscapeLayer<L, C>, new()
     where C : LandscapeChunk<L, C>, new()
 {
-    public static FastNoiseLite TerrainNoise;
 
     public abstract int lodLevel { get; }
 
@@ -584,28 +587,16 @@ public abstract class LandscapeLayer<L, C> : ChunkBasedDataLayer<L, C>, IGodotIn
 
     public LandscapeLayer()
     {
+        TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
         // if (lodLevel < 2)
         // 	AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
-        // if (lodLevel < 3)
-        // 	AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+        if (lodLevel < 3)
+        	AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
     }
 
-    static LandscapeLayer()
+    public Terrain3D? GetTerrainAtWorldPos(Vector3 worldPos)
     {
-        TerrainNoise = new FastNoiseLite();
-        TerrainNoise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Perlin);
-
-        TerrainNoise.SetFrequency(0.002f);
-        TerrainNoise.SetFractalLacunarity(2f);
-        TerrainNoise.SetFractalGain(0.5f);
-        TerrainNoise.SetFractalOctaves(6);
-
-        TerrainNoise.SetFractalType(FastNoiseLite.FractalTypeEnum.Fbm);
-    }
-
-    public Terrain3D GetTerrainAtWorldPos(Vector3 worldPos)
-    {
-        return layerParent; //TODO: do some boundary check
+        return layerParent ?? null; //TODO: do some boundary check
 
         // if (GetChunkOfGridPoint(null,
         //     Mathf.FloorToInt(worldPos.X), Mathf.FloorToInt(worldPos.Z),

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -14,15 +15,27 @@ public static class ArrayExtensions
     {
         return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref MemoryMarshal.GetArrayDataReference(array)), array.Length);
     }
-    
+
     public static Span<T> AsSpan<T>(this T[,,] array)
     {
         return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref MemoryMarshal.GetArrayDataReference(array)), array.Length);
     }
 
+    public static Span<int[]> AsIntArraySpan(this int[,,] array)
+    {
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, int[]>(ref MemoryMarshal.GetArrayDataReference(array)), array.Length);
+    }
+
     public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[,,] array)
     {
         return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref MemoryMarshal.GetArrayDataReference(array)), array.Length);
+    }
+
+    public static IEnumerable<T> Slice<T>(this T[,,] array, int x1, int x2)
+    {
+        for (int x3 = 0; x3 < array.GetLength(2); x3++)
+            yield return array[x1, x2, x3];
+
     }
 
 
