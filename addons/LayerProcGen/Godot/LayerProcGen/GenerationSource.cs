@@ -68,9 +68,9 @@ public partial class GenerationSource : Node3D
 
         foreach (IGodotInstance layer in AbstractDataLayer.layers.OfType<IGodotInstance>())
         {
-            Node? layerRoot = layer.LayerRoot();
-            if(layerRoot != null && layerRoot.GetParent() == null)
-                CallDeferred("add_child", layerRoot); //TODO: would be cool to do this after build end
+            // Node? layerRoot = layer.LayerRoot(); //temporarily disabled for debugging
+            // if(layerRoot != null && layerRoot.GetParent() == null)
+            //     CallDeferred("add_child", layerRoot); //TODO: would be cool to do this after build end
         }
         
         Vector3 focusPos = Position;

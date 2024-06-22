@@ -108,7 +108,7 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 					Location location = ObjectPool<Location>.GlobalGet();
 					locations.Add(location);
 					location.position = pos;
-					location.height = TerrainNoise.Get(pos); //TODO: probably needs offset calculation it usually comes as -1:1
+					location.height = TerrainNoise.GetHeight(pos); //TODO: probably needs offset calculation it usually comes as -1:1
 					location.radius = 10f;
 					location.id = rand.GetInt(pos.x, pos.y);
 

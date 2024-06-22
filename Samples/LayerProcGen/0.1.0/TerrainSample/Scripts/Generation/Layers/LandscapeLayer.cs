@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Xml.Schema;
 using Terrain3DBindings;
 
 /// <summary>
@@ -359,13 +360,13 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
                 // Apply deformation from paths.
                 ph = SimpleProfiler.Begin(phc, "Deform-Paths");
                 List<PathSpec> pathSpecs = pathSpecListPool.Get();
-                // CultivationLayer.instance.GetPathsOverlappingBounds(this, pathSpecs, bounds);
-                // TerrainDeformation.ApplySpecs(
-                // 	heightsNA, distsNA, splatsNA,
-                // 	index * layer.chunkResolution - Point.one * GridOffset,
-                // 	Point.one * (layer.gridResolution + 1),
-                // 	((Vector2)layer.chunkSize) / layer.chunkResolution,
-                // 	pathSpecs);
+                CultivationLayer.instance.GetPathsOverlappingBounds(this, pathSpecs, bounds);
+                TerrainDeformation.ApplySpecs(
+                    ref heightsNA,ref distsNA, ref splatsNA,
+                	index * layer.chunkResolution - Point.one * GridOffset,
+                	Point.one * (layer.gridResolution + 1),
+                	((Vector2)layer.chunkSize) / layer.chunkResolution,
+                	pathSpecs);
                 pathSpecListPool.Return(ref pathSpecs);
                 SimpleProfiler.End(ph);
             }
@@ -428,12 +429,13 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>, IGodotInstance
             for (var xRes = 0; xRes <= gridResolution; xRes++)
             {
                 var p = (Vector2)(terrainOrigin + new Point(xRes, zRes) * cellSize);
-                heights[zRes, xRes] = TerrainNoise.Get(p);
+                heights[zRes, xRes] = TerrainNoise.GetHeight(p);
                 dists[zRes, xRes] = new Vector3(0f, 0f, 1000f);
             }
         }
     }
 
+    //TODO: this can be completely removed, because Terrain3D has an internal feature for that.
     // [BurstCompile]
     static void HandleSplats(
         in DPoint terrainOrigin, in DPoint cellSize, int gridResolution,
@@ -588,8 +590,8 @@ public abstract class LandscapeLayer<L, C> : ChunkBasedDataLayer<L, C>, IGodotIn
     public LandscapeLayer()
     {
         TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
-        // if (lodLevel < 2)
-        // 	AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
+        if (lodLevel < 2)
+        	AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
         if (lodLevel < 3)
         	AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
     }

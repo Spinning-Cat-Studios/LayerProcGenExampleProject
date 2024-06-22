@@ -14,7 +14,7 @@ namespace Godot.Util
             MinHeight = Mathf.Abs(terrainHeight.X);
         }
 
-        public static float Get(Vector2 coords)
+        public static float GetHeight(Vector2 coords)
         {
             return Noise.GetNoise2Dv(coords) * (TotalHeight - MinHeight) + MinHeight;
         }
@@ -24,7 +24,7 @@ namespace Godot.Util
             Noise = new FastNoiseLite();
             Noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Perlin);
 
-            Noise.SetFrequency(0.0009f);
+            Noise.SetFrequency(0.0005f);
             Noise.SetFractalLacunarity(2f);
             Noise.SetFractalGain(0.5f);
             Noise.SetFractalOctaves(6);

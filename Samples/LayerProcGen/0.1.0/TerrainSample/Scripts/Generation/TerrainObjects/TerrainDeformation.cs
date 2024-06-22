@@ -3,6 +3,7 @@ using Godot.Collections;
 using Runevision.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public struct SpecData {
 	public int pointCount;
@@ -35,7 +36,8 @@ public static class TerrainDeformation {
 	static ListPool<SpecPoint> specPointListPool = new ListPool<SpecPoint>(4096);
 	static ListPool<SpecData> specDataListPool = new ListPool<SpecData>(128);
 
-	public static void ApplySpecs(ref Span<float> heights,
+	public static void ApplySpecs(
+		ref Span<float> heights,
 		ref Span<Vector3> dists,
 		ref Span<Vector4> splats,
 		Point gridOffset,
@@ -81,6 +83,7 @@ public static class TerrainDeformation {
 			}
 		}
 
+		// SpecPointB[] specPointsArray = specPoints.Cast<SpecPointB>().ToArray();
 		SpecPointB[] specPointsArray = new SpecPointB[specPoints.Count];
 		SpecData[] specDatasArray = new SpecData[specDatas.Count];
 
