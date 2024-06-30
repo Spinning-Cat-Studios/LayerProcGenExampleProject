@@ -87,7 +87,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         	gridChunkRes,
         	Point.one * TerrainPathFinder.halfCellSize,
         	locationSpecs,
-        	(SpecPoint p) => {
+        	(SpecPointB p) => {
         		p.innerWidth += 2;
         		p.centerElevation = 0;
         		return p;
