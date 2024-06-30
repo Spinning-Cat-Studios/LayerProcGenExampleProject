@@ -1,6 +1,7 @@
 using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
+using System.Reflection;
 using Godot;
 using Godot.Util;
 
@@ -28,6 +29,12 @@ public class Location : IPoolable {
 
 public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 
+	public override void Create(int level, bool destroy)
+	{
+		GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
+		base.Create(level, destroy);
+	}
+	/*
 	struct Connection {
 		public Location a;
 		public Location b;
@@ -278,7 +285,7 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 			}
 		}
 		DebugDrawer.alpha = 1;
-	}
+	}*/
 }
 
 public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk>, ILayerVisualization {
@@ -311,26 +318,26 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk>, 
 	public void GetConnectionsOwnedInBounds(ILC q, List<Location> outConnectionPairs, GridBounds bounds) {
 		// Expanded bounds required since internal connections of a chunk are not necessarily
 		// inside the bounds of the chunk they're generated and stored in.
-		HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 2, chunk => {
+		/*HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 2, chunk => {
 			chunk.GetConnectionsOwnedInBounds(outConnectionPairs, bounds);
-		});
+		});*/
 	}
 
 	public void GetLocationsOwnedInBounds(ILC q, List<Location> outLocations, GridBounds bounds) {
 		// Expanded bounds required since locations are not necessarily inside the bounds
 		// of the chunk they're generated and stored in.
-		HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 1, chunk => {
+		/*HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 1, chunk => {
 			chunk.GetLocationsOwnedInBounds(outLocations, bounds);
-		});
+		});*/
 	}
 
-	public void GetLocationSpecsOverlappingBounds(ILC q, List<LocationSpec> outSpecs, GridBounds bounds) {
+	/*public void GetLocationSpecsOverlappingBounds(ILC q, List<LocationSpec> outSpecs, GridBounds bounds) {
 		// Expanded bounds required since locations are not necessarily inside the bounds
 		// of the chunk they're generated and stored in.
 		HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 1, chunk => {
 			chunk.GetLocationSpecsOverlappingBounds(outSpecs, bounds);
 		});
-	}
+	}*/
 
 	public static DebugToggle debugLayer = DebugToggle.Create(">Layers/LocationLayer");
 	public static DebugToggle debugInitial = DebugToggle.Create(">Layers/LocationLayer/Initial");
@@ -339,12 +346,12 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk>, 
 	public static DebugToggle debugConnections = DebugToggle.Create(">Layers/LocationLayer/Connections");
 
 	public void VisualizationUpdate() {
-		if (!debugLayer.visible)
+		/*if (!debugLayer.visible)
 			return;
 		for (int i = 0; i < GetLevelCount(); i++) {
 			VisualizationManager.BeginDebugDraw(this, i);
 			HandleAllChunks(i, c => c.DebugDraw(i));
 			VisualizationManager.EndDebugDraw();
-		}
+		}*/
 	}
 }

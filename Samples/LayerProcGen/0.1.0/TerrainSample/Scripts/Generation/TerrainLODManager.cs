@@ -4,10 +4,12 @@ using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Terrain3DBindings;
 
+namespace TerrainSample.Scripts.Generation.Layers;
+
 public partial class TerrainLODManager : Node
 {
-
     public static TerrainLODManager instance;
+    public Terrain3D terrain3D;
 
     class TerrainInfo
     {
@@ -32,7 +34,7 @@ public partial class TerrainLODManager : Node
     {
         instance = this;
         layers = new TerrainLODLayer[1];
-        SetupLODLayer(0, LandscapeLayerTerrain3D.instance);
+        SetupLODLayer(0, LandscapeLayerA.instance);
     }
 
     public void SetupLODLayer(int lodLevel, IChunkBasedDataLayer layer)
@@ -86,8 +88,10 @@ public partial class TerrainLODManager : Node
                     );
                     lowestLayerBounds.Encapsulate(index);
                 }
+
                 divisor *= 2;
             }
+
             lastLowerLevelBounds = lowestLayerBounds;
 
             // Activate and deactivate terrain chunks.
@@ -107,7 +111,6 @@ public partial class TerrainLODManager : Node
         // Debug draw.
         if (debugLODBounds.visible)
         {
-
             DebugDrawer.alpha = debugLODBounds.animAlpha;
             var lowestLayer = layers[^1].layer;
             VisualizationManager.BeginDebugDraw(lowestLayer, 0);
@@ -127,7 +130,7 @@ public partial class TerrainLODManager : Node
                     Image terrain = info.heightMap;
                     bool active = !terrain.IsInvisible();
                     if (active || (VisualizationManager.instance != null && VisualizationManager.instance.debugSeparate.visible)
-                    )
+                       )
                     {
                         Vector2 pos = kvp.Key * layers[i].layer.chunkSize;
                         if (layers[i].layer is IGodotInstance godotLayer)
@@ -146,15 +149,16 @@ public partial class TerrainLODManager : Node
                         }
                     }
                 }
+
                 VisualizationManager.EndDebugDraw();
             }
+
             DebugDrawer.alpha = 1f;
         }
     }
 
     public void HandleActivations()
     {
-
     }
 
     Color[] levelColors =
@@ -242,6 +246,7 @@ public partial class TerrainLODManager : Node
             // if (SetTerrainActiveStatus(info, false))
             return;
         }
+
         int subLevel = lodLevel - 1;
         Point subPointA = index * 2;
         Point subPointB = subPointA + Point.right;
@@ -262,4 +267,8 @@ public partial class TerrainLODManager : Node
     // 	// // UnityEngine.Profiling.Profiler.EndSample();
     // 	return true;
     // }
+    public bool HasChunkFor(Point index, int layerLodLevel)
+    {
+        throw new System.NotImplementedException();
+    }
 }

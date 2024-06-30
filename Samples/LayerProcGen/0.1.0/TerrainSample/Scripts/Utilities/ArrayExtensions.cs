@@ -2,9 +2,15 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Godot;
+using Godot.NativeInterop;
 
 public static class ArrayExtensions
 {
+    public static byte At(this Image array, int x, int y)
+    {
+        return array.Data["data"].As<byte[]>()[y * array.GetWidth() + x];
+    }
 
     public static Span<T> AsSpan<T>(this T[,] array)
     {
@@ -35,7 +41,6 @@ public static class ArrayExtensions
     {
         for (int x3 = 0; x3 < array.GetLength(2); x3++)
             yield return array[x1, x2, x3];
-
     }
 
 
@@ -47,6 +52,7 @@ public static class ArrayExtensions
             {
                 Console.Write($"{array[i, j]:0.00} ");
             }
+
             Console.WriteLine();
         }
     }

@@ -3,6 +3,7 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Godot;
 using Godot.Collections;
 using Godot.Util;
@@ -16,7 +17,12 @@ using Godot.Util;
 
 public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
 {
-    public float[,] heights;
+    public override void Create(int level, bool destroy)
+    {
+        GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
+        base.Create(level, destroy);
+    }
+    /*public float[,] heights;
     public Vector3[,] dists;
     public Vector4[,] splats;
 
@@ -99,6 +105,10 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         	});
         locationSpecListPool.Return(ref locationSpecs);
         SimpleProfiler.End(ph);
+    }*/
+    public void Dispose()
+    {
+        throw new NotImplementedException();
     }
 }
 
@@ -111,22 +121,22 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk>
 
     public GeoGridLayer()
     {
-        gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
-
-        AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+        // gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+        //
+        // AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
     }
 
     public void GetDataInBounds(ILC q, GridBounds bounds, float[,] heights, Vector3[,] dists, Vector4[,] splats)
     {
-        HandleGridPoints(q, bounds, chunkSize / TerrainPathFinder.halfCellSize,
-            (GeoGridChunk chunk, Point localPointInChunk, Point globalPoint) =>
-            {
-                int x = globalPoint.x - bounds.min.x;
-                int z = globalPoint.y - bounds.min.y;
-                heights[z, x] = chunk.heights[localPointInChunk.y, localPointInChunk.x];
-                dists[z, x] = chunk.dists[localPointInChunk.y, localPointInChunk.x];
-                splats[z, x] = chunk.splats[localPointInChunk.y, localPointInChunk.x];
-            }
-        );
+        // HandleGridPoints(q, bounds, chunkSize / TerrainPathFinder.halfCellSize,
+        //     (GeoGridChunk chunk, Point localPointInChunk, Point globalPoint) =>
+        //     {
+        //         int x = globalPoint.x - bounds.min.x;
+        //         int z = globalPoint.y - bounds.min.y;
+        //         heights[z, x] = chunk.heights[localPointInChunk.y, localPointInChunk.x];
+        //         dists[z, x] = chunk.dists[localPointInChunk.y, localPointInChunk.x];
+        //         splats[z, x] = chunk.splats[localPointInChunk.y, localPointInChunk.x];
+        //     }
+        // );
     }
 }

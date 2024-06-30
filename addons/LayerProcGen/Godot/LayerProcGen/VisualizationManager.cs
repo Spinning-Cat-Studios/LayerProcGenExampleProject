@@ -590,7 +590,7 @@ namespace Runevision.LayerProcGen
 
         static Label labelStyle;
 
-        // void OnGUI()
+        // void OnGUI() //TODO: generate UI
         // {
         //     DrawLayerLabels(Camera3D.main, DrawText);
         // }
@@ -668,7 +668,7 @@ namespace Runevision.LayerProcGen
         //     GUI.matrix = Projection.Identity;
         // }
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR //TODO DODODODODODODO
 		void OnDuringSceneGui(UnityEditor.SceneView sceneView) {
 			UnityEditor.Handles.BeginGUI();
 			DrawLayerLabels(sceneView.camera, DrawSceneViewTextMethod);
