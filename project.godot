@@ -22,7 +22,9 @@ CallbackHub="*res://addons/LayerProcGen/Godot/Common/CallbackHub.cs"
 [debug_draw_3d]
 
 settings/3d/volumetric_defaults/thickness=5.0
-settings/3d/rendering/render_priority=-1
+settings/3d/rendering/render_priority=127
+settings/3d/rendering/render_mode=2
+settings/3d/rendering/disable_fog=false
 
 [display]
 

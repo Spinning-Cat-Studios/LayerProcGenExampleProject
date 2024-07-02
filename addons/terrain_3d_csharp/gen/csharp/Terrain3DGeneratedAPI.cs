@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using Godot;
 using Godot.Collections;
+using Array = Godot.Collections.Array;
 
 namespace Terrain3DBindings;
 
@@ -37,31 +38,31 @@ public class _Terrain3DInstanceWrapper_ : IDisposable
 
 public class Terrain3D : _Terrain3DInstanceWrapper_
 {
-    private const string storage_name = "storage";
-    private const string terrainlayers_name = "texture_list";
-    private const string material_name = "material";
-    private const string meshlods_name = "mesh_lods";
-    private const string collision_enabled_name = "collision_enabled";
-    private const string collision_layer_name = "collision_layer";
-    private const string collision_mask_name = "collision_mask";
-    private const string collision_priority_name = "collision_priority";
-    private const string debug_level_name = "debug_level";
-    private const string debug_show_collision_name = "debug_show_collision";
-    private const string mesh_size_name = "mesh_size";
-    private const string mesh_vertex_spacing_name = "mesh_vertex_spacing";
-    private const string render_cast_shadows_name = "render_cast_shadows";
-    private const string render_cull_margin_name = "render_cull_margin";
-    private const string render_layers_name = "render_layers";
-    private const string render_mouse_layer_name = "render_mouse_layer";
-    private const string version_name = "version";
-    private const string bake_mesh_name = "bake_mesh";
-    private const string generate_nav_mesh_source_geometry_name = "generate_nav_mesh_source_geometry";
-    private const string get_camera_name = "get_camera";
-    private const string get_intersection_name = "get_intersection";
-    private const string get_plugin_name = "get_plugin";
-    private const string set_camera_name = "set_camera";
-    private const string set_plugin_name = "set_plugin";
-    private const string update_aabbs_name = "update_aabbs";
+    private static readonly StringName storage_name = "storage";
+    private static readonly StringName terrainlayers_name = "texture_list";
+    private static readonly StringName material_name = "material";
+    private static readonly StringName meshlods_name = "mesh_lods";
+    private static readonly StringName collision_enabled_name = "collision_enabled";
+    private static readonly StringName collision_layer_name = "collision_layer";
+    private static readonly StringName collision_mask_name = "collision_mask";
+    private static readonly StringName collision_priority_name = "collision_priority";
+    private static readonly StringName debug_level_name = "debug_level";
+    private static readonly StringName debug_show_collision_name = "debug_show_collision";
+    private static readonly StringName mesh_size_name = "mesh_size";
+    private static readonly StringName mesh_vertex_spacing_name = "mesh_vertex_spacing";
+    private static readonly StringName render_cast_shadows_name = "render_cast_shadows";
+    private static readonly StringName render_cull_margin_name = "render_cull_margin";
+    private static readonly StringName render_layers_name = "render_layers";
+    private static readonly StringName render_mouse_layer_name = "render_mouse_layer";
+    private static readonly StringName version_name = "version";
+    private static readonly StringName bake_mesh_name = "bake_mesh";
+    private static readonly StringName generate_nav_mesh_source_geometry_name = "generate_nav_mesh_source_geometry";
+    private static readonly StringName get_camera_name = "get_camera";
+    private static readonly StringName get_intersection_name = "get_intersection";
+    private static readonly StringName get_plugin_name = "get_plugin";
+    private static readonly StringName set_camera_name = "set_camera";
+    private static readonly StringName set_plugin_name = "set_plugin";
+    private static readonly StringName update_aabbs_name = "update_aabbs";
 
     private Terrain3DMaterial? material;
     private Terrain3DStorage? storage;
@@ -75,7 +76,7 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
     {
     }
 
-    private Node3D AsNode3D => (Node3D)Instance;
+    public Node3D AsNode3D => (Node3D)Instance;
 
     public bool Visible
     {
@@ -267,34 +268,38 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 
 public class Terrain3DMaterial : _Terrain3DInstanceWrapper_
 {
-    private const string shader_parameters = "_shader_parameters";
-    private const string auto_shader_name = "auto_shader";
-    private const string dual_scaling_name = "dual_scaling";
-    private const string shader_override_name = "shader_override";
-    private const string shader_override_enabled_name = "shader_override_enabled";
-    private const string show_autoshader_name = "show_autoshader";
-    private const string show_checkered_name = "show_checkered";
-    private const string show_colormap_name = "show_colormap";
-    private const string show_control_blend_name = "show_control_blend";
-    private const string show_control_texture_name = "show_control_texture";
-    private const string show_grey_name = "show_grey";
-    private const string show_heightmap_name = "show_heightmap";
-    private const string show_navigation_name = "show_navigation";
-    private const string show_roughmap_name = "show_roughmap";
-    private const string show_texture_height_name = "show_texture_height";
-    private const string show_texture_normal_name = "show_texture_normal";
-    private const string show_texture_rough_name = "show_texture_rough";
-    private const string show_vertex_grid_name = "show_vertex_grid";
-    private const string texture_filtering_name = "texture_filtering";
-    private const string world_background_name = "world_background";
-    private const string get_material_rid_name = "get_material_rid";
-    private const string get_region_blend_map_name = "get_region_blend_map";
-    private const string get_shader_param_name = "get_shader_param";
-    private const string get_shader_rid_name = "get_shader_rid";
-    private const string save_name = "save";
-    private const string set_shader_param_name = "set_shader_param";
+    private static readonly StringName shader_parameters = "_shader_parameters";
+    private static readonly StringName auto_shader_name = "auto_shader";
+    private static readonly StringName dual_scaling_name = "dual_scaling";
+    private static readonly StringName shader_override_name = "shader_override";
+    private static readonly StringName shader_override_enabled_name = "shader_override_enabled";
+    private static readonly StringName show_autoshader_name = "show_autoshader";
+    private static readonly StringName show_checkered_name = "show_checkered";
+    private static readonly StringName show_colormap_name = "show_colormap";
+    private static readonly StringName show_control_blend_name = "show_control_blend";
+    private static readonly StringName show_control_texture_name = "show_control_texture";
+    private static readonly StringName show_grey_name = "show_grey";
+    private static readonly StringName show_heightmap_name = "show_heightmap";
+    private static readonly StringName show_navigation_name = "show_navigation";
+    private static readonly StringName show_roughmap_name = "show_roughmap";
+    private static readonly StringName show_texture_height_name = "show_texture_height";
+    private static readonly StringName show_texture_normal_name = "show_texture_normal";
+    private static readonly StringName show_texture_rough_name = "show_texture_rough";
+    private static readonly StringName show_vertex_grid_name = "show_vertex_grid";
+    private static readonly StringName texture_filtering_name = "texture_filtering";
+    private static readonly StringName world_background_name = "world_background";
+    private static readonly StringName get_material_rid_name = "get_material_rid";
+    private static readonly StringName get_region_blend_map_name = "get_region_blend_map";
+    private static readonly StringName get_shader_param_name = "get_shader_param";
+    private static readonly StringName get_shader_rid_name = "get_shader_rid";
+    private static readonly StringName save_name = "save";
+    private static readonly StringName set_shader_param_name = "set_shader_param";
 
     public Terrain3DMaterial(GodotObject instance) : base(instance)
+    {
+    }
+
+    public Terrain3DMaterial() : base(ClassDB.Instantiate(nameof(Terrain3DMaterial)).AsGodotObject())
     {
     }
 
@@ -451,44 +456,44 @@ public class Terrain3DMaterial : _Terrain3DInstanceWrapper_
 
 public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 {
-    private const string regionsize_name = "region_size";
-    private const string heightrange_name = "height_range";
-    private const string colormaps_name = "color_maps";
-    private const string regionoffsets_name = "region_offsets";
-    private const string controlmaps_name = "control_maps";
-    private const string heightmaps_name = "height_maps";
-    private const string set_height_name = "set_height";
-    private const string getcontrol_name = "get_control";
-    private const string set_control_name = "set_control";
-    private const string force_update_maps_name = "force_update_maps";
-    private const string save_bit_name = "save_16_bit";
-    private const string version_name = "version";
-    private const string add_region_name = "add_region";
-    private const string export_image_name = "export_image";
-    private const string get_color_name = "get_color";
-    private const string get_height_name = "get_height";
-    private const string get_map_region_name = "get_map_region";
-    private const string get_maps_name = "get_maps";
-    private const string get_maps_copy_name = "get_maps_copy";
-    private const string get_mesh_vertex_name = "get_mesh_vertex";
-    private const string get_normal_name = "get_normal";
-    private const string get_pixel_name = "get_pixel";
-    private const string get_region_count_name = "get_region_count";
-    private const string get_region_index_name = "get_region_index";
-    private const string get_region_offset_name = "get_region_offset";
-    private const string get_roughness_name = "get_roughness";
-    private const string get_texture_id_name = "get_texture_id";
-    private const string has_region_name = "has_region";
-    private const string import_images_name = "import_images";
-    private const string layered_to_image_name = "layered_to_image";
-    private const string remove_region_name = "remove_region";
-    private const string save_name = "save";
-    private const string set_color_name = "set_color";
-    private const string set_map_region_name = "set_map_region";
-    private const string set_maps_name = "set_maps";
-    private const string set_pixel_name = "set_pixel";
-    private const string set_roughness_name = "set_roughness";
-    private const string update_height_range_name = "update_height_range";
+    private static readonly StringName regionsize_name = "region_size";
+    private static readonly StringName heightrange_name = "height_range";
+    private static readonly StringName colormaps_name = "color_maps";
+    private static readonly StringName regionoffsets_name = "region_offsets";
+    private static readonly StringName controlmaps_name = "control_maps";
+    private static readonly StringName heightmaps_name = "height_maps";
+    private static readonly StringName set_height_name = "set_height";
+    private static readonly StringName getcontrol_name = "get_control";
+    private static readonly StringName set_control_name = "set_control";
+    private static readonly StringName force_update_maps_name = "force_update_maps";
+    private static readonly StringName save_bit_name = "save_16_bit";
+    private static readonly StringName version_name = "version";
+    private static readonly StringName add_region_name = "add_region";
+    private static readonly StringName export_image_name = "export_image";
+    private static readonly StringName get_color_name = "get_color";
+    private static readonly StringName get_height_name = "get_height";
+    private static readonly StringName get_map_region_name = "get_map_region";
+    private static readonly StringName get_maps_name = "get_maps";
+    private static readonly StringName get_maps_copy_name = "get_maps_copy";
+    private static readonly StringName get_mesh_vertex_name = "get_mesh_vertex";
+    private static readonly StringName get_normal_name = "get_normal";
+    private static readonly StringName get_pixel_name = "get_pixel";
+    private static readonly StringName get_region_count_name = "get_region_count";
+    private static readonly StringName get_region_index_name = "get_region_index";
+    private static readonly StringName get_region_offset_name = "get_region_offset";
+    private static readonly StringName get_roughness_name = "get_roughness";
+    private static readonly StringName get_texture_id_name = "get_texture_id";
+    private static readonly StringName has_region_name = "has_region";
+    private static readonly StringName import_images_name = "import_images";
+    private static readonly StringName layered_to_image_name = "layered_to_image";
+    private static readonly StringName remove_region_name = "remove_region";
+    private static readonly StringName save_name = "save";
+    private static readonly StringName set_color_name = "set_color";
+    private static readonly StringName set_map_region_name = "set_map_region";
+    private static readonly StringName set_maps_name = "set_maps";
+    private static readonly StringName set_pixel_name = "set_pixel";
+    private static readonly StringName set_roughness_name = "set_roughness";
+    private static readonly StringName update_height_range_name = "update_height_range";
 
     public Terrain3DStorage(GodotObject instance) : base(instance)
     {
@@ -547,7 +552,9 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
     public Error AddRegion(Vector3 globalPosition, Image[]? images = default, bool update = true)
     {
         images ??= System.Array.Empty<Image>();
-        return AsResource.Call(add_region_name, images, update).As<Error>();
+        var imageArray = new Array();
+        imageArray.AddRange(images);
+        return Instance.Call(add_region_name, Variant.From(globalPosition), imageArray, update).As<Error>();
     }
 
     public Error ExportImage(String fileName, MapType mapType)
@@ -635,7 +642,7 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
         return AsResource.Call(has_region_name, globalPosition).AsBool();
     }
 
-    public void ImportImages(Image[] images, Vector3? globalPosition = default, float offset = 0.0f, float scale = 1.0f)
+    public void ImportImages(Array<Image> images, Vector3? globalPosition = default, float offset = 0.0f, float scale = 1.0f)
     {
         globalPosition ??= Vector3.Zero;
         AsResource.Call(import_images_name, images, (Vector3)globalPosition, offset, scale);
@@ -707,14 +714,14 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 public class Terrain3DTexture : _Terrain3DInstanceWrapper_
 {
-    private const string albedo_texture_name = "albedo_texture";
-    private const string albedo_color_name = "albedo_color";
-    private const string name_name = "name";
-    private const string normal_texture_name = "normal_texture";
-    private const string texture_id_name = "texture_id";
-    private const string uv_rotation_name = "uv_rotation";
-    private const string uv_scale_name = "uv_scale";
-    private const string clear_name = "clear";
+    private static readonly StringName albedo_texture_name = "albedo_texture";
+    private static readonly StringName albedo_color_name = "albedo_color";
+    private static readonly StringName name_name = "name";
+    private static readonly StringName normal_texture_name = "normal_texture";
+    private static readonly StringName texture_id_name = "texture_id";
+    private static readonly StringName uv_rotation_name = "uv_rotation";
+    private static readonly StringName uv_scale_name = "uv_scale";
+    private static readonly StringName clear_name = "clear";
 
     public Terrain3DTexture() : base(ClassDB.Instantiate(nameof(Terrain3DTexture)).AsGodotObject())
     {
@@ -776,11 +783,11 @@ public class Terrain3DTexture : _Terrain3DInstanceWrapper_
 
 public class Terrain3DTextureList : _Terrain3DInstanceWrapper_
 {
-    private const string property_name = "textures";
-    private const string get_texture_name = "get_texture";
-    private const string get_texture_count_name = "get_texture_count";
-    private const string save_name = "save";
-    private const string set_texture_name = "set_texture";
+    private static readonly StringName property_name = "textures";
+    private static readonly StringName get_texture_name = "get_texture";
+    private static readonly StringName get_texture_count_name = "get_texture_count";
+    private static readonly StringName save_name = "save";
+    private static readonly StringName set_texture_name = "set_texture";
 
     private Terrain3DTexture[]? textures;
 

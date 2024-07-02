@@ -3,10 +3,11 @@ namespace Godot.Util
     public static class TerrainNoise
     {
         private static FastNoiseLite Noise;
-        private static float TotalHeight;
-        private static float MinHeight;
+        private static float TotalHeight = 1;
+        private static float MinHeight = 0;
 
         private static Vector2 TerrainHeight { get; set; }
+
         public static void SetFullTerrainHeight(Vector2 terrainHeight)
         {
             TerrainHeight = terrainHeight;

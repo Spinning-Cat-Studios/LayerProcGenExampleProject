@@ -3,6 +3,7 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Terrain3DBindings;
+using TerrainSample.Scripts.Utilities;
 
 namespace TerrainSample.Scripts.Generation.Layers;
 
@@ -33,6 +34,10 @@ public partial class TerrainLODManager : Node
     public override void _Ready()
     {
         instance = this;
+        terrain3D = new Terrain3D();
+        terrain3D.Material = new Terrain3DMaterial();
+        terrain3D.Material.WorldBackground = WorldBackground.NONE;
+        AddChild(terrain3D.AsNode3D);
         layers = new TerrainLODLayer[1];
         SetupLODLayer(0, LandscapeLayerA.instance);
     }
@@ -267,8 +272,27 @@ public partial class TerrainLODManager : Node
     // 	// // UnityEngine.Profiling.Profiler.EndSample();
     // 	return true;
     // }
-    public bool HasChunkFor(Point index, int layerLodLevel)
+
+    public bool HasChunkAt(Vector3 position)
     {
-        throw new System.NotImplementedException();
+        return terrain3D.Storage.HasRegion(position);
+    }
+
+    public void CreateNewChunkAt(Vector3 position)
+    {
+        var addRegionError = terrain3D.Storage.AddRegion(position, null, false);
+        switch (addRegionError)
+        {
+            case Error.Ok:
+                break;
+            default:
+                GD.PushError(addRegionError);
+                break;
+        }
+    }
+
+    public Terrain3DRegion GetChunkAt(Vector3 position)
+    {
+        return Terrain3DRegion.Create(terrain3D.Storage.GetRegionIndex(position));
     }
 }
