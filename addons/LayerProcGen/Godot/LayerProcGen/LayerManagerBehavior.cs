@@ -23,7 +23,7 @@ namespace Runevision.LayerProcGen
     public partial class LayerManagerBehavior : Node
     {
         protected readonly ConcurrentQueue<IEnumerator> Coroutines = new();
-        protected IEnumerator? activeCoroutine;
+        protected IEnumerator? activeEnumerator;
 
         public enum GenerationPlane
         {
@@ -63,20 +63,27 @@ namespace Runevision.LayerProcGen
 
         public override void _Process(double delta)
         {
-            if (activeCoroutine == null)
-                _ = Coroutines.TryDequeue(out activeCoroutine);
-            else
-            {
-                if (activeCoroutine.MoveNext())
-                {
-                    if (activeCoroutine?.Current is IEnumerator e)
-                    {
-                        Coroutines.Enqueue(e);
-                    }
-                }
-                else
-                    activeCoroutine = null;
-            }
+            // activeEnumerator = null;
+            // while (Coroutines.TryDequeue(out var ele))
+            // {
+            //     if (activeEnumerator == ele)
+            //     {
+            //         Coroutines.Enqueue(ele);
+            //         break;
+            //     }
+            //
+            //     activeEnumerator ??= ele;
+            //     if (ele.MoveNext())
+            //         Coroutines.Enqueue(ele);
+            //     if (ele?.Current is IEnumerator e)
+            //         Coroutines.Enqueue(e);
+            // }
+
+            if (activeEnumerator == null)
+                _ = Coroutines.TryDequeue(out activeEnumerator);
+            else if (!activeEnumerator.MoveNext())
+                activeEnumerator = null;
+            if (activeEnumerator?.Current is IEnumerator e) Coroutines.Enqueue(e);
 
             MainThreadActionQueue.ProcessQueue();
             DebugDrawer.xzMode = (generationPlane == GenerationPlane.XZ);

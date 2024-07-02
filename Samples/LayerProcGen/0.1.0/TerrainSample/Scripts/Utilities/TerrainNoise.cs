@@ -17,18 +17,18 @@ namespace Godot.Util
 
         public static float GetHeight(Vector2 coords)
         {
-            return Noise.GetNoise2Dv(coords) * (TotalHeight - MinHeight) + MinHeight;
+            return Mathf.Clamp(( Noise.GetNoise2Dv(coords)+ 1f) / 2f, 0, 1) * (TotalHeight - MinHeight) + MinHeight;
         }
 
         static TerrainNoise()
         {
             Noise = new FastNoiseLite();
-            Noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Perlin);
+            Noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Simplex);
 
-            Noise.SetFrequency(0.0005f);
+            Noise.SetFrequency(0.002f);
             Noise.SetFractalLacunarity(2f);
             Noise.SetFractalGain(0.5f);
-            Noise.SetFractalOctaves(6);
+            Noise.SetFractalOctaves(4);
 
             Noise.SetFractalType(FastNoiseLite.FractalTypeEnum.Fbm);
         }
