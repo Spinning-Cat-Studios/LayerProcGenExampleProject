@@ -64,42 +64,10 @@ public struct QueuedTerrainCallback<L, C> : IQueuedAction
 
     public IEnumerator ProcessRoutine()
     {
-        if (layer.chunkW > regionSize)
-            yield return HandleOverSizedRegions();
-        else if (layer.chunkW < regionSize)
+        if (layer.chunkW < regionSize)
             yield return HandleUnderSizedRegions();
         else
-            yield return HandleSameSizedRegions();
-        yield return null;
-    }
-
-    private IEnumerator HandleSameSizedRegions()
-    {
-        var startPos = index * layer.chunkW;
-        Terrain3DRegion? terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
-        if (terrain == null)
-            yield break;
-
-        var img = terrain.HeightMap ?? Image.Create(regionSize, regionSize, false, Image.Format.Rf);
-        DPoint cellSize = (DPoint)layer.chunkSize / layer.gridResolution;
-        float minHeight = layer.terrainBaseHeight;
-        float totalHeight = layer.terrainHeight - layer.terrainBaseHeight;
-        // TerrainLODManager.instance.terrain3D.Storage.HeightRange = new Vector2(minHeight, layer.terrainHeight);
-
-        GD.Print($"HandleSameSizedRegions: {cellSize}, {layer.chunkSize}, {layer.gridResolution}");
-        // GD.Print($"\t: {layer.lodLevel} {position} in region:{terrain.RegionOffset}, {startPos}; on index:{index}, {index * layer.chunkW}");
-        var offsW = regionSize / heightmap.GetLength(0);
-        var offsD = regionSize / heightmap.GetLength(1);
-        for (var x = 0; x < layer.chunkSize.x; x++)
-        {
-            for (var z = 0; z < layer.chunkSize.y; z++)
-            {
-                img.SetPixel(x, z, Colors.Red * (heightmap[z / offsW, x / offsD] * (totalHeight - minHeight) + minHeight));
-            }
-        }
-
-        terrain.HeightMap = img;
-        TerrainLODManager.instance.terrain3D.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
+            yield return HandleOverSizedRegions();
         yield return null;
     }
 
