@@ -23,32 +23,32 @@ public class Terrain3DRegion
 
     public Image? HeightMap
     {
-        get => TerrainLODManager.instance.terrain3D.Storage.GetMapRegion(MapType.TYPE_HEIGHT, regionIndex);
-        set => TerrainLODManager.instance.terrain3D.Storage.SetMapRegion(MapType.TYPE_HEIGHT, regionIndex, value);
+        get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_HEIGHT, regionIndex);
+        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_HEIGHT, regionIndex, value);
     }
 
     public Image? ControlMap
     {
-        get => TerrainLODManager.instance.terrain3D.Storage.GetMapRegion(MapType.TYPE_CONTROL, regionIndex);
-        set => TerrainLODManager.instance.terrain3D.Storage.SetMapRegion(MapType.TYPE_CONTROL, regionIndex, value);
+        get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_CONTROL, regionIndex);
+        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_CONTROL, regionIndex, value);
     }
 
     public Image? ColorMap
     {
-        get => TerrainLODManager.instance.terrain3D.Storage.GetMapRegion(MapType.TYPE_COLOR, regionIndex);
-        set => TerrainLODManager.instance.terrain3D.Storage.SetMapRegion(MapType.TYPE_COLOR, regionIndex, value);
+        get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_COLOR, regionIndex);
+        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_COLOR, regionIndex, value);
     }
 
     public Image? MaxMap
     {
-        get => TerrainLODManager.instance.terrain3D.Storage.GetMapRegion(MapType.TYPE_MAX, regionIndex);
-        set => TerrainLODManager.instance.terrain3D.Storage.SetMapRegion(MapType.TYPE_MAX, regionIndex, value);
+        get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_MAX, regionIndex);
+        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_MAX, regionIndex, value);
     }
 
     public Vector2I RegionOffset
     {
-        get => TerrainLODManager.instance.terrain3D.Storage.RegionOffsets[regionIndex];
-        set => TerrainLODManager.instance.terrain3D.Storage.RegionOffsets[regionIndex] = value;
+        get => TerrainLODManager.instance.terrain3DWrapper.Storage.RegionOffsets[regionIndex];
+        set => TerrainLODManager.instance.terrain3DWrapper.Storage.RegionOffsets[regionIndex] = value;
     }
 
     public static Terrain3DRegion Create(int regionIndex)

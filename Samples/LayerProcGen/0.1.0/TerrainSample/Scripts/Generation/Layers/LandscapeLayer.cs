@@ -78,11 +78,11 @@ public struct MapQueuedTerrainCallback<L, C> : IQueuedAction
             for (var z = 0; z < layer.chunkSize.y; z++)
             {
                 Vector3 globalPosition = new Vector3(startPos.x + x, 0, startPos.y + z);
-                TerrainLODManager.instance.terrain3D.Storage.SetHeight(globalPosition, heightmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
+                TerrainLODManager.instance.terrain3DWrapper.Storage.SetHeight(globalPosition, heightmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
             }
         }
 
-        TerrainLODManager.instance.terrain3D.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
+        TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
         yield return null;
     }
 }
@@ -137,7 +137,7 @@ public struct ImgQueuedTerrainCallback<L, C> : IQueuedAction
         if (terrain == null)
             yield break;
         terrain.HeightMap = heightmap;
-        TerrainLODManager.instance.terrain3D.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
+        TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps(MapType.TYPE_HEIGHT);
         yield return null;
     }
 }

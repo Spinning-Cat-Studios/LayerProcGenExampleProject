@@ -10,7 +10,10 @@ namespace TerrainSample.Scripts.Generation.Layers;
 public partial class TerrainLODManager : Node
 {
     public static TerrainLODManager instance;
-    public Terrain3D terrain3D;
+
+    [Export(PropertyHint.NodeType, nameof(Terrain3DBindings.Terrain3D))]
+    public Node3D Terrain3D { get; set; }
+    public Terrain3D terrain3DWrapper;
 
     class TerrainInfo
     {
@@ -34,10 +37,11 @@ public partial class TerrainLODManager : Node
     public override void _Ready()
     {
         instance = this;
-        terrain3D = new Terrain3D();
-        terrain3D.Material = new Terrain3DMaterial();
-        terrain3D.Material.WorldBackground = WorldBackground.NONE;
-        AddChild(terrain3D.AsNode3D);
+        // terrain3D = new Terrain3D(terrain3D);
+        // terrain3D.Material = new Terrain3DMaterial();
+        // terrain3D.Material.WorldBackground = WorldBackground.NONE;
+        // AddChild(terrain3D.AsNode3D);
+        terrain3DWrapper = new Terrain3D(Terrain3D);
         layers = new TerrainLODLayer[1];
         SetupLODLayer(0, LandscapeLayerA.instance);
     }
@@ -174,6 +178,7 @@ public partial class TerrainLODManager : Node
         new(0.8f, 0.1f, 0.5f)
     };
 
+
     // Returns true if full area is handled.
     bool HandleAreaIfCovered(int lodLevel, Point index, bool alreadyChecked = false, TerrainInfo selfInfo = null)
     {
@@ -275,12 +280,12 @@ public partial class TerrainLODManager : Node
 
     public bool HasChunkAt(Vector3 position)
     {
-        return terrain3D.Storage.HasRegion(position);
+        return terrain3DWrapper.Storage.HasRegion(position);
     }
 
     public void CreateNewChunkAt(Vector3 position)
     {
-        var addRegionError = terrain3D.Storage.AddRegion(position, null, false);
+        var addRegionError = terrain3DWrapper.Storage.AddRegion(position, null, false);
         switch (addRegionError)
         {
             case Error.Ok:
@@ -293,6 +298,6 @@ public partial class TerrainLODManager : Node
 
     public Terrain3DRegion GetChunkAt(Vector3 position)
     {
-        return Terrain3DRegion.Create(terrain3D.Storage.GetRegionIndex(position));
+        return Terrain3DRegion.Create(terrain3DWrapper.Storage.GetRegionIndex(position));
     }
 }
