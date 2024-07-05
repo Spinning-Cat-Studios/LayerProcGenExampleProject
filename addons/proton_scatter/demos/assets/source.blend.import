@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://y3p4gec88546"
+uid="uid://cj0lryy6qa15h"
 path="res://.godot/imported/source.blend-6553bbdea542ba64489fdff7990920e8.scn"
 
 [deps]
@@ -38,6 +38,7 @@ fbx/embedded_image_handling=1
 gltf/naming_version=1
 gltf/embedded_image_handling=1
 blender/nodes/visible=0
+blender/nodes/active_collection_only=false
 blender/nodes/punctual_lights=true
 blender/nodes/cameras=true
 blender/nodes/custom_properties=true
