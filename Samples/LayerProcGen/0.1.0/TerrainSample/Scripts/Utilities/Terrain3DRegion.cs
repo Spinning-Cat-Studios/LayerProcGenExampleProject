@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using Godot;
+using Terrain3D.Scripts.Generation.Layers;
 using Terrain3DBindings;
-using TerrainSample.Scripts.Generation.Layers;
 
-namespace TerrainSample.Scripts.Utilities;
+namespace Terrain3D.Scripts.Utilities;
 
 public class Terrain3DRegion
 {

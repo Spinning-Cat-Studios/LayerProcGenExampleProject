@@ -3,7 +3,6 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Godot;
 using Godot.Collections;
 using Godot.Util;
@@ -17,14 +16,9 @@ using Godot.Util;
 
 public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
 {
-    public override void Create(int level, bool destroy)
-    {
-        GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
-        base.Create(level, destroy);
-    }
-    /*public float[,] heights;
+    public float[,] heights;
     public Vector3[,] dists;
-    public Vector4[,] splats;
+    public uint[,] controls;
 
     public GeoGridChunk()
     {
@@ -32,7 +26,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         {
             heights = new float[layer.gridChunkRes.y, layer.gridChunkRes.x];
             dists = new Vector3[layer.gridChunkRes.y, layer.gridChunkRes.x];
-            splats = new Vector4[layer.gridChunkRes.y, layer.gridChunkRes.x];
+            controls = new uint[layer.gridChunkRes.y, layer.gridChunkRes.x];
             // LayerManager.instance.abort += Dispose;
         }
     }
@@ -48,7 +42,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         {
             heights.Clear();
             dists.Clear();
-            splats.Clear();
+            controls.Clear();
         }
         else
         {
@@ -84,11 +78,8 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         ph = SimpleProfiler.Begin(phc, "Deform-LocationDeformation");
         List<LocationSpec> locationSpecs = locationSpecListPool.Get();
         LocationLayer.instance.GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
-        var heightsNA = heights.AsSpan();
-        var distsNA = dists.AsSpan();
-        var splatsNA = splats.AsSpan();
         TerrainDeformation.ApplySpecs(
-        	ref heightsNA, ref distsNA, ref splatsNA,
+        	ref heights, ref dists, ref controls,
         	gridOrigin,
         	gridChunkRes,
         	Point.one * TerrainPathFinder.halfCellSize,
@@ -105,10 +96,6 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         	});
         locationSpecListPool.Return(ref locationSpecs);
         SimpleProfiler.End(ph);
-    }*/
-    public void Dispose()
-    {
-        throw new NotImplementedException();
     }
 }
 
@@ -121,22 +108,22 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk>
 
     public GeoGridLayer()
     {
-        // gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
-        //
-        // AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+        gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+
+        AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
     }
 
-    public void GetDataInBounds(ILC q, GridBounds bounds, float[,] heights, Vector3[,] dists, Vector4[,] splats)
+    public void GetDataInBounds(ILC q, GridBounds bounds, float[,] heights, Vector3[,] dists, uint[,] controls)
     {
-        // HandleGridPoints(q, bounds, chunkSize / TerrainPathFinder.halfCellSize,
-        //     (GeoGridChunk chunk, Point localPointInChunk, Point globalPoint) =>
-        //     {
-        //         int x = globalPoint.x - bounds.min.x;
-        //         int z = globalPoint.y - bounds.min.y;
-        //         heights[z, x] = chunk.heights[localPointInChunk.y, localPointInChunk.x];
-        //         dists[z, x] = chunk.dists[localPointInChunk.y, localPointInChunk.x];
-        //         splats[z, x] = chunk.splats[localPointInChunk.y, localPointInChunk.x];
-        //     }
-        // );
+        HandleGridPoints(q, bounds, chunkSize / TerrainPathFinder.halfCellSize,
+            (GeoGridChunk chunk, Point localPointInChunk, Point globalPoint) =>
+            {
+                int x = globalPoint.x - bounds.min.x;
+                int z = globalPoint.y - bounds.min.y;
+                heights[z, x] = chunk.heights[localPointInChunk.y, localPointInChunk.x];
+                dists[z, x] = chunk.dists[localPointInChunk.y, localPointInChunk.x];
+                controls[z, x] = chunk.controls[localPointInChunk.y, localPointInChunk.x];
+            }
+        );
     }
 }

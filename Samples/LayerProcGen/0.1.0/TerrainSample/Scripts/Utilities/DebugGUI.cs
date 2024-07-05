@@ -6,7 +6,7 @@ public partial class DebugGUI : Node
     private Vector2I oldSize;
     private Vector2I oldPos;
     private Window.ModeEnum oldMode;
-    public static bool on { get; private set; }
+    public static bool on { get; private set; } = true;
 
     [Export]
     public Control DebugOverlay { get; set; }
@@ -44,6 +44,8 @@ public partial class DebugGUI : Node
         var screenshotName = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + "_Screenshot.png";
         GetViewport().GetTexture().GetImage().SavePng($"user://{screenshotName}");
         GD.Print($"Screenshot saved under: {Path.Join(OS.GetUserDataDir(), screenshotName)}");
+        
+        if (GetWindow().Size == oldSize) return;
         GetWindow().Size = oldSize;
         GetWindow().Position = oldPos;
         GetWindow().Mode = oldMode;

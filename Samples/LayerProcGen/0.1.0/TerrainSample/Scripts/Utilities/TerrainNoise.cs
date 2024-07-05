@@ -23,7 +23,7 @@ namespace Godot.Util
         static TerrainNoise()
         {
             Noise = new FastNoiseLite();
-            Noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Simplex);
+            Noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Perlin);
 
             Noise.SetFrequency(0.002f);
             Noise.SetFractalLacunarity(2f);

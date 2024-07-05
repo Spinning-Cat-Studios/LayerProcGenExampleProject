@@ -1,27 +1,21 @@
 using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
-using System.Reflection;
 using Godot;
 
 public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
-	public override void Create(int level, bool destroy)
-	{
-		GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
-		base.Create(level, destroy);
-	}
-	/*public List<PathSpec> paths = new List<PathSpec>();
+	public List<PathSpec> paths = new List<PathSpec>();
 
 	float[,] heights;
 	Vector3[,] dists;
-	Vector4[,] splats;
+	uint[,] controls;
 
 	Point gridOrigin;
 
 	public CultivationChunk() {
 		heights = new float[layer.gridSize.y, layer.gridSize.x];
 		dists = new Vector3[layer.gridSize.y, layer.gridSize.x];
-		splats = new Vector4[layer.gridSize.y, layer.gridSize.x];
+		controls = new uint[layer.gridSize.y, layer.gridSize.x];
 	}
 
 	public override void Create(int level, bool destroy) {
@@ -33,7 +27,7 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 			paths.Clear();
 			heights.Clear();
 			dists.Clear();
-			splats.Clear();
+			controls.Clear();
 		}
 		else {
 			Build();
@@ -53,18 +47,18 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 		// Fill the grid with data from the GeoGridLayer.
 		ph = SimpleProfiler.Begin(phc, "Retrieve Data");
 		GeoGridLayer.instance.GetDataInBounds(
-			this, new GridBounds(gridOrigin, gridSize), heights, dists, splats);
+			this, new GridBounds(gridOrigin, gridSize), heights, dists, controls);
 		SimpleProfiler.End(ph);
 
 		// Define a height function and cost function for the pathfinding.
 
 		float HeightFunction(DPoint p) {
 			Point index = GetIndexOfPos(p);
-#if UNITY_EDITOR
+#if DEBUG
 			Point indexClamped = Point.Min(Point.Max(index, Point.zero), gridSize - Point.one);
 			if (indexClamped != index) {
 				index = indexClamped;
-				DebugDrawer.DrawRay(new Vector3((float)p.x, 0, (float)p.y), Vector3.up * 1000, Colors.Red, 1000);
+				DebugDrawer.DrawRay(new Vector3((float)p.x, 0, (float)p.y), Vector3.Up * 1000, Colors.Red, 1000);
 				Logg.LogError("Accessing heights array out of bounds.");
 			}
 #endif
@@ -73,11 +67,11 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 
 		float CostFunction(DPoint p) {
 			Point index = GetIndexOfPos(p);
-#if UNITY_EDITOR
+#if DEBUG
 			Point indexClamped = Point.Min(Point.Max(index, Point.zero), gridSize - Point.one);
 			if (indexClamped != index) {
 				index = indexClamped;
-				DebugDrawer.DrawRay(new Vector3((float)p.x, 0, (float)p.y), Vector3.up * 1000, Colors.Red, 1000);
+				DebugDrawer.DrawRay(new Vector3((float)p.x, 0, (float)p.y), Vector3.Up * 1000, Colors.Red, 1000);
 				Logg.LogError("Accessing dists array out of bounds.");
 			}
 #endif
@@ -220,7 +214,7 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 				}
 			}
 		}
-	}*/
+	}
 }
 
 public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk>, ILayerVisualization ,IGodotInstance{
@@ -236,14 +230,14 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 
 	public Node3D layerParent;
 
-	static DebugToggle debugPaths = DebugToggle.Create(">Layers/CultivationLayer/Paths");
+	static DebugToggle debugPaths = DebugToggle.Create(">Layers/CultivationLayer/Paths", true);
 	static DebugToggle debugPathsRaw = DebugToggle.Create(">Layers/CultivationLayer/Paths Raw");
 	static DebugToggle debugPathBounds = DebugToggle.Create(">Layers/CultivationLayer/Paths Bounds");
 	static DebugToggle debugHeights = DebugToggle.Create(">Layers/CultivationLayer/Heights");
 	static DebugToggle debugDirections = DebugToggle.Create(">Layers/CultivationLayer/Directions");
 
 	public CultivationLayer() {
-		// gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+		gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
 		// Make the grid for each chunk cover an area extending further our than the chunk.
 		// This ensures the pathfinding can succeed even when it extends partially beyond the chunk.
 		worldSpacePadding = chunkSize;
@@ -257,7 +251,7 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 	}
 
 	public void VisualizationUpdate() {
-		/*VisualizationManager.BeginDebugDraw(this, 0);
+		VisualizationManager.BeginDebugDraw(this, 0);
 		if (debugPaths.visible || debugPathsRaw.visible || debugPathBounds.visible)
 			HandleAllChunks(0, c => c.DebugDraw(debugPaths.animAlpha, debugPathsRaw.animAlpha, debugPathBounds.animAlpha));
 		VisualizationManager.EndDebugDraw();
@@ -276,17 +270,17 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 		}
 		if (debugDirections.enabled) {
 			HandleChunksInBounds(null, focusBounds, 0, c => c.DrawDirections(focusBounds));
-		}*/
+		}
 	}
 
-	// public void GetPathsOverlappingBounds(ILC q, List<PathSpec> outPaths, GridBounds bounds) {
-	// 	// Add paths within bounds.
-	// 	HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 0, chunk => {
-	// 		foreach (var path in chunk.paths)
-	// 			if (bounds.Overlaps(path.bounds))
-	// 				outPaths.Add(path);
-	// 	});
-	// }
+	public void GetPathsOverlappingBounds(ILC q, List<PathSpec> outPaths, GridBounds bounds) {
+		// Add paths within bounds.
+		HandleChunksInBounds(q, bounds.GetExpanded(requiredPadding), 0, chunk => {
+			foreach (var path in chunk.paths)
+				if (bounds.Overlaps(path.bounds))
+					outPaths.Add(path);
+		});
+	}
 
 	public Node LayerRoot() => layerParent;
 }

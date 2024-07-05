@@ -2,10 +2,10 @@ using Godot;
 using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
+using Terrain3D.Scripts.Utilities;
 using Terrain3DBindings;
-using TerrainSample.Scripts.Utilities;
 
-namespace TerrainSample.Scripts.Generation.Layers;
+namespace Terrain3D.Scripts.Generation.Layers;
 
 public partial class TerrainLODManager : Node
 {
@@ -13,13 +13,28 @@ public partial class TerrainLODManager : Node
 
     [Export(PropertyHint.NodeType, nameof(Terrain3DBindings.Terrain3D))]
     public Node3D Terrain3D { get; set; }
-    public Terrain3D terrain3DWrapper;
+
+    public Terrain3DBindings.Terrain3D terrain3DWrapper;
+
+    static DebugToggle showCollision = DebugToggle.Create(">Terrain3D/Debug/Show Collision");
+    static DebugToggle showCheckered = DebugToggle.Create(">Terrain3D/Checkered");
+    static DebugToggle showGrey = DebugToggle.Create(">Terrain3D/Grey");
+    static DebugToggle showHeightmap = DebugToggle.Create(">Terrain3D/Height");
+    static DebugToggle showRoughmap = DebugToggle.Create(">Terrain3D/Heightmap");
+    static DebugToggle showControlTexture = DebugToggle.Create(">Terrain3D/Control Texture");
+    static DebugToggle showControlBlend = DebugToggle.Create(">Terrain3D/Control Blend");
+    static DebugToggle showAutoShader = DebugToggle.Create(">Terrain3D/AutoShader");
+    static DebugToggle showNavigation = DebugToggle.Create(">Terrain3D/Navigation");
+    static DebugToggle showTextureHeight = DebugToggle.Create(">Terrain3D/Texture Height");
+    static DebugToggle showTextureNormal = DebugToggle.Create(">Terrain3D/Texture Normal");
+    static DebugToggle showTextureRough = DebugToggle.Create(">Terrain3D/Texture Rough");
+    static DebugToggle showVertexGrid = DebugToggle.Create(">Terrain3D/Vertex Grid");
 
     class TerrainInfo
     {
         public Image heightMap;
         public Image colorMap;
-        public Image splatMap;
+        public Image controlMap;
     }
 
     struct TerrainLODLayer
@@ -37,11 +52,24 @@ public partial class TerrainLODManager : Node
     public override void _Ready()
     {
         instance = this;
+        showCollision.Callback += toggled => terrain3DWrapper.DebugShowCollision = toggled;
+        showCheckered.Callback += toggled => terrain3DWrapper.Material.ShowCheckered = toggled;
+        showGrey.Callback += toggled => terrain3DWrapper.Material.ShowGrey = toggled;
+        showHeightmap.Callback += toggled => terrain3DWrapper.Material.ShowHeightmap = toggled;
+        showRoughmap.Callback += toggled => terrain3DWrapper.Material.ShowRoughmap = toggled;
+        showControlTexture.Callback += toggled => terrain3DWrapper.Material.ShowControlTexture = toggled;
+        showControlBlend.Callback += toggled => terrain3DWrapper.Material.ShowControlBlend = toggled;
+        showAutoShader.Callback += toggled => terrain3DWrapper.Material.ShowAutoshader = toggled;
+        showNavigation.Callback += toggled => terrain3DWrapper.Material.ShowNavigation = toggled;
+        showTextureHeight.Callback += toggled => terrain3DWrapper.Material.ShowTextureHeight = toggled;
+        showTextureNormal.Callback += toggled => terrain3DWrapper.Material.ShowTextureNormal = toggled;
+        showTextureRough.Callback += toggled => terrain3DWrapper.Material.ShowTextureRough = toggled;
+        showVertexGrid.Callback += toggled => terrain3DWrapper.Material.ShowVertexGrid = toggled;
         // terrain3D = new Terrain3D(terrain3D);
         // terrain3D.Material = new Terrain3DMaterial();
         // terrain3D.Material.WorldBackground = WorldBackground.NONE;
         // AddChild(terrain3D.AsNode3D);
-        terrain3DWrapper = new Terrain3D(Terrain3D);
+        terrain3DWrapper = new Terrain3DBindings.Terrain3D(Terrain3D);
         layers = new TerrainLODLayer[1];
         SetupLODLayer(0, LandscapeLayerA.instance);
     }
@@ -63,7 +91,7 @@ public partial class TerrainLODManager : Node
             {
                 heightMap = terrain.HeightMaps[idx],
                 colorMap = terrain.ColorMaps[idx],
-                splatMap = terrain.ControlMaps[idx]
+                controlMap = terrain.ControlMaps[idx]
             };
         else
             GD.Print($"Point: {p} doesn't actually correspond to a region in Terrain3D ({string.Join(',', terrain.RegionOffsets)}");
