@@ -676,7 +676,7 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
         AsResource.Call(set_color_name, globalPosition, color);
     }
 
-    public void SetControl(Vector3 globalPosition, int control)
+    public void SetControl(Vector3 globalPosition, uint control)
     {
         AsResource.Call(set_control_name, globalPosition, control);
     }
@@ -829,24 +829,6 @@ public class Terrain3DTextureList : _Terrain3DInstanceWrapper_
     public void SetTexture(int index, Terrain3DTexture texture)
     {
         Instance.Call(set_texture_name, index, texture.Instance);
-    }
-}
-
-public static class Terrain3DUtil
-{
-    /// <summary>
-    /// https://terrain3d.readthedocs.io/en/latest/docs/controlmap_format.html
-    /// </summary>
-    /// <param name="globalPosition"></param>
-    /// <param name="terrainStorage"></param>
-    /// <param name="slice"></param>
-    public static void ControlMasking(Vector3 globalPosition, Terrain3DStorage terrainStorage, int[] slice)
-    {
-        int control = terrainStorage.GetControl(globalPosition);
-        control |= (slice[0] & 0x1F) << 27;
-        control |= (slice[1] & 0x1F) << 22;
-        control |= (slice[2] & 0xFF) << 14;
-        terrainStorage.SetControl(globalPosition, control);
     }
 }
 
