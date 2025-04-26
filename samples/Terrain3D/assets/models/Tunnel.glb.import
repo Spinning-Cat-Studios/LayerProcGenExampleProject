@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://nta3sef6c2el"
-path="res://.godot/imported/RockB.glb-564be1a6753819e26ec7c7b4b9f5bc3c.scn"
+uid="uid://jib546bbort5"
+path="res://.godot/imported/Tunnel.glb-391c2b4dea9f9f9f8c11dae79cd9caf2.scn"
 
 [deps]
 
-source_file="res://src/samples/Terrain3D/assets/models/RockB.glb"
-dest_files=["res://.godot/imported/RockB.glb-564be1a6753819e26ec7c7b4b9f5bc3c.scn"]
+source_file="res://samples/Terrain3D/assets/models/Tunnel.glb"
+dest_files=["res://.godot/imported/Tunnel.glb-391c2b4dea9f9f9f8c11dae79cd9caf2.scn"]
 
 [params]
 
@@ -24,7 +24,7 @@ meshes/generate_lods=true
 meshes/create_shadow_meshes=true
 meshes/light_baking=1
 meshes/lightmap_texel_size=0.2
-meshes/force_disable_compression=false
+meshes/force_disable_compression=true
 skins/use_named_skins=true
 animation/import=true
 animation/fps=30
@@ -34,9 +34,9 @@ animation/import_rest_as_RESET=false
 import_script/path=""
 _subresources={
 "materials": {
-"@MATERIAL:0": {
+"material_0": {
 "use_external/enabled": true,
-"use_external/path": "res://demo/assets/materials/M_rock30.tres"
+"use_external/path": "res://demo/assets/materials/M_rock30_tp.tres"
 }
 }
 }

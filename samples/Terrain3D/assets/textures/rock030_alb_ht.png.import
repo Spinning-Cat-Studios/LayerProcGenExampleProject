@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ddprscrpsofah"
-path.bptc="res://.godot/imported/ground037_alb_ht.png-ce8f02e126e5f4d9cfa75573a8bb76a7.bptc.ctex"
+uid="uid://br7bfxcxh60df"
+path.bptc="res://.godot/imported/rock030_alb_ht.png-9efc2f02139ee1f6f918878b82161390.bptc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://src/samples/Terrain3D/assets/textures/ground037_alb_ht.png"
-dest_files=["res://.godot/imported/ground037_alb_ht.png-ce8f02e126e5f4d9cfa75573a8bb76a7.bptc.ctex"]
+source_file="res://samples/Terrain3D/assets/textures/rock030_alb_ht.png"
+dest_files=["res://.godot/imported/rock030_alb_ht.png-9efc2f02139ee1f6f918878b82161390.bptc.ctex"]
 
 [params]
 
@@ -32,4 +32,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
