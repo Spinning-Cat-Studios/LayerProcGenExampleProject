@@ -4,20 +4,30 @@ using Godot;
 
 public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk>, ILayerVisualization
 {
-    public override int chunkW => 360;
-    public override int chunkH => 360;
-
-    public static readonly Point requiredPadding = new Point(180, 180);
+	public override int chunkW { get { return 360; } }
+	public override int chunkH { get { return 360; } }
 
     public Node3D layerParent;
 
     public LSystemVillageLayer()
     {
+        GD.Print("LSystemVillageLayer Create");
+
         layerParent = new Node3D { Name = "LSystemVillageLayer" };
-        AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
+        // AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
     }
 
     public Node LayerRoot() => layerParent;
 
-    public void VisualizationUpdate() { /* implement debug visualization if desired */ }
+	public static DebugToggle debugLayer = DebugToggle.Create(">Layers/LSystemVillageLayer");
+
+    public void VisualizationUpdate() { 
+        if (!debugLayer.visible)
+			return;
+		for (int i = 0; i < GetLevelCount(); i++) {
+			VisualizationManager.BeginDebugDraw(this, i);
+			HandleAllChunks(i, c => c.DebugDraw());
+			VisualizationManager.EndDebugDraw();
+		}
+     }
 }
