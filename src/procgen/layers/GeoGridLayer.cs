@@ -41,4 +41,35 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk>
             }
         );
     }
+
+        public GeoGridChunk GetChunk(Point index)
+    {
+        lock(chunks)
+        {
+            GeoGridChunk chunk = chunks[index];
+            return chunk != null && chunk.level >= 0 ? chunk : null;
+        }
+    }
+
+    public float SampleHeightAt(float x, float z)
+    {
+        int cellSize = TerrainPathFinder.halfCellSize;
+
+        int globalX = Mathf.FloorToInt(x / cellSize);
+        int globalZ = Mathf.FloorToInt(z / cellSize);
+
+        Point chunkIndex = new Point(
+            globalX / gridChunkRes.x,
+            globalZ / gridChunkRes.y
+        );
+
+        GeoGridChunk chunk = GetChunk(chunkIndex);
+        if (chunk == null)
+            return 0f; // default fallback if chunk not available
+
+        int localX = Mathf.PosMod(globalX, gridChunkRes.x);
+        int localZ = Mathf.PosMod(globalZ, gridChunkRes.y);
+
+        return chunk.heights[localZ, localX];
+    }
 }
