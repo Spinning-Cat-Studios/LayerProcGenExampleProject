@@ -53,23 +53,33 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk>
 
     public float SampleHeightAt(float x, float z)
     {
-        int cellSize = TerrainPathFinder.halfCellSize;
+        float cellSize    = TerrainPathFinder.fullCellSize; // not halfCellSize
+        int   globalX     = Mathf.FloorToInt(x / cellSize);
+        int   globalZ     = Mathf.FloorToInt(z / cellSize);
 
-        int globalX = Mathf.FloorToInt(x / cellSize);
-        int globalZ = Mathf.FloorToInt(z / cellSize);
+        // which chunk am I in?
+        var chunkIdx     = new Point(globalX / gridChunkRes.x, globalZ / gridChunkRes.y);
+        var chunk        = GetChunk(chunkIdx);
+        if (chunk == null) return 0;
 
-        Point chunkIndex = new Point(
-            globalX / gridChunkRes.x,
-            globalZ / gridChunkRes.y
-        );
+        // local floating‐point cell coords inside the chunk
+        float localXF    = (x / cellSize) - chunkIdx.x * gridChunkRes.x;
+        float localZF    = (z / cellSize) - chunkIdx.y * gridChunkRes.y;
 
-        GeoGridChunk chunk = GetChunk(chunkIndex);
-        if (chunk == null)
-            return 0f; // default fallback if chunk not available
+        int ix           = Mathf.Clamp(Mathf.FloorToInt(localXF), 0, gridChunkRes.x - 2);
+        int iz           = Mathf.Clamp(Mathf.FloorToInt(localZF), 0, gridChunkRes.y - 2);
+        float fx         = localXF - ix;
+        float fz         = localZF - iz;
 
-        int localX = Mathf.PosMod(globalX, gridChunkRes.x);
-        int localZ = Mathf.PosMod(globalZ, gridChunkRes.y);
+        // grab the four corners
+        float h00 = chunk.heights[iz    , ix    ];
+        float h10 = chunk.heights[iz    , ix + 1];
+        float h01 = chunk.heights[iz + 1, ix    ];
+        float h11 = chunk.heights[iz + 1, ix + 1];
 
-        return chunk.heights[localZ, localX];
+        // bilinear interpolate and return
+        float h0 = Mathf.Lerp(h00, h10, fx);
+        float h1 = Mathf.Lerp(h01, h11, fx);
+        return Mathf.Lerp(h0,  h1,  fz);
     }
 }

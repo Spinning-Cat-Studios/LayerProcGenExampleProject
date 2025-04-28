@@ -3,6 +3,7 @@ using Runevision.LayerProcGen;
 using Godot;
 using System.Collections.Generic;
 using System.Linq;
+using Godot.Util;
 
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
@@ -106,7 +107,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
     float GetHeightAt(Vector3 position)
     {
-        return GeoGridLayer.instance.SampleHeightAt(position.X, position.Z);
+        var coords2D = new Vector2(position.X, position.Z);
+        return TerrainNoise.GetHeight(coords2D);
     }
 
     void QueueHouseInstance(Vector3 position)

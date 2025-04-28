@@ -7,6 +7,7 @@ public class TerrainPathFinder : IPoolable {
 
 	public const int cellSize = 6;
 	public const int halfCellSize = cellSize / 2;
+	public const int fullCellSize = cellSize;
 
 	DPoint start, goal;
 	Func<DPoint, float> heightFunction;

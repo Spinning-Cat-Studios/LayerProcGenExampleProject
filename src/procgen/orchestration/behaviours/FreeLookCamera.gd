@@ -28,6 +28,8 @@ var _e = false
 var _shift = false
 var _alt = false
 
+var speed_multi = 1.0
+
 func _input(event):
 	# Receives mouse motion
 	if event is InputEventMouseMotion:
@@ -83,7 +85,6 @@ func _update_movement(delta):
 	+ _velocity.normalized() * _deceleration * _vel_multiplier * delta
 
 	# Compute modifiers' speed multiplier
-	var speed_multi = 1
 	if _shift: speed_multi *= SHIFT_MULTIPLIER
 	if _alt: speed_multi *= ALT_MULTIPLIER
 
@@ -114,3 +115,6 @@ func _update_mouselook():
 
 		rotate_y(deg_to_rad(-yaw))
 		rotate_object_local(Vector3(1,0,0), deg_to_rad(-pitch))
+
+func _on_speed_slider_value_changed(new_speed: float) -> void:
+	speed_multi = new_speed
