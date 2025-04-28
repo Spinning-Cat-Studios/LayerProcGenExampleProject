@@ -60,9 +60,11 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
         GD.Print("L-System Sequence: " + lSequence);
 
-        // // Start interpreting at the chunk's origin
-        // var interpreter = new TurtleInterpreter(GetHeightAt);
-        // interpreter.Interpret(lSequence, gridOrigin.ToVector3(), Vector3.Forward, housePositions);
+        // Start interpreting at the chunk's origin
+        var interpreter = new TurtleInterpreter(GetHeightAt);
+        interpreter.Interpret(lSequence, gridOrigin.ToVector3(), Vector3.Forward, housePositions);
+
+        GD.Print("House positions: " + string.Join(", ", housePositions));
 
         // // Now housePositions has the exact positions for houses in this chunk
         // foreach (var pos in housePositions)
@@ -71,15 +73,15 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         // }
     }
 
-    // float GetHeightAt(Vector3 position)
-    // {
-    //     return GeoGridLayer.instance.SampleHeightAt(position.X, position.Z);
-    // }
+    float GetHeightAt(Vector3 position)
+    {
+        return GeoGridLayer.instance.SampleHeightAt(position.X, position.Z);
+    }
 
     // void PlaceHouseInstance(Vector3 position)
     // {
     //     position.Y = GetHeightAt(position);
-    //     var houseScene = GD.Load<PackedScene>("res://House.tscn");
+    //     var houseScene = GD.Load<PackedScene>("res://src/scenes/l_system_prefabs/house.tscn");
     //     var houseInstance = houseScene.Instantiate<Node3D>();
     //     houseInstance.Position = position;
     //     layer.layerParent.AddChild(houseInstance);
