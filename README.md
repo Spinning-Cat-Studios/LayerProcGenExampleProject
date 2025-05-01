@@ -12,7 +12,7 @@ LayerProcGen is a framework that can be used to implement layer-based procedural
 
 ## What is being demonstrated here?
 
-Building on work due to Sythelux here, I provide a simple Terrain3D layer, and a VillageLayer on top of that.
+Building on work due to Sythelux [here](https://github.com/Sythelux/LayerProcGen/tree/godot_project), I provide a simple Terrain3D layer, and a VillageLayer on top of that.
 
 This provides a network of "hamlets", using white cubes as a placeholder asset for now.
 
