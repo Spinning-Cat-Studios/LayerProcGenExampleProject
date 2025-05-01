@@ -16,7 +16,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int GLOBAL_SEED = 12345; // TODO: make this configurable and/or random but stored in the database when finally hook this up to a backend.
     const int CHUNK_X_RANDOM = 73856093;
     const int CHUNK_Y_RANDOM = 19349663;
-    const int LSYSTEM_ITERATIONS = 3;
+    const int LSYSTEM_ITERATIONS = 5;
 
     public override void Create(int level, bool destroy)
     {
