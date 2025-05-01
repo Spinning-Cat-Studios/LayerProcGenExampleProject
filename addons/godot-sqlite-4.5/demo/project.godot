@@ -1,0 +1,31 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="SQLite Demo"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.4")
+config/icon="res://icon.png"
+
+[debug]
+
+settings/stdout/verbose_stdout=true
+
+[editor_plugins]
+
+enabled=PackedStringArray()
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
+quality/driver/driver_name="GLES2"
+vram_compression/import_etc=true
+environment/default_environment="res://default_env.tres"
