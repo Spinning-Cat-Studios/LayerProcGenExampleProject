@@ -137,7 +137,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 				var baseStartPos = index * layer.chunkW;
 				var subStartPos = subIndex * regionSize;
 				var startPos = baseStartPos + subStartPos;
-				GD.Print($"HandleOverSizedRegions: {cellSize}, {subIndex} {layer.chunkSize}, {startPos}");
+				// GD.Print($"HandleOverSizedRegions: {cellSize}, {subIndex} {layer.chunkSize}, {startPos}");
 
 
 				var heightImg = Image.CreateEmpty(regionSize, regionSize, false, Image.Format.Rf);

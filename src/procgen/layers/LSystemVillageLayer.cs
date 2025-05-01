@@ -4,8 +4,8 @@ using Godot;
 
 public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk>, ILayerVisualization
 {
-	public override int chunkW { get { return 360; } }
-	public override int chunkH { get { return 360; } }
+	public override int chunkW { get { return 128; } }
+	public override int chunkH { get { return 128; } }
 
     public Node3D layerParent;
 

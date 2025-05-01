@@ -4,6 +4,7 @@ using Godot;
 using System.Collections.Generic;
 using System.Linq;
 using Godot.Util;
+using System;
 
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
@@ -15,7 +16,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int GLOBAL_SEED = 12345; // TODO: make this configurable and/or random but stored in the database when finally hook this up to a backend.
     const int CHUNK_X_RANDOM = 73856093;
     const int CHUNK_Y_RANDOM = 19349663;
-    const int LSYSTEM_ITERATIONS = 3;
+    const int LSYSTEM_ITERATIONS = 5;
 
     public override void Create(int level, bool destroy)
     {
@@ -54,43 +55,56 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         return _chunkParent;
     }
 
-
     void Build()
     {
         gridOrigin = index * layer.chunkW;
-
-        // Generate your L-system string
-        var rules = new Dictionary<char, string>
-        {
-            {'A', "ADA"},
-            {'B', "D[B]D[B]"},
-            {'C', "ACA"},
-            {'D', "DA"}
-        };
-
         // Mix in chunk coords so each chunk seed varies
         int chunkSeed = GLOBAL_SEED
                     + index.x * CHUNK_X_RANDOM
                     + index.y * CHUNK_Y_RANDOM;
         
-        var rnd = new System.Random(chunkSeed);
+        var rnd = new Random(chunkSeed);
+
+        // Generate your L-system string
+        var rules = new StochasticRewriteTable(rnd).Build();
+
         var alphabet = rules.Keys.ToArray();
 
-        // Build a 3‑char axiom
-        string axiom = string.Concat(
-            Enumerable.Range(0, 3)
-                    .Select(_ => alphabet[rnd.Next(alphabet.Length)])
-        );
+        // Build a 3‑char axiom with at least one 'B'
+        var picks = Enumerable
+            .Range(0, 3)
+            .Select(_ => alphabet[rnd.Next(alphabet.Length)])
+            .ToList();
+        // ensure at least one 'B'
+        if (!picks.Contains('B'))
+            picks[rnd.Next(picks.Count)] = 'B';
+        string axiom = string.Concat(picks);
 
         // Generate the L-system sequence
-        var lSystem = new LSystem(axiom, rules);
+        var lSystem = new StochasticLSystem(axiom, rules, rnd);
         string lSequence = lSystem.Generate(LSYSTEM_ITERATIONS);
 
         GD.Print("L-System Sequence: " + lSequence);
 
         // Start interpreting at the chunk's origin
         var interpreter = new TurtleInterpreter(GetHeightAt);
-        interpreter.Interpret(lSequence, gridOrigin.ToVector3(), Vector3.Forward, housePositions);
+        float spacingModifier = 3.75f; // Todo: consider using the actual cell size
+        float jitterRange = 150f;
+        // deterministic jitter
+        float jitterX = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
+        float jitterZ = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
+
+        var worldOrigin = new Vector3(
+            gridOrigin.x * spacingModifier + jitterX,
+            0,
+            gridOrigin.y * spacingModifier + jitterZ
+        );
+        interpreter.Interpret(
+            lSequence,
+            worldOrigin,
+            Vector3.Forward,
+            housePositions
+        );
 
         GD.Print("House positions: " + string.Join(", ", housePositions));
 
