@@ -18,7 +18,13 @@ This provides a network of "hamlets", using white cubes as a placeholder asset f
 
 ## Demonstration
 
-![](https://github.com/user-attachments/assets/255aee96-9e33-4c8d-afd0-588629b7ce25)
+<p align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/255aee96-9e33-4c8d-afd0-588629b7ce25"
+    alt="LayerProcGen Demo"
+    width="800"
+  />
+</p>
 
 # More on LayerProcGen
 
