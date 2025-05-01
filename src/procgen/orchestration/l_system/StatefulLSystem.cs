@@ -16,20 +16,18 @@ public class StatefulLSystem
 
     public StatefulLSystem(Random rng) => _rng = rng;
 
-    public string Generate(string axiom, int iterations, TurtleState state)
+    public string Generate(string axiom, int iterations)
         // 1. Generate a string using the L-system rules
         // 2. Interpret the string to produce a list of house positions
         // 3. Return the list of house positions
-
-        // As a side-effect, the L-system will also modify the turtle state
     {
         string s = axiom;
         for (int i = 0; i < iterations; ++i)
-            s = RewriteOnce(s, state);
+            s = RewriteOnce(s);
         return s;
     }
 
-    private string RewriteOnce(string src, TurtleState state) {
+    private string RewriteOnce(string src) {
         var sb    = new StringBuilder();
         int dist = 0, len = 0; // distance since last fork, length of side street
         var stack = new Stack<(int dist,int len)>(); // one counter per branch
@@ -95,10 +93,6 @@ public class StatefulLSystem
                     sb.Append(']');
                     break;
                 
-                case '|':                               // turn around
-                    state.Direction = state.Direction.Rotated(Vector3.Up, Mathf.Pi);
-                    break;
-
                 default:                                // F, H, <, >, …
                     sb.Append(c);
                     break;

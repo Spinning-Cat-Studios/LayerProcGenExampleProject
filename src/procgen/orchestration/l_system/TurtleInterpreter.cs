@@ -48,6 +48,10 @@ public class TurtleInterpreter
                 case '[': stack.Push(state.Clone()); break;
                 case ']': if (stack.Count > 0) state = stack.Pop(); break;
 
+                case '|':                               // turn around
+                    state.Direction = state.Direction.Rotated(Vector3.Up, Mathf.Pi);
+                    break;
+
                 //­­ Turn *in-place*, but by a **random** angle each time
                 case '>':      // right turn
                     {

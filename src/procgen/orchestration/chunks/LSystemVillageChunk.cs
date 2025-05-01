@@ -89,8 +89,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         var turtleState = new TurtleState(worldOrigin, Vector3.Forward);
         string lSequence = lSystem.Generate(
             axiom,
-            LSYSTEM_ITERATIONS,
-            turtleState
+            LSYSTEM_ITERATIONS
         );
 
         GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
