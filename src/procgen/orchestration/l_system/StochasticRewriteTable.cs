@@ -16,12 +16,15 @@ public class StochasticRewriteTable
     {
         return new Dictionary<char, Func<string>>
         {
+            // Main trunk ‘M’ – usually goes forward,
+            // sometimes spawns a left or right branch
             ['M'] = () => Pick(
                 (70, "FH M"),      // straight:   F = road, H = house
                 (15, "F [ < S ] M"), // fork left
                 (15, "F [ > S ] M")  // fork right
             ),
 
+            // Side street ‘S’ – shorter and less likely to fork
             ['S'] = () => Pick(
                 (60, "F H S"),
                 (10, "F [ < S ] S"),
@@ -29,6 +32,7 @@ public class StochasticRewriteTable
                 (20, "F H")         // terminate
             ),
 
+            // Road forward just keeps stepping; house every few cells
             ['F'] = () => Pick(
                 (80, "F"),         // keep going
                 (20, "F H")        // place a house
