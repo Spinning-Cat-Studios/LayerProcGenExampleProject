@@ -78,7 +78,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         var lSystem = new StatefulLSystem(rnd);
         string lSequence = lSystem.Generate(axiom, LSYSTEM_ITERATIONS);
 
-        GD.Print($"L-system sequence len={sequence.Length} first100={sequence[..Math.Min(100,sequence.Length)]}");
+        GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
 
         GD.Print("L-System Sequence: " + lSequence);
 
