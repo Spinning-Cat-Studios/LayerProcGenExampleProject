@@ -68,11 +68,19 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         // Generate your L-system string
 
         // Start with an axiom consisting of 3 arterial roads
-        string axiom =
+        string THREE_ROADS_AXIOM =
             "[ M ] [ | M ]"          // 0°  & 180°
         + "[ > M ] [ > | M ]"      // ~–60° & ~+120°
         + "[ < M ] [ < | M ]"      // ~+60° & ~–120°
         ;
+
+        string TWO_ROADS_AXIOM =
+            "[ M ] [ | M ]"          // 0°  & 180°
+        + "[ >> M ] [ >> | M ]"      // ~–50 to -120° & ~+130 to +60°
+        ;
+
+        // Randomize the axiom based on the chunk seed determined above
+        string axiom = rnd.Next(2) == 0 ? THREE_ROADS_AXIOM : TWO_ROADS_AXIOM;
 
         // Generate the L-system sequence
         var lSystem = new StatefulLSystem(rnd);
