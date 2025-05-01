@@ -16,7 +16,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int GLOBAL_SEED = 12345; // TODO: make this configurable and/or random but stored in the database when finally hook this up to a backend.
     const int CHUNK_X_RANDOM = 73856093;
     const int CHUNK_Y_RANDOM = 19349663;
-    const int LSYSTEM_ITERATIONS = 5;
+    const int LSYSTEM_ITERATIONS = 3;
 
     public override void Create(int level, bool destroy)
     {
@@ -76,7 +76,22 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
         // Generate the L-system sequence
         var lSystem = new StatefulLSystem(rnd);
-        string lSequence = lSystem.Generate(axiom, LSYSTEM_ITERATIONS);
+        float spacingModifier = 3.75f; // Todo: consider using the actual cell size
+        float jitterRange = 150f;
+        // deterministic jitter
+        float jitterX = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
+        float jitterZ = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
+        var worldOrigin = new Vector3(
+            gridOrigin.x * spacingModifier + jitterX,
+            0,
+            gridOrigin.y * spacingModifier + jitterZ
+        );
+        var turtleState = new TurtleState(worldOrigin, Vector3.Forward);
+        string lSequence = lSystem.Generate(
+            axiom,
+            LSYSTEM_ITERATIONS,
+            turtleState
+        );
 
         GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
 
@@ -84,21 +99,10 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
         // Start interpreting at the chunk's origin
         var interpreter = new TurtleInterpreter(GetHeightAt);
-        float spacingModifier = 3.75f; // Todo: consider using the actual cell size
-        float jitterRange = 150f;
-        // deterministic jitter
-        float jitterX = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
-        float jitterZ = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
 
-        var worldOrigin = new Vector3(
-            gridOrigin.x * spacingModifier + jitterX,
-            0,
-            gridOrigin.y * spacingModifier + jitterZ
-        );
         interpreter.Interpret(
             lSequence,
-            worldOrigin,
-            Vector3.Forward,
+            turtleState,
             housePositions
         );
 

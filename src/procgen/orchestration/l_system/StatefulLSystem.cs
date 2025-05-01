@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Godot;
 
 public class StatefulLSystem
 {
@@ -15,16 +16,20 @@ public class StatefulLSystem
 
     public StatefulLSystem(Random rng) => _rng = rng;
 
-    public string Generate(string axiom, int iterations)
+    public string Generate(string axiom, int iterations, TurtleState state)
+        // 1. Generate a string using the L-system rules
+        // 2. Interpret the string to produce a list of house positions
+        // 3. Return the list of house positions
+
+        // As a side-effect, the L-system will also modify the turtle state
     {
         string s = axiom;
         for (int i = 0; i < iterations; ++i)
-            s = RewriteOnce(s);
+            s = RewriteOnce(s, state);
         return s;
     }
 
-    private string RewriteOnce(string src)
-    {
+    private string RewriteOnce(string src, TurtleState state) {
         var sb    = new StringBuilder();
         int dist = 0, len = 0; // distance since last fork, length of side street
         var stack = new Stack<(int dist,int len)>(); // one counter per branch
