@@ -11,7 +11,6 @@ public class TurtleInterpreter
     const float kTurnMin = 0.45f;   //  26°
     const float kTurnMax = 1.05f;   //  60°
 
-    TurtleState state;
     Stack<TurtleState> stack = new();
     Func<Vector3, float> getHeight;
     readonly int worldSeed;
@@ -25,10 +24,11 @@ public class TurtleInterpreter
         noisy     = useHeadingNoise;
     }
 
-    public void Interpret(string sequence, Vector3 startPosition, Vector3 startDirection, List<Vector3> housePositions)
-    {
-        state = new TurtleState(startPosition, startDirection);
-
+    public void Interpret(
+        string sequence,
+        TurtleState state,
+        List<Vector3> housePositions
+    ) {
         foreach (char symbol in sequence)
         {
             switch (symbol)
@@ -47,6 +47,10 @@ public class TurtleInterpreter
                 // Branch markers (no extra rotation here!)
                 case '[': stack.Push(state.Clone()); break;
                 case ']': if (stack.Count > 0) state = stack.Pop(); break;
+
+                case '|':                               // turn around
+                    state.Direction = state.Direction.Rotated(Vector3.Up, Mathf.Pi);
+                    break;
 
                 //­­ Turn *in-place*, but by a **random** angle each time
                 case '>':      // right turn

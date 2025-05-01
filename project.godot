@@ -12,7 +12,7 @@ config_version=5
 
 config/name="LayerProcGenExampleProject"
 run/main_scene="uid://c87eirn0vwlwi"
-config/features=PackedStringArray("4.4", "C#", "Forward Plus")
+config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
