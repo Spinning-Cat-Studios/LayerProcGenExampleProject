@@ -28,4 +28,4 @@ This provides a network of "hamlets", using white cubes as a placeholder asset f
 
 # More on LayerProcGen
 
-Read [Here](layerprocgen.md).
+Read [here](layerprocgen.md).
