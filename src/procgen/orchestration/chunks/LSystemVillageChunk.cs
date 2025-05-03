@@ -6,9 +6,17 @@ using System.Linq;
 using Godot.Util;
 using System;
 
+[Signal]
+public delegate void RoadsGeneratedEventHandler(
+    Vector3[] roadPositions,
+    Vector3[] roadDirections,
+    Vector3 chunkIndex
+);
+
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
     List<Vector3> housePositions = new();
+    List<(Vector3, Vector3)> roadPositionDirections = new();
     Point gridOrigin;
     private Node3D? _chunkParent; 
     private readonly List<Node3D> _pendingHouses = new();
@@ -110,7 +118,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         interpreter.Interpret(
             lSequence,
             turtleState,
-            housePositions
+            housePositions,
+            roadPositionDirections
         );
 
         GD.Print("House positions: " + string.Join(", ", housePositions));
@@ -124,6 +133,13 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         }
 
         FlushHousesToScene();
+        var roadPositions = roadPositionDirections.Select(pair => pair.Item1).ToArray();
+        var roadDirections = roadPositionDirections.Select(pair => pair.Item2).ToArray();
+        SignalBus.Instance.EmitSignal(
+            nameof(RoadsGeneratedEventHandler),
+            roadPositions.ToArray(),
+            roadDirections.ToArray(),
+            index.ToVector3());
     }
 
     float GetHeightAt(Vector3 position)

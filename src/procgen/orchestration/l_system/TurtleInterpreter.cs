@@ -16,9 +16,11 @@ public class TurtleInterpreter
     readonly int worldSeed;
     readonly bool noisy;
 
-    public TurtleInterpreter(Func<Vector3,float> heightSampler,
-                             int seed = 0, bool useHeadingNoise = true)
-    {
+    public TurtleInterpreter(
+        Func<Vector3,float> heightSampler,
+        int seed = 0,
+        bool useHeadingNoise = true
+    ) {
         getHeight = heightSampler;
         worldSeed = seed;
         noisy     = useHeadingNoise;
@@ -27,7 +29,8 @@ public class TurtleInterpreter
     public void Interpret(
         string sequence,
         TurtleState state,
-        List<Vector3> housePositions
+        List<Vector3> housePositions,
+        List<(Vector3, Vector3)> roadPositionDirections
     ) {
         foreach (char symbol in sequence)
         {
@@ -41,6 +44,7 @@ public class TurtleInterpreter
                                                 state.Direction, state.Position,
                                                 worldSeed);
                         state.Position += state.Direction;
+                        roadPositionDirections.Add((state.Position, state.Direction));
                     }
                     break;
 

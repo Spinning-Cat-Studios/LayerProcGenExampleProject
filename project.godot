@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 CallbackHub="*res://addons/LayerProcGen/Godot/Common/CallbackHub.cs"
+SignalBus="*res://src/signals/SignalBus.cs"
 
 [debug_draw_3d]
 
