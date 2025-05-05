@@ -6,13 +6,6 @@ using System.Linq;
 using Godot.Util;
 using System;
 
-[Signal]
-public delegate void RoadsGeneratedEventHandler(
-    Vector3[] roadPositions,
-    Vector3[] roadDirections,
-    Vector3 chunkIndex
-);
-
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
     List<Vector3> housePositions = new();
@@ -108,9 +101,9 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             LSYSTEM_ITERATIONS
         );
 
-        GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
+        // GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
 
-        GD.Print("L-System Sequence: " + lSequence);
+        // GD.Print("L-System Sequence: " + lSequence);
 
         // Start interpreting at the chunk's origin
         var interpreter = new TurtleInterpreter(GetHeightAt);
@@ -122,9 +115,10 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             roadPositionDirections
         );
 
-        GD.Print("House positions: " + string.Join(", ", housePositions));
-
-        GD.Print("Layer parent node name: " + layer.layerParent.Name);
+        // Sensechecking.
+        // GD.Print("House positions: " + string.Join(", ", housePositions));
+        // GD.Print("Road positions: " + string.Join(", ", roadPositionDirections));
+        // GD.Print("Layer parent node name: " + layer.layerParent.Name);
 
         // Now housePositions has the exact positions for houses in this chunk
         foreach (var pos in housePositions)
@@ -135,8 +129,9 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         FlushHousesToScene();
         var roadPositions = roadPositionDirections.Select(pair => pair.Item1).ToArray();
         var roadDirections = roadPositionDirections.Select(pair => pair.Item2).ToArray();
-        SignalBus.Instance.EmitSignal(
-            nameof(RoadsGeneratedEventHandler),
+        SignalBus.Instance.CallDeferred(
+            "emit_signal",
+            SignalBus.SignalName.RoadsGenerated,
             roadPositions.ToArray(),
             roadDirections.ToArray(),
             index.ToVector3());
@@ -162,7 +157,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
     void FlushHousesToScene()
     {
-        GD.Print("LSystemVillageChunk FlushHousesToScene");
+        // GD.Print("LSystemVillageChunk FlushHousesToScene");
         if (_pendingHouses.Count == 0) return;
 
         // Copy to Godot Array so it survives the lambda capture
@@ -178,7 +173,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
                 Callable.From(() =>
                 {
                     var parent = GetChunkParent();    // now definitely in tree
-                    GD.Print("Adding " + batch.Count + " houses to scene for parent " + parent.Name);
+                    // GD.Print("Adding " + batch.Count + " houses to scene for parent " + parent.Name);
                     foreach (Node3D houseNode in batch)
                     {
                         houseNode.Name = "House_" + houseNode.Position.ToString();

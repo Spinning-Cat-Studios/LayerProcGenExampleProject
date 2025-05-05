@@ -15,23 +15,31 @@ public partial class RoadPainter : Node
 
     public override void _Ready()
     {
-        _terrain  = GetNode<T3.Terrain3D>(_terrainPath);
-        _storage  = _terrain.Storage;
-        _vSpacing = _terrain.MeshVertexSpacing;
+        SetTerrainPath(_terrainPath);
 
-        // Connect to global signal bus
-        SignalBus.Instance.Connect(nameof(SignalBus.RoadsGeneratedEventHandler), new Callable(this, nameof(OnRoadsGenerated)));
+        // Connect to global signal bus by hooking the event:
+        SignalBus.Instance.RoadsGenerated += OnRoadsGenerated;
+    }
+
+    public void SetTerrainPath(NodePath path)
+    {
+        _terrainPath = path;
+        // 1. Grab the native node just as a regular Node3D
+        Node3D terrainNode = GetNode<Node3D>(_terrainPath);
+        // 2. Wrap it
+        _terrain = new T3.Terrain3D(terrainNode);
+        _storage     = _terrain.Storage;
     }
 
     private void OnRoadsGenerated(Vector3[] roadPositions, Vector3[] roadDirections, Vector3 chunkIndex)
     {
         GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
-        GD.Print("Road positions: ", string.Join(", ", roadPositions));
-        GD.Print("Road directions: ", string.Join(", ", roadDirections));
+        // GD.Print("Road positions: ", string.Join(", ", roadPositions));
+        // GD.Print("Road directions: ", string.Join(", ", roadDirections));
         // Handle the roads generated event.
     }
 
-    public void PaintRoad(Vector3[] wayPoints)
+    public void PaintRoad(Vector3[] roadPositions)
     {
         // build packed control value
         uint roadCtrl = 0;
@@ -39,10 +47,10 @@ public partial class RoadPainter : Node
         roadCtrl.SetTextureBlend(0);
         roadCtrl.SetAutoshaded(false);
 
-        for (int i = 0; i < wayPoints.Length - 1; ++i)
+        for (int i = 0; i < roadPositions.Length - 1; ++i)
         {
-            Vector3 a = wayPoints[i];
-            Vector3 b = wayPoints[i + 1];
+            Vector3 a = roadPositions[i];
+            Vector3 b = roadPositions[i + 1];
             float segLen = a.DistanceTo(b);
             int   steps  = Mathf.CeilToInt(segLen / _sampleStep);
 
@@ -61,6 +69,6 @@ public partial class RoadPainter : Node
             }
         }
 
-        _storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        // _storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
     }
 }

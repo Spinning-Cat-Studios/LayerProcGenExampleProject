@@ -149,9 +149,9 @@ namespace Runevision.Common {
 		public float magnitude { get { return (float)Math.Sqrt(sqrMagnitude); } }
 
 
-		public Vector3 ToVector3(float y = 0f)
+		public Vector3 ToVector3()
 		{
-			return new Vector3(x, y, y);
+			return new Vector3(x, 0, y);
 		}
 
 		public static float Distance(DPoint a, DPoint b) {
