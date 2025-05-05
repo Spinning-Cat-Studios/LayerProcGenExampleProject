@@ -1,27 +1,34 @@
 using Godot;
 using T3  = Terrain3DBindings;
 using static Terrain3D.Scripts.Utilities.ControlExtension;
+using System.Collections.Generic;
+using System.Linq;
 
 public partial class RoadPainter : Node
 {
     [Export] private NodePath _terrainPath;
     [Export] private int   _roadTexId   = 2;   // ID in the TextureList
-    [Export] private float _halfWidth   = 3.0f;
+    [Export] private float _halfWidth   = 1.0f;
     [Export] private float _sampleStep  = 1.0f;
 
     private T3.Terrain3D        _terrain;
     private T3.Terrain3DStorage _storage;
     private float               _vSpacing;
+    private Vector2[]       _brushOffsets;
+    private bool _needsUpdate;
 
     public override void _Ready()
     {
-        SetTerrainPath(_terrainPath);
+        SetTerrain(_terrainPath);
+        _vSpacing = _terrain.MeshVertexSpacing;
+        _sampleStep = _vSpacing;
+        BuildBrush();
 
         // Connect to global signal bus by hooking the event:
         SignalBus.Instance.RoadsGenerated += OnRoadsGenerated;
     }
 
-    public void SetTerrainPath(NodePath path)
+    public void SetTerrain(NodePath path)
     {
         _terrainPath = path;
         // 1. Grab the native node just as a regular Node3D
@@ -33,42 +40,69 @@ public partial class RoadPainter : Node
 
     private void OnRoadsGenerated(Vector3[] roadPositions, Vector3[] roadDirections, Vector3 chunkIndex)
     {
-        GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
+        // Sensechecking.
+        // GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
         // GD.Print("Road positions: ", string.Join(", ", roadPositions));
         // GD.Print("Road directions: ", string.Join(", ", roadDirections));
         // Handle the roads generated event.
+        GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
+        PaintRoad(roadPositions);
     }
 
-    public void PaintRoad(Vector3[] roadPositions)
+    public void EchoPaintRoad(Vector3[] roadPositions)
     {
-        // build packed control value
+        GD.Print("Hello from EchoPaintRoad");
+    }
+
+    private void BuildBrush()
+    {
+        var list = new List<Vector2>();
+        for (float dx = -_halfWidth; dx <= _halfWidth; dx += _vSpacing)
+        for (float dz = -_halfWidth; dz <= _halfWidth; dz += _vSpacing)
+            if (dx*dx + dz*dz <= _halfWidth * _halfWidth)
+                list.Add(new Vector2(dx, dz));
+
+        _brushOffsets = list.ToArray();
+    }
+
+    public void PaintRoad(Vector3[] road)
+    {
+        if (road.Length < 2) return;
+
+        // one‑time initialisation
+        if (_vSpacing == 0) _vSpacing = _terrain.MeshVertexSpacing;
+        if (_brushOffsets == null) BuildBrush();
+
         uint roadCtrl = 0;
         roadCtrl.SetBaseTextureId((byte)_roadTexId);
         roadCtrl.SetTextureBlend(0);
         roadCtrl.SetAutoshaded(false);
 
-        for (int i = 0; i < roadPositions.Length - 1; ++i)
+        for (int i = 0; i < road.Length - 1; ++i)
         {
-            Vector3 a = roadPositions[i];
-            Vector3 b = roadPositions[i + 1];
-            float segLen = a.DistanceTo(b);
-            int   steps  = Mathf.CeilToInt(segLen / _sampleStep);
+            Vector3 a = road[i];
+            Vector3 b = road[i + 1];
+            float seg = a.DistanceTo(b);
+            int   n   = Mathf.CeilToInt(seg / _vSpacing);
 
-            for (int s = 0; s <= steps; ++s)
+            for (int s = 0; s <= n; ++s)
             {
-                Vector3 centre = a.Lerp(b, (float)s / steps);
+                Vector3 c = a.Lerp(b, (float)s / n);
 
-                for (float dx = -_halfWidth; dx <= _halfWidth; dx += _vSpacing)
-                for (float dz = -_halfWidth; dz <= _halfWidth; dz += _vSpacing)
-                {
-                    if (dx*dx + dz*dz > _halfWidth * _halfWidth) continue;
-
-                    Vector3 worldPos = centre + new Vector3(dx, 0, dz);
-                    _storage.SetControl(worldPos, roadCtrl);
-                }
+                foreach (var o in _brushOffsets)
+                    _storage.SetControl(c + new Vector3(o.X, 0, o.Y), roadCtrl);
             }
         }
 
-        // _storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        _needsUpdate = true;
     }
+
+
+    public override void _PhysicsProcess(double _)
+    {
+        if (!_needsUpdate) return;
+        _storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        _needsUpdate = false;
+    }
+
 }
