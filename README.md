@@ -4,11 +4,25 @@
 
 # LayerProcGen Example Project
 
-This is a project showcasing what can be built with LayerProcGen.
+This is a project showcasing what can be built with LayerProcGen on top of the Godot Game Engine.
 
 ## What is LayerProcGen?
 
 LayerProcGen is a framework that can be used to implement layer-based procedural generation that's **infinite**, **deterministic** and **contextual**. It works out of the box in Unity but can be used in any C#-compatible engine.
+
+This project is Godot Game engine specific.
+
+## Getting started
+
+- Download Godot Game Engine 4.4.1 mono (note, the C# build is required, not just the base engine).
+- Clone this project.
+- Open the project in Godot.
+- Create a C# solution for your project if it doesn't work out of the box.
+
+<img width="959" alt="Create a C# solution" src="https://github.com/user-attachments/assets/516e4355-22dd-4245-bf78-a495fba19e03" />
+
+- Click run + watch hamlet generation amazingness.
+- Have a cookie.
 
 ## What is being demonstrated here?
 
@@ -20,7 +34,7 @@ This provides a network of "hamlets", using white cubes as a placeholder asset f
 
 <p align="center">
   <img 
-    src="https://github.com/user-attachments/assets/255aee96-9e33-4c8d-afd0-588629b7ce25"
+    src="https://github.com/user-attachments/assets/fbb62dfd-d2bf-4c2c-b19a-a8e4d0ed6e6e"
     alt="LayerProcGen Demo"
     width="800"
   />
