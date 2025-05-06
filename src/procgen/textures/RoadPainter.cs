@@ -3,6 +3,7 @@ using T3  = Terrain3DBindings;
 using static Terrain3D.Scripts.Utilities.ControlExtension;
 using System.Collections.Generic;
 using System.Linq;
+using Runevision.Common;
 
 public partial class RoadPainter : Node
 {
@@ -38,7 +39,12 @@ public partial class RoadPainter : Node
         _storage     = _terrain.Storage;
     }
 
-    private void OnRoadsGenerated(Vector3[] roadPositions, Vector3[] roadDirections, Vector3 chunkIndex)
+    private void OnRoadsGenerated(
+        Vector3[] roadPositions,
+        Vector3[] roadDirections,
+        int[] roadStartIndices,
+        int[] roadEndIndices,
+        Vector3 chunkIndex)
     {
         // Sensechecking.
         // GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
@@ -46,7 +52,7 @@ public partial class RoadPainter : Node
         // GD.Print("Road directions: ", string.Join(", ", roadDirections));
         // Handle the roads generated event.
         GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
-        PaintRoad(roadPositions);
+        PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
     }
 
     public void EchoPaintRoad(Vector3[] roadPositions)
@@ -65,7 +71,7 @@ public partial class RoadPainter : Node
         _brushOffsets = list.ToArray();
     }
 
-    public void PaintRoad(Vector3[] road)
+    public void PaintRoad(Vector3[] road, int[] roadStartIndices, int[] roadEndIndices)
     {
         if (road.Length < 2) return;
 
@@ -78,7 +84,35 @@ public partial class RoadPainter : Node
         roadCtrl.SetTextureBlend(0);
         roadCtrl.SetAutoshaded(false);
 
-        for (int i = 0; i < road.Length - 1; ++i)
+        // Split the road into subroads starting from roadStartIndice and ending at roadEndIndices
+        // and paint each segment with the road control.
+        List<List<Vector3>> subroads = new List<List<Vector3>>();
+        for (int i = 0; i < roadStartIndices.Length; ++i)
+        {
+            int startIdx = (int)roadStartIndices[i];
+            int endIdx   = (int)roadEndIndices[i];
+
+            if (startIdx < 0 || endIdx > road.Length || startIdx >= endIdx)
+                continue;
+
+            List<Vector3> subroad = new List<Vector3>();
+            for (int j = startIdx; j < endIdx; ++j)
+                subroad.Add(road[j]);
+
+            subroads.Add(subroad);
+        }
+        // Paint each subroad
+        foreach (var subroad in subroads)
+        {
+            PaintSubroad(subroad.ToArray(), roadCtrl);
+        }
+    }
+
+    private void PaintSubroad(Vector3[] road, uint roadCtrl)
+    {
+        int ROAD_START_INDEX = 2;
+        int ROAD_END_INDEX   = road.Length - 2;
+        for (int i = ROAD_START_INDEX; i < ROAD_END_INDEX; ++i)
         {
             Vector3 a = road[i];
             Vector3 b = road[i + 1];
