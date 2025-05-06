@@ -10,6 +10,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 {
     List<Vector3> housePositions = new();
     List<(Vector3, Vector3)> roadPositionDirections = new();
+    List<int> roadStartIndices = new();
+    List<int> roadEndIndices = new();
     Point gridOrigin;
     private Node3D? _chunkParent; 
     private readonly List<Node3D> _pendingHouses = new();
@@ -112,7 +114,9 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             lSequence,
             turtleState,
             housePositions,
-            roadPositionDirections
+            roadPositionDirections,
+            roadStartIndices,
+            roadEndIndices
         );
 
         // Sensechecking.
@@ -134,6 +138,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             SignalBus.SignalName.RoadsGenerated,
             roadPositions.ToArray(),
             roadDirections.ToArray(),
+            roadStartIndices.ToArray(),
+            roadEndIndices.ToArray(),
             index.ToVector3());
     }
 

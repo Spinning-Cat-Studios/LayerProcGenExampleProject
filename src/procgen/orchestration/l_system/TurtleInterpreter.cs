@@ -1,6 +1,7 @@
 using Godot;
 using System.Collections.Generic;
 using System;
+using Runevision.Common;
 
 public class TurtleInterpreter
 {
@@ -30,7 +31,9 @@ public class TurtleInterpreter
         string sequence,
         TurtleState state,
         List<Vector3> housePositions,
-        List<(Vector3, Vector3)> roadPositionDirections
+        List<(Vector3, Vector3)> roadPositionDirections,
+        List<int> roadStartIndices,
+        List<int> roadEndIndices
     ) {
         foreach (char symbol in sequence)
         {
@@ -49,8 +52,15 @@ public class TurtleInterpreter
                     break;
 
                 // Branch markers (no extra rotation here!)
-                case '[': stack.Push(state.Clone()); break;
-                case ']': if (stack.Count > 0) state = stack.Pop(); break;
+                case '[': {
+                    stack.Push(state.Clone());
+                    roadStartIndices.Add(roadPositionDirections.Count);
+                    break;
+                }
+                case ']': {
+                    roadEndIndices.Add(roadPositionDirections.Count);
+                    if (stack.Count > 0) state = stack.Pop(); break;
+                }
 
                 case '|':                               // turn around
                     state.Direction = state.Direction.Rotated(Vector3.Up, Mathf.Pi);
