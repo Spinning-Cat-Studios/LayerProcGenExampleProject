@@ -9,6 +9,7 @@ using System;
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
     List<Vector3> housePositions = new();
+    List<(Vector3, Vector3)> roadPositionDirections = new();
     Point gridOrigin;
     private Node3D? _chunkParent; 
     private readonly List<Node3D> _pendingHouses = new();
@@ -16,7 +17,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int GLOBAL_SEED = 12345; // TODO: make this configurable and/or random but stored in the database when finally hook this up to a backend.
     const int CHUNK_X_RANDOM = 73856093;
     const int CHUNK_Y_RANDOM = 19349663;
-    const int LSYSTEM_ITERATIONS = 3;
+    const int LSYSTEM_ITERATIONS = 5;
 
     public override void Create(int level, bool destroy)
     {
@@ -68,11 +69,19 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         // Generate your L-system string
 
         // Start with an axiom consisting of 3 arterial roads
-        string axiom =
+        string THREE_ROADS_AXIOM =
             "[ M ] [ | M ]"          // 0°  & 180°
         + "[ > M ] [ > | M ]"      // ~–60° & ~+120°
         + "[ < M ] [ < | M ]"      // ~+60° & ~–120°
         ;
+
+        string TWO_ROADS_AXIOM =
+            "[ M ] [ | M ]"          // 0°  & 180°
+        + "[ >> M ] [ >> | M ]"      // ~–50 to -120° & ~+130 to +60°
+        ;
+
+        // Randomize the axiom based on the chunk seed determined above
+        string axiom = rnd.Next(2) == 0 ? THREE_ROADS_AXIOM : TWO_ROADS_AXIOM;
 
         // Generate the L-system sequence
         var lSystem = new StatefulLSystem(rnd);
@@ -92,9 +101,9 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             LSYSTEM_ITERATIONS
         );
 
-        GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
+        // GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
 
-        GD.Print("L-System Sequence: " + lSequence);
+        // GD.Print("L-System Sequence: " + lSequence);
 
         // Start interpreting at the chunk's origin
         var interpreter = new TurtleInterpreter(GetHeightAt);
@@ -102,12 +111,14 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         interpreter.Interpret(
             lSequence,
             turtleState,
-            housePositions
+            housePositions,
+            roadPositionDirections
         );
 
-        GD.Print("House positions: " + string.Join(", ", housePositions));
-
-        GD.Print("Layer parent node name: " + layer.layerParent.Name);
+        // Sensechecking.
+        // GD.Print("House positions: " + string.Join(", ", housePositions));
+        // GD.Print("Road positions: " + string.Join(", ", roadPositionDirections));
+        // GD.Print("Layer parent node name: " + layer.layerParent.Name);
 
         // Now housePositions has the exact positions for houses in this chunk
         foreach (var pos in housePositions)
@@ -116,6 +127,14 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         }
 
         FlushHousesToScene();
+        var roadPositions = roadPositionDirections.Select(pair => pair.Item1).ToArray();
+        var roadDirections = roadPositionDirections.Select(pair => pair.Item2).ToArray();
+        SignalBus.Instance.CallDeferred(
+            "emit_signal",
+            SignalBus.SignalName.RoadsGenerated,
+            roadPositions.ToArray(),
+            roadDirections.ToArray(),
+            index.ToVector3());
     }
 
     float GetHeightAt(Vector3 position)
@@ -138,7 +157,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
     void FlushHousesToScene()
     {
-        GD.Print("LSystemVillageChunk FlushHousesToScene");
+        // GD.Print("LSystemVillageChunk FlushHousesToScene");
         if (_pendingHouses.Count == 0) return;
 
         // Copy to Godot Array so it survives the lambda capture
@@ -154,7 +173,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
                 Callable.From(() =>
                 {
                     var parent = GetChunkParent();    // now definitely in tree
-                    GD.Print("Adding " + batch.Count + " houses to scene for parent " + parent.Name);
+                    // GD.Print("Adding " + batch.Count + " houses to scene for parent " + parent.Name);
                     foreach (Node3D houseNode in batch)
                     {
                         houseNode.Name = "House_" + houseNode.Position.ToString();

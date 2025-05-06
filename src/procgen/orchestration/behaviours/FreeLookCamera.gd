@@ -28,7 +28,7 @@ var _e = false
 var _shift = false
 var _alt = false
 
-var speed_multi = 1.0
+var speed_multi = 7
 
 func _input(event):
 	# Receives mouse motion

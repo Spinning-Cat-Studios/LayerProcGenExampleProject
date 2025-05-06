@@ -12,12 +12,13 @@ config_version=5
 
 config/name="LayerProcGenExampleProject"
 run/main_scene="uid://c87eirn0vwlwi"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 CallbackHub="*res://addons/LayerProcGen/Godot/Common/CallbackHub.cs"
+SignalBus="*res://src/signals/SignalBus.cs"
 
 [debug_draw_3d]
 
@@ -45,7 +46,7 @@ movie_writer/movie_file="/media/data/Syd/Videos/LayerProcGen/MountainGen.avi"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/LayerProcGen/plugin.cfg", "res://addons/terrain_3d/plugin.cfg")
+enabled=PackedStringArray("res://addons/LayerProcGen/plugin.cfg", "res://addons/godot-sqlite-4.5/demo/addons/godot-sqlite/plugin.cfg")
 
 [input]
 
