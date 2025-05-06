@@ -11,6 +11,11 @@ public partial class RoadPainter : Node
     [Export] private float _halfWidth   = 1.0f;
     [Export] private float _sampleStep  = 1.0f;
 
+    private readonly Dictionary<int, Vector3[]> _pending = new();
+
+    private readonly Dictionary<int, Vector3[]> _waypoints = new();
+    private readonly HashSet<int>               _mapsReady = new();
+
     private T3.Terrain3D        _terrain;
     private T3.Terrain3DStorage _storage;
     private float               _vSpacing;
@@ -24,8 +29,38 @@ public partial class RoadPainter : Node
         _sampleStep = _vSpacing;
         BuildBrush();
 
-        // Connect to global signal bus by hooking the event:
+        // Connect to the signals by hooking handlers to the events
         SignalBus.Instance.RoadsGenerated += OnRoadsGenerated;
+        SignalBus.Instance.ChunkMapsReady += OnChunkMapsReady;
+    }
+
+    private void OnRoadsGenerated(Vector3[] points, int key)
+    {
+        GD.Print("RoadPainter.OnRoadsGenerated", key);
+        _waypoints[key] = points;
+        TryPaint(key);
+    }
+
+    private void OnChunkMapsReady(int key)
+    {
+        _mapsReady.Add(key);
+        TryPaint(key);
+    }
+
+    private void TryPaint(int key)
+    {
+        // GD.Print("RoadPainter.TryPaint", key);
+        if (!_mapsReady.Contains(key))            // terrain not ready yet
+            return;
+        // GD.Print("RoadPainter.TryPaint: maps ready", key);
+        if (!_waypoints.TryGetValue(key, out var road))
+            return;                               // no way‑points yet
+        GD.Print("RoadPainter.TryPaint: waypoints", key);
+
+        PaintRoad(road);                          // ← your existing method
+        _waypoints.Remove(key);                   // tidy up
+        _mapsReady.Remove(key);
+        _needsUpdate = true;                      // upload once in _PhysicsProcess
     }
 
     public void SetTerrain(NodePath path)
@@ -36,22 +71,6 @@ public partial class RoadPainter : Node
         // 2. Wrap it
         _terrain = new T3.Terrain3D(terrainNode);
         _storage     = _terrain.Storage;
-    }
-
-    private void OnRoadsGenerated(Vector3[] roadPositions, Vector3[] roadDirections, Vector3 chunkIndex)
-    {
-        // Sensechecking.
-        // GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
-        // GD.Print("Road positions: ", string.Join(", ", roadPositions));
-        // GD.Print("Road directions: ", string.Join(", ", roadDirections));
-        // Handle the roads generated event.
-        GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
-        PaintRoad(roadPositions);
-    }
-
-    public void EchoPaintRoad(Vector3[] roadPositions)
-    {
-        GD.Print("Hello from EchoPaintRoad");
     }
 
     private void BuildBrush()
@@ -67,6 +86,7 @@ public partial class RoadPainter : Node
 
     public void PaintRoad(Vector3[] road)
     {
+        GD.Print("RoadPainter.PaintRoad", road.Length);
         if (road.Length < 2) return;
 
         // one‑time initialisation
@@ -87,10 +107,20 @@ public partial class RoadPainter : Node
 
             for (int s = 0; s <= n; ++s)
             {
-                Vector3 c = a.Lerp(b, (float)s / n);
+                Vector3 centre = a.Lerp(b, (float)s / n);
 
                 foreach (var o in _brushOffsets)
-                    _storage.SetControl(c + new Vector3(o.X, 0, o.Y), roadCtrl);
+                {
+                    Vector3 p = centre + new Vector3(o.X, 0, o.Y);
+
+                    uint ctrl = (uint)_storage.GetControl(p);
+
+                    ctrl.SetBaseTextureId((byte)_roadTexId);
+                    ctrl.SetTextureBlend(0);
+                    ctrl.SetAutoshaded(false);
+
+                    _storage.SetControl(p, ctrl);
+                }
             }
         }
 
@@ -101,7 +131,7 @@ public partial class RoadPainter : Node
     public override void _PhysicsProcess(double _)
     {
         if (!_needsUpdate) return;
-        _storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        _storage.ForceUpdateMaps();     // TYPE_MAX – updates height+control
         _needsUpdate = false;
     }
 

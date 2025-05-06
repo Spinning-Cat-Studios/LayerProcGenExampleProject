@@ -157,6 +157,10 @@ namespace Runevision.Common {
 		public static float Distance(DPoint a, DPoint b) {
 			return (b - a).magnitude;
 		}
+
+		public int ChunkKey() {
+			return (x << 16) ^ y;
+		}
 	}
 
 }

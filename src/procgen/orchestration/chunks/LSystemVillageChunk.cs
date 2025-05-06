@@ -129,12 +129,13 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         FlushHousesToScene();
         var roadPositions = roadPositionDirections.Select(pair => pair.Item1).ToArray();
         var roadDirections = roadPositionDirections.Select(pair => pair.Item2).ToArray();
+
+        int key = ChunkKeyUtil.Make(index);
         SignalBus.Instance.CallDeferred(
             "emit_signal",
             SignalBus.SignalName.RoadsGenerated,
             roadPositions.ToArray(),
-            roadDirections.ToArray(),
-            index.ToVector3());
+            key);
     }
 
     float GetHeightAt(Vector3 position)

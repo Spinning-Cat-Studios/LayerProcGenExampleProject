@@ -70,10 +70,7 @@ public struct MapQueuedTerrainCallback<L, C> : IQueuedAction
 		DPoint cellSize = (DPoint)layer.chunkSize / layer.gridResolution;
 		float minHeight = layer.terrainBaseHeight;
 		float totalHeight = layer.terrainHeight - layer.terrainBaseHeight;
-		// TerrainLODManager.instance.terrain3D.Storage.HeightRange = new Vector2(minHeight, layer.terrainHeight);
 
-		// GD.Print($"HandleUnderSizedRegions: {cellSize}, {layer.chunkSize}, {layer.gridResolution}");
-		// GD.Print($"\t: {layer.lodLevel} {position} in region:{terrain.RegionOffset}, {startPos}; on index:{index}, {index * layer.chunkW}");
 		for (var x = 0; x < layer.chunkSize.x; x++)
 		{
 			for (var z = 0; z < layer.chunkSize.y; z++)
@@ -84,7 +81,14 @@ public struct MapQueuedTerrainCallback<L, C> : IQueuedAction
 			}
 		}
 
+		int key = ChunkKeyUtil.Make(index);
+
 		TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps();
+		SignalBus.Instance.CallDeferred(
+			"emit_signal",
+    		SignalBus.SignalName.ChunkMapsReady,
+			key
+		);
 		yield return null;
 	}
 }
