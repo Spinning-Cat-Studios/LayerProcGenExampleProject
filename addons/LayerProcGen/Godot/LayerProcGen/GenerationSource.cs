@@ -13,7 +13,7 @@
 using Runevision.Common;
 using Godot;
 using System.Linq;
-
+using LayerProcGenExampleProject.Data;
 
 namespace Runevision.LayerProcGen;
 
@@ -30,6 +30,11 @@ public partial class GenerationSource : Node3D
 
 	public override void _EnterTree()
 	{
+		using (var db = new DatabaseContext())
+		{
+			db.ClearAllData();
+		}
+
 		if(!Engine.IsEditorHint())
 			UpdateState();
 	}

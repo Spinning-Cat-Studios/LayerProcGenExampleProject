@@ -2,6 +2,7 @@ using SQLite;
 using Godot;
 using LayerProcGenExampleProject.Data.Entities;
 using System.IO;
+using System.Linq;
 using System;
 
 namespace LayerProcGenExampleProject.Data
@@ -37,6 +38,28 @@ namespace LayerProcGenExampleProject.Data
                 _referenceCount++;
             }
         }
+
+        public void ClearAllData()
+        {
+            lock (_lock)
+            {
+                // Wrap everything in one transaction – faster & keeps the DB consistent.
+                _sharedConnection.RunInTransaction(() =>
+                {
+                    var tableNames = _sharedConnection
+                        .Query<Scm>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+                        .Select(r => r.Name);
+
+                    foreach (var name in tableNames)
+                        _sharedConnection.Execute($"DELETE FROM \"{name}\";");
+
+                    GD.Print($"[DB] Cleared data in {tableNames.Count()} table(s).");
+                });
+            }
+        }
+
+        // Lightweight record to read sqlite_master rows
+        private class Scm { public string Name { get; set; } }
 
         public void Insert<T>(T entity)
         {
