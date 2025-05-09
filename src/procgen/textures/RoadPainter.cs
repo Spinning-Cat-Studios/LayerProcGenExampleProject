@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Runevision.Common;
 
+
 public partial class RoadPainter : Node
 {
     [Export] private NodePath _terrainPath;
@@ -27,6 +28,9 @@ public partial class RoadPainter : Node
 
         // Connect to global signal bus by hooking the event:
         SignalBus.Instance.RoadsGenerated += OnRoadsGenerated;
+
+        // Connect to the signal for when the road end positions are computed
+        SignalBus.Instance.InitialRoadEndPositionsComputed += OnInitialRoadEndPositionsComputed;
     }
 
     public void SetTerrain(NodePath path)
@@ -53,6 +57,18 @@ public partial class RoadPainter : Node
         // Handle the roads generated event.
         GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
         PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
+    }
+
+    private void OnInitialRoadEndPositionsComputed(
+        Vector3[] roadStartPositions,
+        Vector3[] roadEndPositions,
+        Vector3 chunkIndex)
+    {
+        // Handle the initial road end positions computed event.
+        GD.Print("Received InitialRoadEndPositionsComputed signal with chunk index: ", chunkIndex);
+        // Sensechecking.
+        // GD.Print("Road start positions: ", string.Join(", ", roadStartPositions));
+        GD.Print("Road end positions: ", string.Join(", ", roadEndPositions));
     }
 
     public void EchoPaintRoad(Vector3[] roadPositions)

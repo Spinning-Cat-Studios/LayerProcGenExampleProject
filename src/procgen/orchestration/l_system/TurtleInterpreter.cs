@@ -33,7 +33,9 @@ public class TurtleInterpreter
         List<Vector3> housePositions,
         List<(Vector3, Vector3)> roadPositionDirections,
         List<int> roadStartIndices,
-        List<int> roadEndIndices
+        List<int> roadEndIndices,
+        List<Vector3> roadStartPositions,
+        List<Vector3> roadEndPositions
     ) {
         foreach (char symbol in sequence)
         {
@@ -55,10 +57,12 @@ public class TurtleInterpreter
                 case '[': {
                     stack.Push(state.Clone());
                     roadStartIndices.Add(roadPositionDirections.Count);
+                    roadStartPositions.Add(state.Position);
                     break;
                 }
                 case ']': {
                     roadEndIndices.Add(roadPositionDirections.Count);
+                    roadEndPositions.Add(state.Position);
                     if (stack.Count > 0) state = stack.Pop(); break;
                 }
 
