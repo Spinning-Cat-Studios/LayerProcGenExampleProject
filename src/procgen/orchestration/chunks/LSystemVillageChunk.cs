@@ -11,11 +11,6 @@ using LayerProcGenExampleProject.Data.Entities;
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
     List<Vector3> housePositions = new();
-    List<(Vector3, Vector3)> roadPositionDirections = new();
-    List<int> roadStartIndices = new();
-    List<int> roadEndIndices = new();
-    List<Vector3> roadStartPositions = new();
-    List<Vector3> roadEndPositions = new();
     Point gridOrigin;
     private Node3D? _chunkParent; 
     private readonly List<Node3D> _pendingHouses = new();
@@ -65,91 +60,55 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     void Build()
     {
         gridOrigin = index * layer.chunkW;
-        // Mix in chunk coords so each chunk seed varies
-        int chunkSeed = GLOBAL_SEED
-                    + index.x * CHUNK_X_RANDOM
-                    + index.y * CHUNK_Y_RANDOM;
-        
-        var rnd = new Random(chunkSeed);
+        int chunkSeed = GLOBAL_SEED + index.x * CHUNK_X_RANDOM + index.y * CHUNK_Y_RANDOM;
 
-        // Generate your L-system string
+        var lSystemService = new LSystemService(chunkSeed);
+        var axiom = lSystemService.SelectRandomAxiom();
 
-        // Start with an axiom consisting of 3 arterial roads
-        string THREE_ROADS_AXIOM =
-            "[ M ] [ | M ]"          // 0°  & 180°
-        + "[ > M ] [ > | M ]"      // ~–60° & ~+120°
-        + "[ < M ] [ < | M ]"      // ~+60° & ~–120°
-        ;
-
-        string TWO_ROADS_AXIOM =
-            "[ M ] [ | M ]"          // 0°  & 180°
-        + "[ >> M ] [ >> | M ]"      // ~–50 to -120° & ~+130 to +60°
-        ;
-
-        // Randomize the axiom based on the chunk seed determined above
-        string axiom = rnd.Next(2) == 0 ? THREE_ROADS_AXIOM : TWO_ROADS_AXIOM;
-
-        // Generate the L-system sequence
-        var lSystem = new StatefulLSystem(rnd);
-        float spacingModifier = 3.75f; // Todo: consider using the actual cell size
+        float spacingModifier = 3.75f;
         float jitterRange = 150f;
-        // deterministic jitter
-        float jitterX = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
-        float jitterZ = (float)(rnd.NextDouble() * (2 * jitterRange) - jitterRange);
-        var worldOrigin = new Vector3(
-            gridOrigin.x * spacingModifier + jitterX,
-            0,
-            gridOrigin.y * spacingModifier + jitterZ
-        );
-        var turtleState = new TurtleState(worldOrigin, Vector3.Forward);
-        string lSequence = lSystem.Generate(
-            axiom,
-            LSYSTEM_ITERATIONS
-        );
+        var (jitterX, jitterZ) = lSystemService.GenerateJitter(jitterRange);
+        var worldOrigin = new Vector3(gridOrigin.x * spacingModifier + jitterX, 0, gridOrigin.y * spacingModifier + jitterZ);
 
-        // Start interpreting at the chunk's origin
-        var interpreter = new TurtleInterpreter(GetHeightAt);
-
-        interpreter.Interpret(
-            lSequence,
-            turtleState,
-            housePositions,
-            roadPositionDirections,
-            roadStartIndices,
-            roadEndIndices,
-            roadStartPositions,
-            roadEndPositions
-        );
-
-        // Now housePositions has the exact positions for houses in this chunk
-        foreach (var pos in housePositions)
+        var config = new LSystemConfig
         {
+            ChunkSeed = chunkSeed,
+            Iterations = LSYSTEM_ITERATIONS,
+            WorldOrigin = worldOrigin,
+            Axiom = axiom
+        };
+
+        string lSequence = lSystemService.GenerateSequence(config.Axiom, config.Iterations);
+        var turtleState = new TurtleState(config.WorldOrigin, Vector3.Forward);
+
+        var result = new LSystemResult();
+        var interpreterService = new TurtleInterpreterService(GetHeightAt);
+        interpreterService.Interpret(lSequence, turtleState, result);
+
+        foreach (var pos in result.HousePositions)
             QueueHouseInstance(pos);
-        }
 
         FlushHousesToScene();
-        var roadPositions = roadPositionDirections.Select(pair => pair.Item1).ToArray();
-        var roadDirections = roadPositionDirections.Select(pair => pair.Item2).ToArray();
+
+        var roadPositions = result.RoadPositionDirections.Select(pair => pair.Item1).ToArray();
+        var roadDirections = result.RoadPositionDirections.Select(pair => pair.Item2).ToArray();
         SignalBus.Instance.CallDeferred(
             "emit_signal",
             SignalBus.SignalName.RoadsGenerated,
-            roadPositions.ToArray(),
-            roadDirections.ToArray(),
-            roadStartIndices.ToArray(),
-            roadEndIndices.ToArray(),
-            index.ToVector3());
-        
-        // Store chunk index + road start/end positions to SQLite
+            roadPositions,
+            roadDirections,
+            result.RoadStartIndices.ToArray(),
+            result.RoadEndIndices.ToArray(),
+            index.ToVector3()
+        );
+
         using var dbContext = new DatabaseContext();
-        
-        var chunkData = new RoadChunkData
+        dbContext.Insert(new RoadChunkData
         {
             ChunkX = index.x,
             ChunkY = index.y,
-            RoadEndPositions = roadEndPositions
-        };
-
-        dbContext.Insert(chunkData);
+            RoadEndPositions = result.RoadEndPositions
+        });
     }
 
     float GetHeightAt(Vector3 position)
