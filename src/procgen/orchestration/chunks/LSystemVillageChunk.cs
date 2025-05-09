@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot.Util;
 using System;
+using LayerProcGenExampleProject.Data;
+using LayerProcGenExampleProject.Data.Entities;
 
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
@@ -12,6 +14,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     List<(Vector3, Vector3)> roadPositionDirections = new();
     List<int> roadStartIndices = new();
     List<int> roadEndIndices = new();
+    List<Vector3> roadStartPositions = new();
+    List<Vector3> roadEndPositions = new();
     Point gridOrigin;
     private Node3D? _chunkParent; 
     private readonly List<Node3D> _pendingHouses = new();
@@ -103,10 +107,6 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             LSYSTEM_ITERATIONS
         );
 
-        // GD.Print($"L-system sequence len={lSequence.Length} first100={lSequence[..Math.Min(100,lSequence.Length)]}");
-
-        // GD.Print("L-System Sequence: " + lSequence);
-
         // Start interpreting at the chunk's origin
         var interpreter = new TurtleInterpreter(GetHeightAt);
 
@@ -116,13 +116,10 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             housePositions,
             roadPositionDirections,
             roadStartIndices,
-            roadEndIndices
+            roadEndIndices,
+            roadStartPositions,
+            roadEndPositions
         );
-
-        // Sensechecking.
-        // GD.Print("House positions: " + string.Join(", ", housePositions));
-        // GD.Print("Road positions: " + string.Join(", ", roadPositionDirections));
-        // GD.Print("Layer parent node name: " + layer.layerParent.Name);
 
         // Now housePositions has the exact positions for houses in this chunk
         foreach (var pos in housePositions)
@@ -141,6 +138,18 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             roadStartIndices.ToArray(),
             roadEndIndices.ToArray(),
             index.ToVector3());
+        
+        // Store chunk index + road start/end positions to SQLite
+        using var dbContext = new DatabaseContext();
+        
+        var chunkData = new RoadChunkData
+        {
+            ChunkX = index.x,
+            ChunkY = index.y,
+            RoadEndPositions = roadEndPositions
+        };
+
+        dbContext.Insert(chunkData);
     }
 
     float GetHeightAt(Vector3 position)
