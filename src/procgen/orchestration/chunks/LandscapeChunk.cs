@@ -35,7 +35,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 		dists = new Vector3[layer.gridResolution, layer.gridResolution];
 	}
 
-	public override void Create(int level, bool destroy)
+	public override void Create(int level, bool destroy, Action done)
 	{
 		if (destroy)
 		{
@@ -43,14 +43,14 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 		}
 		else
 		{
-			Build();
+			Build(done);
 		}
 
 		// GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
-		base.Create(level, destroy);
+		base.Create(level, destroy, done);
 	}
 
-	private void Build()
+	private void Build(Action done)
 	{
 		SimpleProfiler.ProfilerHandle ph;
 
@@ -154,6 +154,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 				MainThreadActionQueue.Enqueue(action);
 			}
 		}
+		done?.Invoke();
 	}
 
 	private void ControlBase(ref uint[,] controlMap)

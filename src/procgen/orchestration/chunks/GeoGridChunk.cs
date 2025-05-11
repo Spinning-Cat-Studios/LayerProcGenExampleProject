@@ -26,7 +26,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
 
     }
 
-    public override void Create(int level, bool destroy)
+    public override void Create(int level, bool destroy, Action done)
     {
         if (destroy)
         {
@@ -36,13 +36,13 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         }
         else
         {
-            Build();
+            Build(done);
         }
     }
 
     static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(64);
 
-    void Build()
+    void Build(Action done)
     {
         Point gridChunkRes = layer.gridChunkRes;
         Point gridOrigin = index * gridChunkRes;
@@ -86,5 +86,6 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         	});
         locationSpecListPool.Return(ref locationSpecs);
         SimpleProfiler.End(ph);
+        done?.Invoke();
     }
 }

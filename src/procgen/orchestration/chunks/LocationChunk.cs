@@ -3,6 +3,7 @@ using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
 using Godot.Util;
+using System;
 
 public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 
@@ -31,7 +32,7 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 	// Used temporarily during generation.
 	List<Point> allPositions = new List<Point>();
 
-	public override void Create(int level, bool destroy) {
+	public override void Create(int level, bool destroy, Action done) {
 		float pushDist = bounds.size.x * 0.5f;
 		int o = rand.GetInt(index.array);
 
@@ -116,6 +117,7 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 					loc.frontDir = loc.frontDir.Normalized();
 			}
 		}
+		done?.Invoke();
 	}
 
 	public void GetConnectionsOwnedInBounds(List<Location> outConnectionPairs, GridBounds bounds) {

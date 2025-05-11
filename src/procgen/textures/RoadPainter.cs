@@ -55,7 +55,7 @@ public partial class RoadPainter : Node
         // GD.Print("Road positions: ", string.Join(", ", roadPositions));
         // GD.Print("Road directions: ", string.Join(", ", roadDirections));
         // Handle the roads generated event.
-        GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
+        // GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
         PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
     }
 
@@ -69,6 +69,17 @@ public partial class RoadPainter : Node
         // Sensechecking.
         // GD.Print("Road start positions: ", string.Join(", ", roadStartPositions));
         GD.Print("Road end positions: ", string.Join(", ", roadEndPositions));
+    }
+
+    private void OnAllChunksGenerated(string layerName)
+    {
+        // Handle the all chunks generated event.
+        GD.Print("Received AllChunksGenerated signal for layer: ", layerName);
+        if (layerName == "LSystemVillageLayer")
+        {
+            // Perform any necessary actions when all chunks are generated.
+            GD.Print("All chunks for LSystemVillageLayer have been generated.");
+        }
     }
 
     public void EchoPaintRoad(Vector3[] roadPositions)

@@ -6,6 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+using Godot;
 using Runevision.Common;
 using Runevision.SaveState;
 using System;
@@ -71,6 +72,9 @@ namespace Runevision.LayerProcGen {
 		where C : LayerChunk<L, C>, new()
 	{
 		static L s_Instance;
+		private Action createChunkDone;
+		private Action removeChunkDone;
+		int[] chunkLevelCount;
 		public static L instance {
 			get {
 				if (s_Instance == null)
@@ -113,13 +117,20 @@ namespace Runevision.LayerProcGen {
 		/// The default is 0.</param>
 		/// <param name="rollingGridMaxOverlap">The max overlap of the rolling grid 
 		/// the chunks are stored in. The default is 3.</param>
+		/// <param name="createChunkDone">The signal to call when the layer is done generating.</param>
+		/// <param name="removeChunkDone">The signal to call when the layer is done removing.</param>
 		protected ChunkBasedDataLayer(
-			int rollingGridWidth = 32, int rollingGridHeight = 0, int rollingGridMaxOverlap = 3
+			int rollingGridWidth = 32,
+			int rollingGridHeight = 0,
+			int rollingGridMaxOverlap = 3,
+			Action createChunkDone = null,
+			Action removeChunkDone = null
 		) {
 			if (rollingGridHeight == 0)
 				rollingGridHeight = rollingGridWidth;
 			chunks = new RollingGrid<C>(rollingGridWidth, rollingGridHeight, rollingGridMaxOverlap);
-
+			this.createChunkDone = createChunkDone;
+			this.removeChunkDone = removeChunkDone;
 			int levelCount = GetLevelCount();
 			dependencies = new List<LayerDependency>[levelCount];
 			for (int i = 0; i < levelCount; i++)
@@ -154,7 +165,7 @@ namespace Runevision.LayerProcGen {
 				if (chunk.level != level - 1)
 					Logg.LogError($"{chunk}: raising internal level from {chunk.level} to {level}");
 				chunk.phc = ph;
-				chunk.Create(level, false);
+				chunk.Create(level, false, this.createChunkDone);
 				lock (chunks) {
 					chunk.level = level;
 					chunk.SetLevelData(levelData, level);
@@ -180,7 +191,7 @@ namespace Runevision.LayerProcGen {
 				lock (chunks) {
 					chunk.level = level - 1;
 				}
-				chunk.Create(level, true);
+				chunk.Create(level, true, this.removeChunkDone);
 				foreach (ChunkLevelData.ProviderStruct provider in levelData.providers)
 					provider.chunk.DecrementUserCountOfLevel(provider.level);
 
@@ -330,7 +341,7 @@ namespace Runevision.LayerProcGen {
 				$"Layer {q.abstractLayer.GetType().Name} requires chunks from {GetType().Name} that are not available.\n"
 				+ $"It needs a dependency with padding {hPadding},{vPadding}.\n"
 				+ $"Requested bounds: {requested}, bounds of requester chunk: {requester}\n"
-				+ $"{Environment.StackTrace}");
+				+ $"{System.Environment.StackTrace}");
 		}
 
 		/// <summary>

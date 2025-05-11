@@ -6,9 +6,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+using Godot;
 using Runevision.Common;
 using Runevision.SaveState;
 using System.Collections.Generic;
+using System;
 
 namespace Runevision.LayerProcGen {
 
@@ -208,7 +210,7 @@ namespace Runevision.LayerProcGen {
 		/// }
 		/// </code>
 		/// </example>
-		public virtual void Create(int level, bool destroy) { }
+		public virtual void Create(int level, bool destroy, System.Action done = null) { }
 
 		/// <summary>
 		/// Example output: "[TerrainChunk (3,-4) level 0]"

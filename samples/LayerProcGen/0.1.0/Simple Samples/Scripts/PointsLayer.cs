@@ -2,13 +2,14 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
+using System;
 
 public class PointsChunk : LayerChunk<PointsLayer, PointsChunk> {
 	// Data for this chunk goes here.
 	// This could be any data structure, a List of points is just an example.
 	public List<Point> pointList = new List<Point>();
 
-	public override void Create(int level, bool destroy) {
+	public override void Create(int level, bool destroy, Action done) {
 		if (destroy) {
 			// Destroy data for this chunk here.
 			// Chunk objects are reused so keep data structures if possible

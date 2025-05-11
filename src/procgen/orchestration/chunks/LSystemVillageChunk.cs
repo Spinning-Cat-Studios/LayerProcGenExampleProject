@@ -20,13 +20,13 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int CHUNK_Y_RANDOM = 19349663;
     const int LSYSTEM_ITERATIONS = 5;
 
-    public override void Create(int level, bool destroy)
+    public override void Create(int level, bool destroy, Action done)
     {
-        GD.Print("LSystemVillageChunk Create");
+        // GD.Print("LSystemVillageChunk Create");
         if (destroy)
             housePositions.Clear();
         else
-            Build();
+            Build(done);
     }
 
     public void DebugDraw() {
@@ -57,7 +57,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         return _chunkParent;
     }
 
-    void Build()
+    void Build(Action done)
     {
         gridOrigin = index * layer.chunkW;
         int chunkSeed = GLOBAL_SEED + index.x * CHUNK_X_RANDOM + index.y * CHUNK_Y_RANDOM;
@@ -109,6 +109,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             ChunkY = index.y,
             RoadEndPositions = result.RoadEndPositions
         });
+        done.Invoke();
     }
 
     float GetHeightAt(Vector3 position)

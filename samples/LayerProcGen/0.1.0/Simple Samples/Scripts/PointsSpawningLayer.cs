@@ -2,6 +2,7 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
+using System;
 
 public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawningChunk> {
 	
@@ -11,7 +12,7 @@ public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawnin
 	// Data for this chunk goes here.
 	TransformWrapper chunkParent;
 
-	public override void Create(int level, bool destroy) {
+	public override void Create(int level, bool destroy, Action done) {
 		if (destroy) {
 			QueuedGameObjectDestruction.Enqueue(chunkParent, false);
 		}
