@@ -2,14 +2,37 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using Godot;
 using System;
+using LayerProcGenExampleProject.Services;
+using LayerProcGenExampleProject.Services.Data;
 
 public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk>, ILayerVisualization
 {
 	public override int chunkW { get { return 128; } }
 	public override int chunkH { get { return 128; } }
 
-    static readonly Action createChunkDoneDefault = static () => GD.Print("✅  A chunk finished generating");
+    public static int gridDoneCounter { get; set; } = 0;
+
+    static readonly int TotalChunks = 25;
+
+    static readonly Action createChunkDoneDefault = static () => {
+        gridDoneCounter++;
+        if (gridDoneCounter >= TotalChunks)
+        {
+            GD.Print("✅  All chunks finished generating, emitting signal to VillageManagerService");
+            SignalBus.Instance.CallDeferred(
+                "emit_signal",
+                SignalBus.SignalName.AllLSystemVillageChunksGenerated
+            );
+            gridDoneCounter = 0;
+        }
+    };
     static readonly Action removeChunkDoneDefault = static () => GD.Print("🗑️  A chunk level got removed");
+
+    private static readonly VillageService _villageService = new VillageService(
+        new DatabaseContext(),
+        new TurtleInterpreterService(),
+        new LSystemService()
+    );
 
     public Node3D layerParent;
 

@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot.Util;
 using System;
-using LayerProcGenExampleProject.Data;
-using LayerProcGenExampleProject.Data.Entities;
+using LayerProcGenExampleProject.Services.Data;
+using LayerProcGenExampleProject.Services.Data.Entities;
 
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
 {
@@ -20,7 +20,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int CHUNK_Y_RANDOM = 19349663;
     const int LSYSTEM_ITERATIONS = 5;
 
-    public override void Create(int level, bool destroy, Action done)
+    public override void Create(int level, bool destroy, Action done, LayerService layerService)
     {
         // GD.Print("LSystemVillageChunk Create");
         if (destroy)
