@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Runevision.Common;
 
-
 public partial class RoadPainter : Node
 {
     [Export] private NodePath _terrainPath;

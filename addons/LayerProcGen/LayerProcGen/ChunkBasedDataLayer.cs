@@ -67,13 +67,17 @@ namespace Runevision.LayerProcGen {
 	/// <typeparam name="C">The corresponding chunk class.</typeparam>
 	// Generic class. Things that depend on the type of the chunks (such as the chunks grid)
 	// have to be handled here rather than in the abstract class.
-	public abstract class ChunkBasedDataLayer<L, C> : AbstractChunkBasedDataLayer, IChunkBasedDataLayer
-		where L : ChunkBasedDataLayer<L, C>, new()
-		where C : LayerChunk<L, C>, new()
+	public abstract class ChunkBasedDataLayer<L, C, S> : AbstractChunkBasedDataLayer, IChunkBasedDataLayer
+		where L : ChunkBasedDataLayer<L, C, S>, new()
+		where C : LayerChunk<L, C, S>, new()
+		where S : LayerService
 	{
 		static L s_Instance;
 		private Action createChunkDone;
 		private Action removeChunkDone;
+
+		protected readonly S service;  
+		public LayerService Service => service;
 		int[] chunkLevelCount;
 		public static L instance {
 			get {
@@ -124,13 +128,15 @@ namespace Runevision.LayerProcGen {
 			int rollingGridHeight = 0,
 			int rollingGridMaxOverlap = 3,
 			Action createChunkDone = null,
-			Action removeChunkDone = null
+			Action removeChunkDone = null,
+			S service = null
 		) {
 			if (rollingGridHeight == 0)
 				rollingGridHeight = rollingGridWidth;
 			chunks = new RollingGrid<C>(rollingGridWidth, rollingGridHeight, rollingGridMaxOverlap);
 			this.createChunkDone = createChunkDone;
 			this.removeChunkDone = removeChunkDone;
+			this.service = service;
 			int levelCount = GetLevelCount();
 			dependencies = new List<LayerDependency>[levelCount];
 			for (int i = 0; i < levelCount; i++)
@@ -165,7 +171,11 @@ namespace Runevision.LayerProcGen {
 				if (chunk.level != level - 1)
 					Logg.LogError($"{chunk}: raising internal level from {chunk.level} to {level}");
 				chunk.phc = ph;
-				chunk.Create(level, false, this.createChunkDone);
+				chunk.Create(
+					level,
+					false,
+					this.createChunkDone,
+					this.service);
 				lock (chunks) {
 					chunk.level = level;
 					chunk.SetLevelData(levelData, level);

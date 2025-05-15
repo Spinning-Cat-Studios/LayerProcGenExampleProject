@@ -3,7 +3,7 @@ using Godot;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace LayerProcGenExampleProject.Services.Data.Entities
+namespace LayerProcGenExampleProject.Services.SQLite.Entities
 {
     // This class represents a chunk of road data in the SQLite database.
     // It includes the chunk's coordinates and a list of road end positions.

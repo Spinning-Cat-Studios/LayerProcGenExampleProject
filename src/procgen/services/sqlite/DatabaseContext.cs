@@ -1,11 +1,11 @@
 using SQLite;
 using Godot;
-using LayerProcGenExampleProject.Services.Data.Entities;
+using LayerProcGenExampleProject.Services.SQLite.Entities;
 using System.IO;
 using System.Linq;
 using System;
 
-namespace LayerProcGenExampleProject.Services.Data
+namespace LayerProcGenExampleProject.Services.SQLite
 {
     // DatabaseContext is a singleton class that manages a shared SQLite connection.
     // It ensures that only one connection is used across the application,

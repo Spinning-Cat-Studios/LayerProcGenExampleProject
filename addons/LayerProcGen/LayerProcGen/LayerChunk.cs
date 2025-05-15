@@ -210,7 +210,7 @@ namespace Runevision.LayerProcGen {
 		/// }
 		/// </code>
 		/// </example>
-		public virtual void Create(int level, bool destroy, System.Action done = null) { }
+		public virtual void Create(int level, bool destroy, System.Action done = null, LayerService service = null) { }
 
 		/// <summary>
 		/// Example output: "[TerrainChunk (3,-4) level 0]"
@@ -230,9 +230,10 @@ namespace Runevision.LayerProcGen {
 	/// A layer contains a grid of chunks and takes care of generating and destroying them as appropriate.
 	/// Each chunk generates and destroys its own data in its <see cref="Create"/> method.
 	/// </remarks>
-	public abstract class LayerChunk<L, C> : AbstractLayerChunk
-		where L : ChunkBasedDataLayer<L, C>, new()
-		where C : LayerChunk<L, C>, new()
+	public abstract class LayerChunk<L, C, S> : AbstractLayerChunk
+		where L : ChunkBasedDataLayer<L, C, S>, new()
+		where C : LayerChunk<L, C, S>, new()
+		where S : LayerService
 	{
 		/// <summary>
 		/// The layer for this chunk type.
@@ -242,7 +243,7 @@ namespace Runevision.LayerProcGen {
 		/// and other chunk-related properties specified in a layer due to them being
 		/// identical for all chunks of that layer.
 		/// </remarks>
-		public L layer { get { return ChunkBasedDataLayer<L, C>.instance; } }
+		public L layer { get { return ChunkBasedDataLayer<L, C, S>.instance; } }
 
 		/// <summary>
 		/// Needed for C# covariance reasons. The layer property can be used instead.

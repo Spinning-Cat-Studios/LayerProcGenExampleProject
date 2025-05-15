@@ -5,10 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot.Util;
 using System;
-using LayerProcGenExampleProject.Services.Data;
-using LayerProcGenExampleProject.Services.Data.Entities;
+using LayerProcGenExampleProject.Services.SQLite;
+using LayerProcGenExampleProject.Services.SQLite.Entities;
+using LayerProcGenExampleProject.Services;
 
-public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk>
+public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk, VillageService>
 {
     List<Vector3> housePositions = new();
     Point gridOrigin;
@@ -20,13 +21,19 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     const int CHUNK_Y_RANDOM = 19349663;
     const int LSYSTEM_ITERATIONS = 5;
 
-    public override void Create(int level, bool destroy, Action done, LayerService layerService)
+    public override void Create(
+        int level,
+        bool destroy,
+        Action done,
+        LayerService service)
     {
         // GD.Print("LSystemVillageChunk Create");
+        var villageService = service as VillageService
+            ?? throw new InvalidCastException("Expected a VillageService");
         if (destroy)
             housePositions.Clear();
         else
-            Build(done);
+            Build(done, villageService);
     }
 
     public void DebugDraw() {
@@ -57,7 +64,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         return _chunkParent;
     }
 
-    void Build(Action done)
+    void Build(Action done, VillageService villageService)
     {
         gridOrigin = index * layer.chunkW;
         int chunkSeed = GLOBAL_SEED + index.x * CHUNK_X_RANDOM + index.y * CHUNK_Y_RANDOM;

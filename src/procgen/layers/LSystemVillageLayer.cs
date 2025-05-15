@@ -3,9 +3,10 @@ using Runevision.LayerProcGen;
 using Godot;
 using System;
 using LayerProcGenExampleProject.Services;
-using LayerProcGenExampleProject.Services.Data;
+using LayerProcGenExampleProject.Services.SQLite;
+using Godot.Util;
 
-public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk>, ILayerVisualization
+public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk, VillageService>, ILayerVisualization
 {
 	public override int chunkW { get { return 128; } }
 	public override int chunkH { get { return 128; } }
@@ -28,10 +29,16 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     };
     static readonly Action removeChunkDoneDefault = static () => GD.Print("🗑️  A chunk level got removed");
 
+    static float GetHeightAt(Vector3 position)
+    {
+        var coords2D = new Vector2(position.X, position.Z);
+        return TerrainNoise.GetHeight(coords2D);
+    }
+
     private static readonly VillageService _villageService = new VillageService(
         new DatabaseContext(),
-        new TurtleInterpreterService(),
-        new LSystemService()
+        new TurtleInterpreterService(GetHeightAt),
+        new RoadPainterService()
     );
 
     public Node3D layerParent;
@@ -44,7 +51,8 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
             rollingGridHeight: 0,
             rollingGridMaxOverlap: 3,
             createChunkDone: createChunkDoneDefault,
-            removeChunkDone: removeChunkDoneDefault
+            removeChunkDone: removeChunkDoneDefault,
+            service: _villageService
         ) { }
 
     /// <summary>
@@ -59,12 +67,14 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         int    rollingGridHeight     = 0,
         int    rollingGridMaxOverlap = 3,
         Action createChunkDone      = null,
-        Action removeChunkDone      = null)
+        Action removeChunkDone      = null,
+        VillageService service = null)
         : base(rollingGridWidth,
                rollingGridHeight,
                rollingGridMaxOverlap,
                createChunkDone ?? createChunkDoneDefault,
-               removeChunkDone ?? removeChunkDoneDefault)
+               removeChunkDone ?? removeChunkDoneDefault,
+               service ?? _villageService)
     {
         GD.Print("LSystemVillageLayer created");
 

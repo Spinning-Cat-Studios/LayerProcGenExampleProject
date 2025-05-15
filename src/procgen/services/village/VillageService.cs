@@ -1,24 +1,26 @@
-using LayerProcGenExampleProject.Services.Data;
-using LayerProcGenExampleProject.Services.Data.Entities;
+using LayerProcGenExampleProject.Services.SQLite;
+using LayerProcGenExampleProject.Services.SQLite.Entities;
 using System.Collections.Generic;
 using Godot;
+using Runevision.LayerProcGen;
 
 namespace LayerProcGenExampleProject.Services
 {
-    public class VillageService: LayerService<LSystemVillageLayer, LSystemVillageChunk>
+    public class VillageService: LayerService
     {
         private readonly DatabaseContext _dbContext;
         private readonly TurtleInterpreterService _turtleInterpreterService;
-        private readonly LSystemService _lSystemService;
+        private readonly RoadPainterService _roadPainterService;
 
         public VillageService(
             DatabaseContext dbContext,
             TurtleInterpreterService turtleInterpreterService,
-            LSystemService lSystemService)
+            RoadPainterService roadPainterService)
+            : base("Village") // Pass the required layerName to the base constructor
         {
             _dbContext = dbContext;
             _turtleInterpreterService = turtleInterpreterService;
-            _lSystemService = lSystemService;
+            _roadPainterService = roadPainterService;
 
             SignalBus.Instance.AllLSystemVillageChunksGenerated += OnAllLSystemVillageChunksGenerated;
         }
