@@ -3,7 +3,7 @@ using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
 
-public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk>, ILayerVisualization ,IGodotInstance{
+public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk, LayerService>, ILayerVisualization ,IGodotInstance {
 	public override int chunkW { get { return 360; } }
 	public override int chunkH { get { return 360; } }
 

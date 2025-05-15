@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Godot;
 using Godot.Util;
 
-public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk>, ILayerVisualization {
+public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, LayerService>, ILayerVisualization {
 	public override int chunkW { get { return 360; } }
 	public override int chunkH { get { return 360; } }
 

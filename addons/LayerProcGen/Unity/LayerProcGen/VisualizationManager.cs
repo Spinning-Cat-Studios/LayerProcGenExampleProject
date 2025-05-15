@@ -129,6 +129,7 @@ namespace Runevision.LayerProcGen {
 		#endif
 
 		void AddLayer(LayerSpec layerSpec) {
+			GD.Print("Adding layer " + layerSpec.layerClassName);
 			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerSpec.layerClassName.GetLayerInstance();
 			if (layer == null)
 				return;
@@ -235,6 +236,15 @@ namespace Runevision.LayerProcGen {
 						layerVisualization.VisualizationUpdate();
 				}
 			}
+			// // Indicate that chunks have been generated.
+			// // Note: you will need to register LPGSignalBus with your project as an autoload.
+			// // TODO: figure out how to do this (LPG signal bus registration) programmatically.
+			// GD.Print("LPGSignalBus.Instance.CallDeferred");
+			// LPGSignalBus.Instance.CallDeferred(
+			// 	"emit_signal",
+			// 	LPGSignalBus.SignalName.AllChunksGenerated,
+			// 	layer.name
+			// );
 		}
 
 		void UpdateLayer(IChunkBasedDataLayer layer, int level) {
