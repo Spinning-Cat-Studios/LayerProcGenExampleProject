@@ -8,17 +8,17 @@ namespace LayerProcGenExampleProject.Services
 {
     public class VillageService: LayerService
     {
-        private readonly DatabaseContext _dbContext;
+        private readonly SQLiteService _sqliteService;
         private readonly TurtleInterpreterService _turtleInterpreterService;
         private readonly RoadPainterService _roadPainterService;
 
         public VillageService(
-            DatabaseContext dbContext,
+            SQLiteService sqliteService,
             TurtleInterpreterService turtleInterpreterService,
             RoadPainterService roadPainterService)
             : base("Village") // Pass the required layerName to the base constructor
         {
-            _dbContext = dbContext;
+            _sqliteService = sqliteService;
             _turtleInterpreterService = turtleInterpreterService;
             _roadPainterService = roadPainterService;
 
@@ -33,12 +33,12 @@ namespace LayerProcGenExampleProject.Services
 
         public void SaveChunk(LSystemVillageChunk chunk)
         {
-            _dbContext.Insert(chunk);
+            _sqliteService.Insert(chunk);
         }
 
         public List<RoadChunkData> GetAllChunks()
         {
-            return _dbContext.Table<RoadChunkData>().ToList();
+            return _sqliteService.Table<RoadChunkData>().ToList();
         }
     }
 }

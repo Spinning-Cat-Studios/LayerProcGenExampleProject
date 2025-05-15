@@ -36,7 +36,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     }
 
     private static readonly VillageService _villageService = new VillageService(
-        new DatabaseContext(),
+        new SQLiteService(),
         new TurtleInterpreterService(GetHeightAt),
         new RoadPainterService()
     );

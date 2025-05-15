@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Godot;
 using System;
 
-public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
+public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, LayerService> {
 	public List<PathSpec> paths = new List<PathSpec>();
 
 	float[,] heights;
@@ -19,7 +19,7 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 		controls = new uint[layer.gridSize.y, layer.gridSize.x];
 	}
 
-	public override void Create(int level, bool destroy, Action done) {
+	public override void Create(int level, bool destroy, Action done, LayerService service = null) {
 		if (destroy) {
 			foreach (var path in paths) {
 				PathSpec pathCopy = path;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Godot;
 using System;
 
-public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawningChunk> {
+public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawningChunk, LayerService> {
 	
 	// A pool of List<Point> that all have the specified capacity.
 	static ListPool<Point> pointsListPool = new ListPool<Point>(12);
@@ -12,7 +12,7 @@ public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawnin
 	// Data for this chunk goes here.
 	TransformWrapper chunkParent;
 
-	public override void Create(int level, bool destroy, Action done) {
+	public override void Create(int level, bool destroy, Action done, LayerService? service = null) {
 		if (destroy) {
 			QueuedGameObjectDestruction.Enqueue(chunkParent, false);
 		}
@@ -50,7 +50,7 @@ public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawnin
 	}
 }
 
-public class PointsSpawningLayer : ChunkBasedDataLayer<PointsSpawningLayer, PointsSpawningChunk>, IGodotInstance {
+public class PointsSpawningLayer : ChunkBasedDataLayer<PointsSpawningLayer, PointsSpawningChunk, LayerService>, IGodotInstance {
 	// Specify the world space dimensions of the chunks.
 	public override int chunkW { get { return 100; } }
 	public override int chunkH { get { return 100; } }

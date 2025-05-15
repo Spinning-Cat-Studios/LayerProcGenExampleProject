@@ -15,9 +15,10 @@ using Terrain3DBindings;
 using Terrain3D.Scripts.Generation.Layers;
 using Terrain3D.Scripts.Utilities;
 
-public abstract class LandscapeLayer<L, C> : ChunkBasedDataLayer<L, C>
-	where L : LandscapeLayer<L, C>, new()
-	where C : LandscapeChunk<L, C>, new()
+public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
+	where L : LandscapeLayer<L, C, S>, new()
+	where C : LandscapeChunk<L, C, S>, new()
+	where S : LayerService
 {
 	public abstract int lodLevel { get; }
 
@@ -38,33 +39,33 @@ public abstract class LandscapeLayer<L, C> : ChunkBasedDataLayer<L, C>
 }
 
 //@formatter:off
-public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA> {
+public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, LayerService> {
 	public override int lodLevel => 0;
 	public override int chunkW => (int)RegionSize.SIZE_1024/8;
 	public override int chunkH => (int)RegionSize.SIZE_1024/8;
 }
 
-public class LandscapeLayerB : LandscapeLayer<LandscapeLayerB, LandscapeChunkB> {
+public class LandscapeLayerB : LandscapeLayer<LandscapeLayerB, LandscapeChunkB, LayerService> {
 	public override int lodLevel => 1;
 	public override int chunkW => (int)RegionSize.SIZE_1024/4;
 	public override int chunkH => (int)RegionSize.SIZE_1024/4;
 }
 
-public class LandscapeLayerC : LandscapeLayer<LandscapeLayerC, LandscapeChunkC> {
+public class LandscapeLayerC : LandscapeLayer<LandscapeLayerC, LandscapeChunkC, LayerService> {
 	public override int lodLevel => 2;
 	public override int chunkW => (int)RegionSize.SIZE_1024/4;
 	public override int chunkH => (int)RegionSize.SIZE_1024/4;
 }
 
-public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD> {
+public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD, LayerService> {
 	public override int lodLevel => 3;
 	public override int chunkW => (int)RegionSize.SIZE_1024;
 	public override int chunkH => (int)RegionSize.SIZE_1024;
 }
 
-public class LandscapeChunkA : LandscapeChunk<LandscapeLayerA, LandscapeChunkA> { }
-public class LandscapeChunkB : LandscapeChunk<LandscapeLayerB, LandscapeChunkB> { }
-public class LandscapeChunkC : LandscapeChunk<LandscapeLayerC, LandscapeChunkC> { }
-public class LandscapeChunkD : LandscapeChunk<LandscapeLayerD, LandscapeChunkD> { }
+public class LandscapeChunkA : LandscapeChunk<LandscapeLayerA, LandscapeChunkA, LayerService> { }
+public class LandscapeChunkB : LandscapeChunk<LandscapeLayerB, LandscapeChunkB, LayerService> { }
+public class LandscapeChunkC : LandscapeChunk<LandscapeLayerC, LandscapeChunkC, LayerService> { }
+public class LandscapeChunkD : LandscapeChunk<LandscapeLayerD, LandscapeChunkD, LayerService> { }
 
 //@formatter:on

@@ -109,7 +109,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             index.ToVector3()
         );
 
-        using var dbContext = new DatabaseContext();
+        using var dbContext = new SQLiteService();
         dbContext.Insert(new RoadChunkData
         {
             ChunkX = index.x,

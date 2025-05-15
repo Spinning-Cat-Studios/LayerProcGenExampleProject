@@ -5,7 +5,7 @@ using Godot;
 using Godot.Util;
 using System;
 
-public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
+public class LocationChunk : LayerChunk<LocationLayer, LocationChunk, LayerService> {
 
 	struct Connection {
 		public Location a;
@@ -32,7 +32,7 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk> {
 	// Used temporarily during generation.
 	List<Point> allPositions = new List<Point>();
 
-	public override void Create(int level, bool destroy, Action done) {
+	public override void Create(int level, bool destroy, Action done, LayerService service = null) {
 		float pushDist = bounds.size.x * 0.5f;
 		int o = rand.GetInt(index.array);
 

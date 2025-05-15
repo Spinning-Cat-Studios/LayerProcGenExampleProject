@@ -3,7 +3,7 @@ using Godot;
 using Runevision.LayerProcGen;
 using Runevision.Common;
 
-public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk>
+public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 {
     public override int chunkW => 8;
     public override int chunkH => 8;

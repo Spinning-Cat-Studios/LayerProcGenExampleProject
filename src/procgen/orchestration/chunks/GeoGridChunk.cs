@@ -7,7 +7,7 @@ using Godot;
 using Godot.Collections;
 using Godot.Util;
 
-public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
+public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk, LayerService>, IDisposable
 {
     public float[,] heights;
     public Vector3[,] dists;
@@ -26,7 +26,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
 
     }
 
-    public override void Create(int level, bool destroy, Action done)
+    public override void Create(int level, bool destroy, Action done, LayerService? service = null)
     {
         if (destroy)
         {
