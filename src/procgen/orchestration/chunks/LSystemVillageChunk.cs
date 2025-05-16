@@ -5,21 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot.Util;
 using System;
-using LayerProcGenExampleProject.Services.SQLite;
-using LayerProcGenExampleProject.Services.SQLite.Entities;
 using LayerProcGenExampleProject.Services;
 
 public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillageChunk, VillageService>
 {
     List<Vector3> housePositions = new();
-    Point gridOrigin;
     private Node3D? _chunkParent; 
     private readonly List<Node3D> _pendingHouses = new();
-
-    const int GLOBAL_SEED = 12345; // TODO: make this configurable and/or random but stored in the database when finally hook this up to a backend.
-    const int CHUNK_X_RANDOM = 73856093;
-    const int CHUNK_Y_RANDOM = 19349663;
-    const int LSYSTEM_ITERATIONS = 5;
 
     public override void Create(
         int level,
@@ -66,57 +58,32 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
     void Build(Action done, VillageService villageService)
     {
-        gridOrigin = index * layer.chunkW;
-        int chunkSeed = GLOBAL_SEED + index.x * CHUNK_X_RANDOM + index.y * CHUNK_Y_RANDOM;
+        // 1. Generate all data in one call
+        LSystemResult result = villageService.GenerateVillageData(index, layer);
 
-        var lSystemService = new LSystemService(chunkSeed);
-        var axiom = lSystemService.SelectRandomAxiom();
-
-        float spacingModifier = 3.75f;
-        float jitterRange = 150f;
-        var (jitterX, jitterZ) = lSystemService.GenerateJitter(jitterRange);
-        var worldOrigin = new Vector3(gridOrigin.x * spacingModifier + jitterX, 0, gridOrigin.y * spacingModifier + jitterZ);
-
-        var config = new LSystemConfig
-        {
-            ChunkSeed = chunkSeed,
-            Iterations = LSYSTEM_ITERATIONS,
-            WorldOrigin = worldOrigin,
-            Axiom = axiom
-        };
-
-        string lSequence = lSystemService.GenerateSequence(config.Axiom, config.Iterations);
-        var turtleState = new TurtleState(config.WorldOrigin, Vector3.Forward);
-
-        var result = new LSystemResult();
-        var interpreterService = new TurtleInterpreterService(GetHeightAt);
-        interpreterService.Interpret(lSequence, turtleState, result);
-
+        // 2. Houses → scene
         foreach (var pos in result.HousePositions)
             QueueHouseInstance(pos);
-
         FlushHousesToScene();
 
-        var roadPositions = result.RoadPositionDirections.Select(pair => pair.Item1).ToArray();
-        var roadDirections = result.RoadPositionDirections.Select(pair => pair.Item2).ToArray();
+        // 3. Paint / signal roads
+        var roadPos  = result.RoadPositionDirections.Select(p => p.Item1).ToArray();
+        var roadDirs = result.RoadPositionDirections.Select(p => p.Item2).ToArray();
+
         SignalBus.Instance.CallDeferred(
             "emit_signal",
             SignalBus.SignalName.RoadsGenerated,
-            roadPositions,
-            roadDirections,
+            roadPos,
+            roadDirs,
             result.RoadStartIndices.ToArray(),
             result.RoadEndIndices.ToArray(),
             index.ToVector3()
         );
 
-        using var dbContext = new SQLiteService();
-        dbContext.Insert(new RoadChunkData
-        {
-            ChunkX = index.x,
-            ChunkY = index.y,
-            RoadEndPositions = result.RoadEndPositions
-        });
-        done.Invoke();
+        // 4. Persist to DB
+        villageService.PersistRoadChunk(index, result.RoadEndPositions);
+
+        done?.Invoke();
     }
 
     float GetHeightAt(Vector3 position)

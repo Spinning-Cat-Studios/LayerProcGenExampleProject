@@ -19,7 +19,6 @@ config/icon="res://icon.svg"
 
 CallbackHub="*res://addons/LayerProcGen/Godot/Common/CallbackHub.cs"
 SignalBus="*res://src/signals/SignalBus.cs"
-LPGSignalBus="*res://addons/LayerProcGen/Godot/Signals/LPGSignalBus.cs"
 
 [debug_draw_3d]
 
