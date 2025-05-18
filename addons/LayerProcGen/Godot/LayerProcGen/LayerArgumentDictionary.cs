@@ -6,7 +6,7 @@ namespace Runevision.LayerProcGen
 {
     public partial class LayerArgument : Resource
     {
-        public Dictionary<string, Dictionary<string, NodePath>> parameters = new();
+        public Dictionary<string, Dictionary<string, Variant>> parameters = new();
     }
 
     public class LayerArgumentDictionary

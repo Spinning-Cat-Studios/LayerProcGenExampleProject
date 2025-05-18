@@ -45,7 +45,7 @@ public partial class GenerationSource
                 layer.className = value+"";
                 return true;
             case nameof(LayerArgumentDictionary):
-                var d = value.AsGodotDictionary<string, Dictionary<string, NodePath>>();
+                var d = value.AsGodotDictionary<string, Dictionary<string, Variant>>();
                 layerArguments.Arguments[0].parameters = d;
                 return true;
             default:
