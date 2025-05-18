@@ -18,7 +18,7 @@ public partial class GenerationSource
     {
         get => layer.className;
         set => layer.className = value;
-    }
+    }    
 
     [Export]
     private Vector2 Size
@@ -33,6 +33,7 @@ public partial class GenerationSource
         (property + string.Empty) switch
         {
             nameof(Layer) => layer.className,
+            nameof(LayerArgumentDictionary) => Variant.From(layerArguments.Arguments[0].parameters),
             _ => base._Get(property)
         };
 
@@ -42,6 +43,10 @@ public partial class GenerationSource
         {
             case nameof(Layer):
                 layer.className = value+"";
+                return true;
+            case nameof(LayerArgumentDictionary):
+                var d = value.AsGodotDictionary<string, Dictionary<string, NodePath>>();
+                layerArguments.Arguments[0].parameters = d;
                 return true;
             default:
                 return base._Set(property, value);
@@ -59,6 +64,13 @@ public partial class GenerationSource
                 { "usage", (int)PropertyUsageFlags.Default },
                 { "hint", (int)PropertyHint.Enum },
                 { "hint_string", FillLayerHintString() }
+            },
+            new()
+            {
+                { "name", nameof(LayerArgumentDictionary)},
+                { "type", (int)Variant.Type.Dictionary },
+                { "usage", (int)PropertyUsageFlags.Default },
+                { "hint", (int)PropertyHint.None }
             }
         };
 

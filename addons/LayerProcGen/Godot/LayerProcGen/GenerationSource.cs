@@ -23,7 +23,10 @@ namespace Runevision.LayerProcGen;
 
 public partial class GenerationSource : Node3D
 {
-	public LayerNamedReference layer = new LayerNamedReference();
+	public LayerNamedReference layer = new();
+
+	public LayerArgumentDictionary layerArguments = new();
+
 	public Point size = Point.zero;
 
 	public TopLayerDependency dep { get; private set; }
