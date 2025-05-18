@@ -16,7 +16,6 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     public static string layerName { get; } = nameof(LSystemVillageLayer);
     private static NodePath _terrainPath { get; set; } = new NodePath("TerrainPath");
-
     static readonly int TotalChunks = 25;
 
     static readonly Action createChunkDoneDefault = static () => {
@@ -41,20 +40,19 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     public override void ApplyArguments(LayerArgumentDictionary args)
     {
+        GD.Print("LSystemVillageLayer.ApplyArguments");
+        GD.Print(args.parameters);
         // outer key is the layer’s name (you could also use GetType().Name)
         var myKey = nameof(LSystemVillageLayer);
 
         // look up the inner map for this layer
-        if (args.Arguments.parameters
+        if (args.parameters
              .TryGetValue(myKey, out var layerParams)
             && layerParams.TryGetValue("TerrainPath", out var pathVariant))
         {
             // we expect a plain string Variant here
             var nodePath = new NodePath(pathVariant.AsString());
             _terrainPath = nodePath;
-
-            // Now update the terrain path in the village service
-            _villageService.SetTerrain(nodePath);
         }
     }
 

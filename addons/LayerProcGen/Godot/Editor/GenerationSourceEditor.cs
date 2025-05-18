@@ -33,7 +33,7 @@ public partial class GenerationSource
         (property + string.Empty) switch
         {
             nameof(Layer) => layer.className,
-            nameof(LayerArgumentDictionary) => Variant.From(layerArguments.Arguments.parameters),
+            nameof(LayerArgumentDictionary) => Variant.From(layerArguments.parameters),
             _ => base._Get(property)
         };
 
@@ -46,7 +46,7 @@ public partial class GenerationSource
                 return true;
             case nameof(LayerArgumentDictionary):
                 var d = value.AsGodotDictionary<string, Dictionary<string, Variant>>();
-                layerArguments.Arguments.parameters = d;
+                layerArguments.parameters = d;
                 return true;
             default:
                 return base._Set(property, value);

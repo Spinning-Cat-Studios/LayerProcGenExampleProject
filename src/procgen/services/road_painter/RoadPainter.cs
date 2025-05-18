@@ -26,7 +26,7 @@ public partial class RoadPainter : Node
         BuildBrush();
 
         // Connect to global signal bus by hooking the event:
-        SignalBus.Instance.RoadsGenerated += OnRoadsGenerated;
+        // SignalBus.Instance.RoadsGenerated += OnRoadsGenerated;
 
         // Connect to the signal for when the road end positions are computed
         SignalBus.Instance.InitialRoadEndPositionsComputed += OnInitialRoadEndPositionsComputed;

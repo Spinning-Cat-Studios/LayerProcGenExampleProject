@@ -276,12 +276,30 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		internal sealed override void ProcessTopDependency(TopLayerDependency dep)
+		void ApplyArgumentsToLayers(TopLayerDependency dep)
 		{
+			GD.Print($"Processing top dependency {dep.layer.GetType().Name} {dep.level} {dep.focus} {dep.size}");
 			if (dep.layerArguments != null)
 			{
+				// 1) apply to the top layer
+				GD.Print($"Applying arguments to {dep.layer.GetType().Name}: {dep.layerArguments}");
 				dep.layer.ApplyArguments(dep.layerArguments);
+
+				// 2) also apply to any explicitly‐added dependencies
+				for (int lvl = 0; lvl < dependencies.Length; lvl++)
+				{
+					foreach (var link in dependencies[lvl])
+					{
+						GD.Print($"  → Propagating arguments to dependency {link.layer.GetType().Name}");
+						link.layer.ApplyArguments(dep.layerArguments);
+					}
+				}
 			}
+		}
+
+		internal sealed override void ProcessTopDependency(TopLayerDependency dep)
+		{
+			ApplyArgumentsToLayers(dep);
 			dep.GetPendingBounds(out GridBounds requiredBounds, out int requiredLevel);
 			ChunkLevelData oldRootUsage = dep.currentRootUsage;
 

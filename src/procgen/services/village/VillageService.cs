@@ -77,7 +77,7 @@ namespace LayerProcGenExampleProject.Services
         {
             // Handle the event when roads are generated.
             GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
-            // _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
+            _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
         }
 
         public void SaveChunk(LSystemVillageChunk chunk)

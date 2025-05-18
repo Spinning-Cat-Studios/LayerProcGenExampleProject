@@ -25,6 +25,7 @@ public partial class GenerationSource : Node3D
 {
 	public LayerNamedReference layer = new();
 
+	[Export(PropertyHint.ResourceType, nameof(LayerArgumentDictionary))]
 	public LayerArgumentDictionary layerArguments = new();
 
 	public Point size = Point.zero;
