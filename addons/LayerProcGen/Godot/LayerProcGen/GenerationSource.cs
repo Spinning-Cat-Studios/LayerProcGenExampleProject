@@ -62,7 +62,7 @@ public partial class GenerationSource : Node3D
 		{
 			if (dep != null)
 				dep.isActive = false;
-			dep = new TopLayerDependency(instance, size);
+			dep = new TopLayerDependency(instance, size, layerArguments);
 		}
 	}
 

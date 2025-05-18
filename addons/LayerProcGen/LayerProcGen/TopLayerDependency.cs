@@ -18,6 +18,7 @@ namespace Runevision.LayerProcGen {
 		public IChunkBasedDataLayer layer { get { return (IChunkBasedDataLayer)abstractLayer; } }
 		public AbstractChunkBasedDataLayer abstractLayer { get; private set; }
 		public int level { get; private set; }
+		public LayerArgumentDictionary layerArguments { get; private set; }
 		public Point focus { get; private set; }
 		public Point size { get; private set; }
 		public GridBounds chunkIndices { get; private set; }
@@ -39,14 +40,15 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size, int level) {
+		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size, int level, LayerArgumentDictionary layerArguments) {
 			abstractLayer = layer;
 			this.size = size;
 			this.level = level;
+			this.layerArguments = layerArguments;	
 		}
 
-		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size)
-			: this(layer, size, layer.GetLevelCount() - 1) { }
+		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size, LayerArgumentDictionary layerArguments)
+			: this(layer, size, layer.GetLevelCount() - 1, layerArguments) { }
 
 		public void SetFocus(Point focus) {
 			if (isActive && focus == this.focus)

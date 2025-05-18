@@ -5,6 +5,7 @@ using System;
 using LayerProcGenExampleProject.Services;
 using LayerProcGenExampleProject.Services.SQLite;
 using Godot.Util;
+using System.Linq;
 
 public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk, VillageService>, ILayerVisualization
 {
@@ -12,6 +13,9 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 	public override int chunkH { get { return 128; } }
 
     public static int gridDoneCounter { get; set; } = 0;
+
+    public static string layerName { get; } = nameof(LSystemVillageLayer);
+    private static NodePath _terrainPath { get; set; } = new NodePath("TerrainPath");
 
     static readonly int TotalChunks = 25;
 
@@ -35,10 +39,29 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         return TerrainNoise.GetHeight(coords2D);
     }
 
+    public override void ApplyArguments(LayerArgumentDictionary args)
+    {
+        // outer key is the layer’s name (you could also use GetType().Name)
+        var myKey = nameof(LSystemVillageLayer);
+
+        // look up the inner map for this layer
+        if (args.Arguments.parameters
+             .TryGetValue(myKey, out var layerParams)
+            && layerParams.TryGetValue("TerrainPath", out var pathVariant))
+        {
+            // we expect a plain string Variant here
+            var nodePath = new NodePath(pathVariant.AsString());
+            _terrainPath = nodePath;
+
+            // Now update the terrain path in the village service
+            _villageService.SetTerrain(nodePath);
+        }
+    }
+
     private static readonly VillageService _villageService = new VillageService(
         new SQLiteService(),
         new TurtleInterpreterService(GetHeightAt),
-        new RoadPainterService()
+        new RoadPainterService(_terrainPath)
     );
 
     public Node3D layerParent;

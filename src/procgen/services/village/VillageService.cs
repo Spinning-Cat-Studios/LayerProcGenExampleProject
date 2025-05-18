@@ -43,6 +43,12 @@ namespace LayerProcGenExampleProject.Services
             _subscribed = false;
         }
 
+        public void SetTerrain(NodePath path)
+        {
+            // Set the terrain path in the RoadPainter service or any other relevant service.
+            _roadPainterService.SetTerrain(path);
+        }
+
         public VillageService(
             SQLiteService sqliteService,
             TurtleInterpreterService turtleInterpreterService,

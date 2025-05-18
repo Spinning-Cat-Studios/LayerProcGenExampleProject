@@ -14,12 +14,12 @@ namespace Runevision.LayerProcGen
         // now you can click “Add Element” in the inspector
         // and pick “LayerArgument” resources
         [Export(PropertyHint.ResourceType, nameof(LayerArgument))]
-        public Array<LayerArgument> Arguments { get; set; } = new();
+        public LayerArgument Arguments { get; set; } = new();
 
         public LayerArgumentDictionary()
         {
             // Initialize the Arguments array with a default LayerArgument instance
-            Arguments.Add(new LayerArgument());
+            Arguments = new LayerArgument();
         }
     }
 }

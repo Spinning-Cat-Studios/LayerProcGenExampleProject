@@ -22,6 +22,8 @@ namespace Runevision.LayerProcGen {
 		Point chunkSize { get; }
 		int GetLevelCount();
 
+		void ApplyArguments(LayerArgumentDictionary layerArguments);
+
 		void HandleDependenciesForLevel(int level, Action<LayerDependency> func);
 		void HandleAllAbstractChunks(int minChunkLevel, Action<AbstractLayerChunk> func);
 
@@ -50,6 +52,8 @@ namespace Runevision.LayerProcGen {
 		/// Override to specify the number of generation levels in the layer. Default is 1.
 		/// </summary>
 		public virtual int GetLevelCount() { return 1; }
+
+		public virtual void ApplyArguments(LayerArgumentDictionary layerArguments) { }
 
 		internal AbstractChunkBasedDataLayer() { }
 
@@ -274,6 +278,10 @@ namespace Runevision.LayerProcGen {
 
 		internal sealed override void ProcessTopDependency(TopLayerDependency dep)
 		{
+			if (dep.layerArguments != null)
+			{
+				dep.layer.ApplyArguments(dep.layerArguments);
+			}
 			dep.GetPendingBounds(out GridBounds requiredBounds, out int requiredLevel);
 			ChunkLevelData oldRootUsage = dep.currentRootUsage;
 
