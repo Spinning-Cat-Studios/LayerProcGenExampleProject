@@ -22,8 +22,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     {
         SignalBus.Instance.CallDeferred(
             "emit_signal",
-            SignalBus.SignalName.LSystemVillageChunkReady,
-            _terrainPath
+            SignalBus.SignalName.LSystemVillageChunkReady
         );
     };
 
@@ -69,7 +68,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     private static readonly VillageService _villageService = new VillageService(
         new SQLiteService(),
         new TurtleInterpreterService(GetHeightAt),
-        new RoadPainterService(_terrainPath)
+        new RoadPainterService()
     );
 
     public Node3D layerParent;

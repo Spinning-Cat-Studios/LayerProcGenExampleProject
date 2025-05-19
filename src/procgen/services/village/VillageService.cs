@@ -45,12 +45,6 @@ namespace LayerProcGenExampleProject.Services
             _subscribed = false;
         }
 
-        public void SetTerrain(NodePath path)
-        {
-            // Set the terrain path in the RoadPainter service or any other relevant service.
-            _roadPainterService.SetTerrain(path);
-        }
-
         public VillageService(
             SQLiteService sqliteService,
             TurtleInterpreterService turtleInterpreterService,
@@ -70,11 +64,7 @@ namespace LayerProcGenExampleProject.Services
             GD.Print("All L-System village chunks have been generated.");
         }
 
-        private void OnLSystemVillageChunkReady(NodePath terrainPath)
-        {
-            // Handle the event when a chunk is ready to be generated.
-            SetTerrain(terrainPath);
-        }
+        private void OnLSystemVillageChunkReady() { }
 
         private void OnRoadsGenerated(
             Vector3[] roadPositions,
