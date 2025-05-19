@@ -77,6 +77,7 @@ namespace Runevision.LayerProcGen {
 		where S : LayerService
 	{
 		static L s_Instance;
+		private Action createChunkReady;
 		private Action createChunkDone;
 		private Action removeChunkDone;
 
@@ -149,12 +150,14 @@ namespace Runevision.LayerProcGen {
 		/// The default is 0.</param>
 		/// <param name="rollingGridMaxOverlap">The max overlap of the rolling grid 
 		/// the chunks are stored in. The default is 3.</param>
+		/// <param name="createChunkReady">The signal to call when the layer is ready to generate.</param>
 		/// <param name="createChunkDone">The signal to call when the layer is done generating.</param>
 		/// <param name="removeChunkDone">The signal to call when the layer is done removing.</param>
 		protected ChunkBasedDataLayer(
 			int rollingGridWidth = 32,
 			int rollingGridHeight = 0,
 			int rollingGridMaxOverlap = 3,
+			Action createChunkReady = null,
 			Action createChunkDone = null,
 			Action removeChunkDone = null,
 			S service = null
@@ -163,6 +166,7 @@ namespace Runevision.LayerProcGen {
 			if (rollingGridHeight == 0)
 				rollingGridHeight = rollingGridWidth;
 			chunks = new RollingGrid<C>(rollingGridWidth, rollingGridHeight, rollingGridMaxOverlap);
+			this.createChunkReady = createChunkReady;
 			this.createChunkDone = createChunkDone;
 			this.removeChunkDone = removeChunkDone;
 			this.service = service;
@@ -207,6 +211,7 @@ namespace Runevision.LayerProcGen {
 				chunk.Create(
 					level,
 					false,
+					this.createChunkReady,
 					this.createChunkDone,
 					this.service);
 				lock (chunks)

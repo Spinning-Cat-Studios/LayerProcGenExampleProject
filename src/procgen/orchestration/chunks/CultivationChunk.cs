@@ -19,9 +19,17 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, L
 		controls = new uint[layer.gridSize.y, layer.gridSize.x];
 	}
 
-	public override void Create(int level, bool destroy, Action done, LayerService service = null) {
-		if (destroy) {
-			foreach (var path in paths) {
+	public override void Create(
+		int level,
+		bool destroy,
+		Action ready,
+		Action done,
+		LayerService service = null
+	) {
+		if (destroy)
+		{
+			foreach (var path in paths)
+			{
 				PathSpec pathCopy = path;
 				ObjectPool<PathSpec>.GlobalReturn(ref pathCopy);
 			}
@@ -30,14 +38,16 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, L
 			dists.Clear();
 			controls.Clear();
 		}
-		else {
-			Build(done);
+		else
+		{
+			Build(ready, done);
 		}
 	}
 
 	static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(128);
 
-	void Build(Action done) {
+	void Build(Action ready, Action done) {
+		ready?.Invoke();
 		// We use a grid that covers an area larger than the chunk itself,
 		// so pathfinding can go beyond the chunk bounds.
 		Point gridSize = layer.gridSize; // larger than gridChunkRes!

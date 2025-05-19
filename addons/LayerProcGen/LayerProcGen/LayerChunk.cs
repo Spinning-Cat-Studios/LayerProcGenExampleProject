@@ -210,7 +210,13 @@ namespace Runevision.LayerProcGen {
 		/// }
 		/// </code>
 		/// </example>
-		public virtual void Create(int level, bool destroy, System.Action done = null, LayerService service = null) { }
+		public virtual void Create(
+			int level,
+			bool destroy,
+			System.Action ready = null,
+			System.Action done = null,
+			LayerService service = null
+		) { }
 
 		/// <summary>
 		/// Example output: "[TerrainChunk (3,-4) level 0]"

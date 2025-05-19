@@ -17,8 +17,19 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     public static string layerName { get; } = nameof(LSystemVillageLayer);
     private static NodePath _terrainPath { get; set; } = new NodePath("TerrainPath");
     static readonly int TotalChunks = 25;
+    
+    static readonly Action createChunkReadyDefault = static () =>
+    {
+        GD.Print($"🧱  A chunk level is ready to be generated, sending terrain path ({_terrainPath}) to village service");
+        SignalBus.Instance.CallDeferred(
+            "emit_signal",
+            SignalBus.SignalName.LSystemVillageChunkReady,
+            _terrainPath
+        );
+    };
 
-    static readonly Action createChunkDoneDefault = static () => {
+    static readonly Action createChunkDoneDefault = static () =>
+    {
         gridDoneCounter++;
         if (gridDoneCounter >= TotalChunks)
         {
@@ -71,6 +82,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
             rollingGridWidth: 32,
             rollingGridHeight: 0,
             rollingGridMaxOverlap: 3,
+            createChunkReady: createChunkReadyDefault,
             createChunkDone: createChunkDoneDefault,
             removeChunkDone: removeChunkDoneDefault,
             service: _villageService
@@ -87,12 +99,14 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         int    rollingGridWidth      = 32,
         int    rollingGridHeight     = 0,
         int    rollingGridMaxOverlap = 3,
-        Action createChunkDone      = null,
-        Action removeChunkDone      = null,
-        VillageService service = null)
+        Action createChunkReady      = null,
+        Action createChunkDone       = null,
+        Action removeChunkDone       = null,
+        VillageService service       = null)
         : base(rollingGridWidth,
                rollingGridHeight,
                rollingGridMaxOverlap,
+               createChunkReady ?? createChunkReadyDefault,
                createChunkDone ?? createChunkDoneDefault,
                removeChunkDone ?? removeChunkDoneDefault,
                service ?? _villageService)

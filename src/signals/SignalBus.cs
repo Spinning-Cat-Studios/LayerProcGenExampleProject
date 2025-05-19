@@ -19,6 +19,11 @@ public partial class SignalBus : Node
     [Signal]
     public delegate void AllLSystemVillageChunksGeneratedEventHandler();
 
+    [Signal]
+    public delegate void LSystemVillageChunkReadyEventHandler(
+        NodePath terrainPath
+    );
+
     // Singleton instance reference (set this script as an autoload in Project Settings).
     public static SignalBus Instance { get; private set; }
 

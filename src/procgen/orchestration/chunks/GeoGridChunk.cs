@@ -26,7 +26,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk, LayerService>
 
     }
 
-    public override void Create(int level, bool destroy, Action done, LayerService? service = null)
+    public override void Create(int level, bool destroy, Action ready, Action done, LayerService? service = null)
     {
         if (destroy)
         {
@@ -36,14 +36,15 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk, LayerService>
         }
         else
         {
-            Build(done);
+            Build(ready, done);
         }
     }
 
     static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(64);
 
-    void Build(Action done)
+    void Build(Action ready, Action done)
     {
+        ready?.Invoke();
         Point gridChunkRes = layer.gridChunkRes;
         Point gridOrigin = index * gridChunkRes;
         SimpleProfiler.ProfilerHandle ph;

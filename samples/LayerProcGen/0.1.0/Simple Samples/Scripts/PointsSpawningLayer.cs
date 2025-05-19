@@ -12,11 +12,17 @@ public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawnin
 	// Data for this chunk goes here.
 	TransformWrapper chunkParent;
 
-	public override void Create(int level, bool destroy, Action done, LayerService? service = null) {
+	public override void Create(
+		int level,
+		bool destroy,
+		Action ready,
+		Action done,
+		LayerService? service = null) {
 		if (destroy) {
 			QueuedGameObjectDestruction.Enqueue(chunkParent, false);
 		}
 		else {
+			ready?.Invoke();
 			// Get a List from the list pool.
 			List<Point> points = pointsListPool.Get();
 			

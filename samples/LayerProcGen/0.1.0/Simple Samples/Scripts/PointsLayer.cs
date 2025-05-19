@@ -9,7 +9,7 @@ public class PointsChunk : LayerChunk<PointsLayer, PointsChunk, LayerService> {
 	// This could be any data structure, a List of points is just an example.
 	public List<Point> pointList = new List<Point>();
 
-	public override void Create(int level, bool destroy, Action done, LayerService? service = null) {
+	public override void Create(int level, bool destroy, Action ready, Action done, LayerService? service = null) {
 		if (destroy) {
 			// Destroy data for this chunk here.
 			// Chunk objects are reused so keep data structures if possible
@@ -17,8 +17,10 @@ public class PointsChunk : LayerChunk<PointsLayer, PointsChunk, LayerService> {
 			pointList.Clear();
 		}
 		else {
+			ready?.Invoke();
 			// Create data for this chunk here.
-			for (int i = 0; i < 3; i++) {
+			for (int i = 0; i < 3; i++)
+			{
 				// bounds and index are useful properties of the base LayerChunk class.
 				Point point = new Point(
 					// The first two Range arguments specify the range.

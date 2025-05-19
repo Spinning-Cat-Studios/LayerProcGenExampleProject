@@ -36,7 +36,7 @@ public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
 		dists = new Vector3[layer.gridResolution, layer.gridResolution];
 	}
 
-	public override void Create(int level, bool destroy, Action done, LayerService service)
+	public override void Create(int level, bool destroy, Action ready, Action done, LayerService service)
 	{
 		if (destroy)
 		{
@@ -44,15 +44,16 @@ public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
 		}
 		else
 		{
-			Build(done);
+			Build(ready, done);
 		}
 
 		// GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
 		base.Create(level, destroy, done, null);
 	}
 
-	private void Build(Action done)
+	private void Build(Action ready, Action done)
 	{
+		ready?.Invoke();
 		SimpleProfiler.ProfilerHandle ph;
 
 		DPoint cellSize = (DPoint)layer.chunkSize / layer.chunkResolution;

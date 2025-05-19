@@ -27,6 +27,8 @@ namespace LayerProcGenExampleProject.Services
 
             SignalBus.Instance.AllLSystemVillageChunksGenerated
                 += OnAllLSystemVillageChunksGenerated;
+            SignalBus.Instance.LSystemVillageChunkReady
+                += OnLSystemVillageChunkReady;
             SignalBus.Instance.RoadsGenerated
                 += OnRoadsGenerated;
             _subscribed = true;
@@ -66,6 +68,13 @@ namespace LayerProcGenExampleProject.Services
         {
             // Handle the event when all L-System village chunks are generated.
             GD.Print("All L-System village chunks have been generated.");
+        }
+
+        private void OnLSystemVillageChunkReady(NodePath terrainPath)
+        {
+            // Handle the event when a chunk is ready to be generated.
+            GD.Print("A chunk level is ready to be generated, setting terrain path.");
+            SetTerrain(terrainPath);
         }
 
         private void OnRoadsGenerated(

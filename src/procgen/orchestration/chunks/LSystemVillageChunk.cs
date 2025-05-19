@@ -16,6 +16,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     public override void Create(
         int level,
         bool destroy,
+        Action ready,
         Action done,
         LayerService service)
     {
@@ -25,7 +26,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         if (destroy)
             housePositions.Clear();
         else
-            Build(done, villageService);
+            Build(ready, done, villageService);
     }
 
     public void DebugDraw() {
@@ -56,8 +57,9 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         return _chunkParent;
     }
 
-    void Build(Action done, VillageService villageService)
+    void Build(Action ready, Action done, VillageService villageService)
     {
+        ready?.Invoke();
         // 1. Generate all data in one call
         LSystemResult result = villageService.GenerateVillageData(index, layer);
 

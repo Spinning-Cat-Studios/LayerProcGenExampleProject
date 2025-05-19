@@ -32,7 +32,8 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk, LayerServi
 	// Used temporarily during generation.
 	List<Point> allPositions = new List<Point>();
 
-	public override void Create(int level, bool destroy, Action done, LayerService service = null) {
+	public override void Create(int level, bool destroy, Action ready, Action done, LayerService service = null) {
+		ready?.Invoke();
 		float pushDist = bounds.size.x * 0.5f;
 		int o = rand.GetInt(index.array);
 
