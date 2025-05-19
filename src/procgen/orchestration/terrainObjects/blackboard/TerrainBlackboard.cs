@@ -18,7 +18,7 @@ public static class TerrainBlackboard
             Terrain = new T3.Terrain3D(terrainNode);
             Storage = Terrain.Storage;
             TerrainPath = terrainPath;
-            GD.Print($"TerrainBlackboard initialized with node: {terrainNode.Name}");
+            // GD.Print($"TerrainBlackboard initialized with node: {terrainNode.Name}");
         }
         else
         {

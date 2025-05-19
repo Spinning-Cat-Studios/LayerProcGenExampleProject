@@ -31,6 +31,8 @@ namespace LayerProcGenExampleProject.Services
                 += OnLSystemVillageChunkReady;
             SignalBus.Instance.RoadsGenerated
                 += OnRoadsGenerated;
+            SignalBus.Instance.RoadPainterServiceTimerTimeout
+                += OnRoadPainterServiceTimerTimeout;
             _subscribed = true;
         }
 
@@ -42,6 +44,8 @@ namespace LayerProcGenExampleProject.Services
                 -= OnAllLSystemVillageChunksGenerated;
             SignalBus.Instance.RoadsGenerated
                 -= OnRoadsGenerated;
+            SignalBus.Instance.RoadPainterServiceTimerTimeout
+                -= OnRoadPainterServiceTimerTimeout;
             _subscribed = false;
         }
 
@@ -74,8 +78,15 @@ namespace LayerProcGenExampleProject.Services
             Vector3 chunkIndex)
         {
             // Handle the event when roads are generated.
-            GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
+            // GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
             _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
+        }
+
+        private void OnRoadPainterServiceTimerTimeout()
+        {
+            // Handle the event when the road painter service timer times out.
+            // GD.Print("RoadPainterService timer timeout.");
+            _roadPainterService.UpdateIfNeeded();
         }
 
         public void SaveChunk(LSystemVillageChunk chunk)

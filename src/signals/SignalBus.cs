@@ -20,6 +20,9 @@ public partial class SignalBus : Node
     public delegate void AllLSystemVillageChunksGeneratedEventHandler();
 
     [Signal]
+    public delegate void RoadPainterServiceTimerTimeoutEventHandler();
+
+    [Signal]
     public delegate void LSystemVillageChunkReadyEventHandler();
 
     // Singleton instance reference (set this script as an autoload in Project Settings).

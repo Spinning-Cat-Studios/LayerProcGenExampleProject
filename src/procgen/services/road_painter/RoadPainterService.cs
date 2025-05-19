@@ -7,9 +7,9 @@ using System;
 public class RoadPainterService
 {
     private NodePath _terrainPath;
-    private int   _roadTexId   = 2;   // ID in the TextureList
-    private float _halfWidth   = 1.0f;
-    private float _sampleStep  = 1.0f;
+    private int _roadTexId = 2;   // ID in the TextureList
+    private float _halfWidth = 1.0f;
+    private float _sampleStep = 1.0f;
     private Node _sceneRoot;
 
     private float _vSpacing;
@@ -23,15 +23,15 @@ public class RoadPainterService
     private bool IsTerrainSet => Terrain != null && Storage != null;
 
     public RoadPainterService() { }
-    
+
     private void BuildBrush()
     {
         _vSpacing = Terrain?.MeshVertexSpacing ?? 1.0f;
         var list = new List<Vector2>();
         for (float dx = -_halfWidth; dx <= _halfWidth; dx += _vSpacing)
-        for (float dz = -_halfWidth; dz <= _halfWidth; dz += _vSpacing)
-            if (dx*dx + dz*dz <= _halfWidth * _halfWidth)
-                list.Add(new Vector2(dx, dz));
+            for (float dz = -_halfWidth; dz <= _halfWidth; dz += _vSpacing)
+                if (dx * dx + dz * dz <= _halfWidth * _halfWidth)
+                    list.Add(new Vector2(dx, dz));
         _brushOffsets = list.ToArray();
     }
 
@@ -61,7 +61,7 @@ public class RoadPainterService
         for (int i = 0; i < roadStartIndices.Length; ++i)
         {
             int startIdx = (int)roadStartIndices[i];
-            int endIdx   = (int)roadEndIndices[i];
+            int endIdx = (int)roadEndIndices[i];
 
             if (startIdx < 0 || endIdx > road.Length || startIdx >= endIdx)
                 continue;
@@ -82,13 +82,13 @@ public class RoadPainterService
     private void PaintSubroad(Vector3[] road, uint roadCtrl)
     {
         int ROAD_START_INDEX = 2;
-        int ROAD_END_INDEX   = road.Length - 2;
+        int ROAD_END_INDEX = road.Length - 2;
         for (int i = ROAD_START_INDEX; i < ROAD_END_INDEX; ++i)
         {
             Vector3 a = road[i];
             Vector3 b = road[i + 1];
             float seg = a.DistanceTo(b);
-            int   n   = Mathf.CeilToInt(seg / _vSpacing);
+            int n = Mathf.CeilToInt(seg / _vSpacing);
 
             for (int s = 0; s <= n; ++s)
             {
@@ -100,5 +100,13 @@ public class RoadPainterService
         }
 
         _needsUpdate = true;
+    }
+    
+    // Flush the changes to the terrain.
+    public void UpdateIfNeeded()
+    {
+        if (!_needsUpdate) return;
+        Storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        _needsUpdate = false;
     }
 }

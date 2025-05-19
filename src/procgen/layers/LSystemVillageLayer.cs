@@ -49,19 +49,58 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     public override void ApplyArguments(LayerArgumentDictionary args)
     {
-        GD.Print("LSystemVillageLayer.ApplyArguments");
-        GD.Print(args.parameters);
+        // GD.Print("LSystemVillageLayer.ApplyArguments");
+        // GD.Print(args.parameters);
         // outer key is the layer’s name (you could also use GetType().Name)
         var myKey = nameof(LSystemVillageLayer);
 
         // look up the inner map for this layer
         if (args.parameters
-             .TryGetValue(myKey, out var layerParams)
-            && layerParams.TryGetValue("TerrainPath", out var pathVariant))
+                 .TryGetValue(myKey, out var layerParams))
         {
-            // we expect a plain string Variant here
-            var nodePath = new NodePath(pathVariant.AsString());
-            _terrainPath = nodePath;
+            // Handle terrain path as before
+            if (layerParams.TryGetValue("TerrainPath", out var pathVariant))
+            {
+                var nodePath = new NodePath(pathVariant.AsString());
+                _terrainPath = nodePath;
+            }
+
+            // Handle timer creation if specified
+            if (layerParams.TryGetValue("Node:Timer", out var timerSignalVariant))
+            {
+                string signalMethod = timerSignalVariant.AsString();
+                // GD.Print($"Creating Timer node for {myKey}, connecting to {signalMethod}");
+
+                var timer = new Timer();
+                timer.WaitTime = 0.5f; // Or make this configurable
+                timer.Autostart = true;
+                timer.OneShot = false;
+
+                var tree = Engine.GetMainLoop() as SceneTree;
+                var sceneRoot = tree?.CurrentScene as Node3D;
+                if (sceneRoot != null)
+                {
+                    sceneRoot.CallDeferred("add_child", timer);
+                    // GD.Print($"Timer node scheduled to be added to {sceneRoot.Name}");
+
+                    // Connect the timeout signal to a method on SignalBus.Instance
+                    timer.Timeout += () =>
+                    {
+                        SignalBus.Instance.CallDeferred(
+                            "emit_signal",
+                            signalMethod // this is the string, e.g. "RoadPainterServiceTimerTimeout"
+                        );
+                    };
+
+                    // Start the timer
+                    timer.Start();
+                    // GD.Print($"Timer started with wait time: {timer.WaitTime}");
+                }
+                else
+                {
+                    GD.PrintErr("Scene root is null, cannot add Timer node.");
+                }
+            }
         }
     }
 
@@ -109,7 +148,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
                removeChunkDone ?? removeChunkDoneDefault,
                service ?? _villageService)
     {
-        GD.Print("LSystemVillageLayer created");
+        // GD.Print("LSystemVillageLayer created");
 
         layerParent = new Node3D { Name = "LSystemVillageLayer" };
 

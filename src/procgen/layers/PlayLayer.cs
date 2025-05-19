@@ -22,6 +22,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             256,
             256
         ));
-        GD.Print("PlayLayer Create");
+        // GD.Print("PlayLayer Create");
     }
 }
