@@ -10,6 +10,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
     public PlayLayer()
     {
+        TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
+
         AddLayerDependency(new LayerDependency(LandscapeLayerD.instance, 2048, 2048));
         AddLayerDependency(new LayerDependency(LandscapeLayerC.instance, 1024, 1024));
         AddLayerDependency(new LayerDependency(LandscapeLayerB.instance,  512,  512));

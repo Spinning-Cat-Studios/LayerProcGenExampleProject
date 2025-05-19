@@ -20,7 +20,6 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         Action done,
         LayerService service)
     {
-        // GD.Print("LSystemVillageChunk Create");
         var villageService = service as VillageService
             ?? throw new InvalidCastException("Expected a VillageService");
         if (destroy)
