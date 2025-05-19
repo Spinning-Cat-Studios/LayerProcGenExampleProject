@@ -20,7 +20,6 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     
     static readonly Action createChunkReadyDefault = static () =>
     {
-        GD.Print($"🧱  A chunk level is ready to be generated, sending terrain path ({_terrainPath}) to village service");
         SignalBus.Instance.CallDeferred(
             "emit_signal",
             SignalBus.SignalName.LSystemVillageChunkReady,

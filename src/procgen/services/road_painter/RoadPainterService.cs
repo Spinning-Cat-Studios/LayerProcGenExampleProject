@@ -16,6 +16,7 @@ public class RoadPainterService
     private float _vSpacing;
     private Vector2[] _brushOffsets;
     private bool _needsUpdate;
+    private bool _isTerrainSet = false;
 
     public RoadPainterService(NodePath terrainPath)
     {
@@ -24,7 +25,13 @@ public class RoadPainterService
 
     public void SetTerrain(NodePath path)
     {
+        // First, drop the leading '../' if it exists
+        string pathStr = path.ToString();
+        if (pathStr.StartsWith("../"))
+            path = new NodePath(pathStr.Substring(3));
+
         GD.Print("Setting terrain path in RoadPainterService to: ", path);
+
         // Set the terrain path for the road painter service
         _terrainPath = path;
 
@@ -39,10 +46,14 @@ public class RoadPainterService
         Node3D terrainNode = _sceneRoot.GetNode<Node3D>(_terrainPath);
 
         // 3) wrap it
-        _terrain  = new T3.Terrain3D(terrainNode);
-        _storage  = _terrain.Storage;
+        _terrain = new T3.Terrain3D(terrainNode);
+        _storage = _terrain.Storage;
         _vSpacing = _terrain.MeshVertexSpacing;
         BuildBrush();
+
+        // 4) set the flag to true
+        _isTerrainSet = true;
+        GD.Print("Terrain path set in RoadPainterService.");
     }
     
     private void BuildBrush()
@@ -58,6 +69,13 @@ public class RoadPainterService
 
     public void PaintRoad(Vector3[] road, int[] roadStartIndices, int[] roadEndIndices)
     {
+        // Check if the terrain is set before proceeding
+        if (!_isTerrainSet)
+        {
+            GD.PrintErr("Terrain is not set. Cannot paint road.");
+            return;
+        }
+
         if (road.Length < 2) return;
 
         // one‑time initialisation

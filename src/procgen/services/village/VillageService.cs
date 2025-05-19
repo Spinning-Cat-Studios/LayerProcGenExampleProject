@@ -73,7 +73,6 @@ namespace LayerProcGenExampleProject.Services
         private void OnLSystemVillageChunkReady(NodePath terrainPath)
         {
             // Handle the event when a chunk is ready to be generated.
-            GD.Print("A chunk level is ready to be generated, setting terrain path.");
             SetTerrain(terrainPath);
         }
 
