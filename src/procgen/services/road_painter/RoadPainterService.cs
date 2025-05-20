@@ -40,9 +40,9 @@ public class RoadPainterService
     }
 
     public void PaintRoad(Vector3[] waypoints) =>
-        PaintRoad(waypoints, new int[] { 0 }, new int[] { waypoints.Length - 1 });
+        PaintRoad(waypoints, new int[] { 0 }, new int[] { waypoints.Length - 1 }, 0, 0);
 
-    public void PaintRoad(Vector3[] road, int[] roadStartIndices, int[] roadEndIndices)
+    public void PaintRoad(Vector3[] road, int[] roadStartIndices, int[] roadEndIndices, int roadStartIndex = 2, int roadEndIndexOffset = 1)
     {
         // Check if the terrain is set before proceeding
         if (!IsTerrainSet)
@@ -82,15 +82,14 @@ public class RoadPainterService
         // Paint each subroad
         foreach (var subroad in subroads)
         {
-            PaintSubroad(subroad.ToArray(), roadCtrl);
+            PaintSubroad(subroad.ToArray(), roadCtrl, roadStartIndex, roadEndIndexOffset);
         }
     }
 
-    private void PaintSubroad(Vector3[] road, uint roadCtrl)
+    private void PaintSubroad(Vector3[] road, uint roadCtrl, int startIndex, int endIndexOffset)
     {
-        int ROAD_START_INDEX = 2;
-        int ROAD_END_INDEX = road.Length - 2;
-        for (int i = ROAD_START_INDEX; i < ROAD_END_INDEX; ++i)
+        int road_end_index = road.Length - 1 - endIndexOffset;
+        for (int i = startIndex; i < road_end_index; ++i)
         {
             Vector3 a = road[i];
             Vector3 b = road[i + 1];
@@ -182,6 +181,7 @@ public class RoadPainterService
         // Merge, avoiding duplicate intermediate point
         left.RemoveAt(left.Count - 1);
         left.AddRange(right);
+        left.Add(b);
         return left;
     }
 
