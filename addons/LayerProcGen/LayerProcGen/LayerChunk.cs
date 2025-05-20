@@ -17,7 +17,7 @@ namespace Runevision.LayerProcGen {
 	/// <summary>
 	/// Internal. A level of a chunk, or alternatively a root usage of a layer.
 	/// </summary>
-	internal class ChunkLevelData : IPoolable {
+	public class ChunkLevelData : IPoolable {
 		/// <summary>
 		/// A provider chunk and level that another chunk and level depends on.
 		/// </summary>

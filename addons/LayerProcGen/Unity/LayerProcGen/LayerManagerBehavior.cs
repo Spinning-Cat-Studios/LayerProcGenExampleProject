@@ -55,7 +55,9 @@ namespace Runevision.LayerProcGen {
 				debugQueueText.text = MainThreadActionQueue.idle ? string.Empty
 					: "Action Queue: " + MainThreadActionQueue.queueCount;
 			if (debugStatusText && debugStatusText.enabled)
-				debugStatusText.text = SimpleProfiler.GetStatus();
+				Callable.From(() => {
+					debugStatusText.Text = SimpleProfiler.GetStatus();
+				}).CallDeferred();
 #endif
 		}
 	}

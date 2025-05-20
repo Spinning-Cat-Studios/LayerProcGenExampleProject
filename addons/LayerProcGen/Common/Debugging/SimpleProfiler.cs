@@ -72,8 +72,10 @@ namespace Runevision.Common {
 		static Dictionary<int, ProfilerInfo> dict = new Dictionary<int, ProfilerInfo>();
 		static StringBuilder statusBuilder = new StringBuilder();
 		static int currentTotal;
+		
 
-		public static bool AnyCurrent() {
+		public static bool AnyCurrent()
+		{
 			return currentTotal == 0;
 		}
 
@@ -194,7 +196,7 @@ namespace Runevision.Common {
 
 		static void StatusRecursive(StringBuilder logString, ProfilerInfo info, int level) {
 			if (level >= 0) {
-				int indent = level * 2;
+				int indent = Math.Max(0, level * 2); // Prevent negative indent
 				logString.AppendFormat("{0}{1} {2}\n",
 					new string(' ', indent),
 					info.name,

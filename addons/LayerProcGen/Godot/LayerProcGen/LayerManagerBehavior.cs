@@ -93,7 +93,9 @@ namespace Runevision.LayerProcGen
 			if (debugQueueText is { Visible: true })
 				debugQueueText.Text = MainThreadActionQueue.idle ? string.Empty : "Action Queue: " + MainThreadActionQueue.queueCount;
 			if (debugStatusText is { Visible: true })
-				debugStatusText.Text = SimpleProfiler.GetStatus();
+				Callable.From(() => {
+					debugStatusText.Text = SimpleProfiler.GetStatus();
+				}).CallDeferred();
 		}
 
 		public void StartCoroutine(IEnumerator coroutine)

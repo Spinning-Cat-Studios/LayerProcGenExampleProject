@@ -7,18 +7,21 @@
  */
 
 using Runevision.Common;
+using System;
 
 namespace Runevision.LayerProcGen {
 
 	/// <summary>
 	/// A layer's dependency on another with a specified level and padding.
 	/// </summary>
-	public class LayerDependency {
+	public class LayerDependency
+	{
 
 		public AbstractChunkBasedDataLayer layer;
 		public int level;
 		public int vPadding;
 		public int hPadding;
+		public Action<GridBounds, int, ChunkLevelData> Callback { get; set; }
 
 		public LayerDependency(AbstractChunkBasedDataLayer layer, int padding)
 			: this(layer, padding, padding) { }
@@ -28,11 +31,25 @@ namespace Runevision.LayerProcGen {
 			: this(layer, padding.x, padding.y, layer.GetLevelCount() - 1) { }
 		public LayerDependency(AbstractChunkBasedDataLayer layer, Point padding, int level)
 			: this(layer, padding.x, padding.y, level) { }
-		public LayerDependency(AbstractChunkBasedDataLayer layer, int hPadding, int vPadding, int level) {
+		public LayerDependency(AbstractChunkBasedDataLayer layer, int hPadding, int vPadding, int level)
+		{
 			this.layer = layer;
 			this.hPadding = hPadding;
 			this.vPadding = vPadding;
 			this.level = level;
+		}
+		public LayerDependency(
+			AbstractChunkBasedDataLayer layer,
+			int hPadding,
+			int vPadding,
+			int level,
+			Action<GridBounds, int, ChunkLevelData> callback = null)
+		{
+			this.layer = layer;
+			this.hPadding = hPadding;
+			this.vPadding = vPadding;
+			this.level = level;
+			this.Callback = callback;
 		}
 	}
 
