@@ -39,6 +39,9 @@ public class RoadPainterService
         _brushOffsets = list.ToArray();
     }
 
+    public void PaintRoad(Vector3[] waypoints) =>
+        PaintRoad(waypoints, new int[] { 0 }, new int[] { waypoints.Length - 1 });
+
     public void PaintRoad(Vector3[] road, int[] roadStartIndices, int[] roadEndIndices)
     {
         // Check if the terrain is set before proceeding
@@ -111,12 +114,12 @@ public class RoadPainterService
         foreach (var (a, b, aJson, bJson) in adjacentHamletRoadEndpoints)
         {
             // Use the endpoints (a, b) to generate roads between the hamlets.
-            GD.Print($"Generating road between hamlets at {a} and {b}");
+            // GD.Print($"Generating road between hamlets at {a} and {b}");
             // Compute intermediate point between a and b given the JSON data.
             // This is a three step process:
             // 1. Determine which pairs of road endpoints are closest to each other.
-            // 2. Compute the intermediate point between the two closest endpoints.
-            // 3. Add a certain amount of noise to the intermediate point to make it more natural, this should be proportional to the distance between the two endpoints.
+            // 2. Compute intermediate waypoints between the two closest endpoints.
+            // 3. Paint the road between the two endpoints using the waypoints.
 
             // Step 1.
             // Deserialize the string information to get the road endpoints.
@@ -144,24 +147,42 @@ public class RoadPainterService
                 }
             }
 
-            // Step 2.
-            // Compute the intermediate point between the two closest endpoints.
-            Vector3 intermediatePoint = (closestA + closestB) / 2;
+            // Step 2. Compute waypoints between the two closest endpoints.
+            float minSegmentLength = closestDistance * 0.1f;
+            float noiseFactor = 0.1f;
+            List<Vector3> waypoints = GenerateNoisyWaypoints(closestA, closestB, minSegmentLength, noiseFactor);
 
-            // Step 3.
-            // Add a certain amount of noise to the intermediate point to make it more natural,
-            // this should be proportional to the distance between the two endpoints.
-            float noiseAmount = closestDistance * 0.1f; // Adjust the noise factor as needed
-            var (jitterX, jitterZ) = GenerateJitter(noiseAmount);
-            intermediatePoint += new Vector3(jitterX, 0, jitterZ);
 
-            GD.Print($"Generated road between {a} and {b} with intermediate point {intermediatePoint}");
+            // GD.Print($"Generated waypoints between {a} and {b}: {waypoints.Count} waypoints.");
 
-            // Following this, we want to successively compute more intermediate points recursively
-            // i.e. through a stack of iterated function calls e.g. towers of hanoi-esque, until successive
-            // intermediate points are within a certain distance of each other.
-            // This will be done in a follow-up commit.
+            // Step 3. Paint the road using the waypoints.
+            PaintRoad([.. waypoints]);
         }
+    }
+
+    private List<Vector3> GenerateNoisyWaypoints(Vector3 a, Vector3 b, float minSegmentLength, float noiseFactor)
+    {
+        float distance = a.DistanceTo(b);
+        if (distance < minSegmentLength)
+        {
+            // Base case: just return the endpoints
+            return new List<Vector3> { a, b };
+        }
+
+        // Compute intermediate point with noise
+        Vector3 intermediate = (a + b) / 2;
+        float noiseAmount = distance * noiseFactor;
+        var (jitterX, jitterZ) = GenerateJitter(noiseAmount);
+        intermediate += new Vector3(jitterX, 0, jitterZ);
+
+        // Recursively subdivide
+        var left = GenerateNoisyWaypoints(a, intermediate, minSegmentLength, noiseFactor);
+        var right = GenerateNoisyWaypoints(intermediate, b, minSegmentLength, noiseFactor);
+
+        // Merge, avoiding duplicate intermediate point
+        left.RemoveAt(left.Count - 1);
+        left.AddRange(right);
+        return left;
     }
 
     public (float jitterX, float jitterZ) GenerateJitter(float range)

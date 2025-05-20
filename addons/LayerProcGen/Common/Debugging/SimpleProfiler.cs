@@ -89,7 +89,7 @@ namespace Runevision.Common {
 			statusBuilder.Clear();
 			try {
 				lock (dict) {
-					StatusRecursive(statusBuilder, root, -1);
+					StatusRecursive(statusBuilder, root, 0);
 				}
 				return statusBuilder.ToString();
 			}
