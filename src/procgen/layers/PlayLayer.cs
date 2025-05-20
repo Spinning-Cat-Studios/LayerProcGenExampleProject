@@ -24,18 +24,16 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             256,
             LSystemVillageLayer.instance.GetLevelCount() - 1,
             (bounds, level, levelData) => {
-                SignalBus.Instance.LandscapeChunksReady += () => {
-                    void Handler() {
-                        LSystemVillageLayer.instance.EnsureLoadedInBounds(bounds, level, levelData);
-                        GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
-                    }
+                void Handler() {
+                    LSystemVillageLayer.instance.EnsureLoadedInBounds(bounds, level, levelData);
+                    GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
+                }
 
-                    SignalBus.Instance.LandscapeChunksReady += Handler;
+                SignalBus.Instance.LandscapeChunksReady += Handler;
 
-                    // Check if already ready, and manually trigger if so
-                    if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-                        Handler();
-                };
+                // Check if already ready, and manually trigger if so
+                if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
+                    Handler();
             }
         ));
         // GD.Print("PlayLayer Create");

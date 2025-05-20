@@ -92,17 +92,25 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
                         }))
                     );
 
-                    timer.TreeEntered += () =>
-                    {
-                        timer.Start();
-                        // GD.Print($"Timer started with wait time: {timer.WaitTime}");
-                    };
+                    timer.CallDeferred(
+                        "connect",
+                        "tree_entered",
+                        Callable.From((Action)(() =>
+                        {
+                            // GD.Print($"Timer tree entered");
+                            timer.Start();
+                        }))
+                    );
 
-                    timer.TreeExited += () =>
-                    {
-                        timer.Stop();
-                        // GD.Print($"Timer stopped");
-                    };
+                    timer.CallDeferred(
+                        "connect",
+                        "tree_exited",
+                        Callable.From((Action)(() =>
+                        {
+                            // GD.Print($"Timer tree exited");
+                            timer.Stop();
+                        }))
+                    );
                 }
                 else
                 {
