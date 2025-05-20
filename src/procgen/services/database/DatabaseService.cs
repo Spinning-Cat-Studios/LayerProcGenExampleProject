@@ -1,23 +1,23 @@
 using SQLite;
 using Godot;
-using LayerProcGenExampleProject.Services.SQLite.Entities;
+using LayerProcGenExampleProject.Services.Database.Entities;
 using System.IO;
 using System.Linq;
 using System;
 
-namespace LayerProcGenExampleProject.Services.SQLite
+namespace LayerProcGenExampleProject.Services.Database
 {
-    // SQLiteService is a singleton class that manages a shared SQLite connection.
+    // DatabaseService is a singleton class that manages a shared SQLite connection.
     // It ensures that only one connection is used across the application,
     // and it handles the reference counting to dispose of the connection when no longer needed.
-    public class SQLiteService : IDisposable
+    public class DatabaseService : IDisposable
     {
         private static readonly object _lock = new();
         private static SQLiteConnection _sharedConnection;
         private static int _referenceCount = 0;
 
         // Stores data to /Users/<current_user>/Library/Application\ Support/Godot/app_userdata/LayerProcGenExampleProject/db/LSystemVillageChunk.db
-        public SQLiteService(string databaseFileName = "LSystemVillageChunk.db")
+        public DatabaseService(string databaseFileName = "LSystemVillageChunk.db")
         {
             lock (_lock)
             {

@@ -3,7 +3,7 @@ using Runevision.LayerProcGen;
 using Godot;
 using System;
 using LayerProcGenExampleProject.Services;
-using LayerProcGenExampleProject.Services.SQLite;
+using LayerProcGenExampleProject.Services.Database;
 using Godot.Util;
 using System.Linq;
 
@@ -113,7 +113,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     }
 
     private static readonly VillageService _villageService = new VillageService(
-        new SQLiteService(),
+        new DatabaseService(),
         new TurtleInterpreterService(GetHeightAt),
         new RoadPainterService()
     );

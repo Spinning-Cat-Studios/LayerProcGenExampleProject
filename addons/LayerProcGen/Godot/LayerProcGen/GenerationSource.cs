@@ -13,7 +13,7 @@
 using Runevision.Common;
 using Godot;
 using System.Linq;
-using LayerProcGenExampleProject.Services.SQLite;
+using LayerProcGenExampleProject.Services.Database;
 
 namespace Runevision.LayerProcGen;
 
@@ -34,7 +34,7 @@ public partial class GenerationSource : Node3D
 
 	public override void _EnterTree()
 	{
-		using (var db = new SQLiteService())
+		using (var db = new DatabaseService())
 		{
 			db.ClearAllData();
 		}

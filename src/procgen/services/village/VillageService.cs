@@ -1,5 +1,5 @@
-using LayerProcGenExampleProject.Services.SQLite;
-using LayerProcGenExampleProject.Services.SQLite.Entities;
+using LayerProcGenExampleProject.Services.Database;
+using LayerProcGenExampleProject.Services.Database.Entities;
 using System.Collections.Generic;
 using Godot;
 using Runevision.LayerProcGen;
@@ -15,7 +15,7 @@ namespace LayerProcGenExampleProject.Services
         const int CHUNK_Y_RANDOM = 19349663;
         const int LSYSTEM_ITERATIONS = 5;
 
-        private readonly SQLiteService _sqliteService;
+        private readonly DatabaseService _databaseService;
         private readonly TurtleInterpreterService _turtleInterpreterService;
         private readonly RoadPainterService _roadPainterService;
 
@@ -50,12 +50,12 @@ namespace LayerProcGenExampleProject.Services
         }
 
         public VillageService(
-            SQLiteService sqliteService,
+            DatabaseService databaseService,
             TurtleInterpreterService turtleInterpreterService,
             RoadPainterService roadPainterService)
             : base("Village") // Pass the required layerName to the base constructor
         {
-            _sqliteService = sqliteService;
+            _databaseService = databaseService;
             _turtleInterpreterService = turtleInterpreterService;
             _roadPainterService = roadPainterService;
 
@@ -91,12 +91,12 @@ namespace LayerProcGenExampleProject.Services
 
         public void SaveChunk(LSystemVillageChunk chunk)
         {
-            _sqliteService.Insert(chunk);
+            _databaseService.Insert(chunk);
         }
 
         public List<RoadChunkData> GetAllChunks()
         {
-            return _sqliteService.Table<RoadChunkData>().ToList();
+            return _databaseService.Table<RoadChunkData>().ToList();
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ namespace LayerProcGenExampleProject.Services
             Runevision.Common.Point chunkIndex,
             List<Vector3> roadEnds
         ) {
-            _sqliteService.Insert(new RoadChunkData
+            _databaseService.Insert(new RoadChunkData
             {
                 ChunkX = chunkIndex.x,
                 ChunkY = chunkIndex.y,
