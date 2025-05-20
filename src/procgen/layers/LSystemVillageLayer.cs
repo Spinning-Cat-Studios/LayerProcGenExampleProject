@@ -29,19 +29,16 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     static readonly Action createChunkDoneDefault = static () =>
     {
-        int count = Interlocked.Increment(ref gridDoneCounter);
-        if (count >= TotalChunks)
+        lock (_gridDoneLock)
         {
-            lock (_gridDoneLock)
+            int count = ++gridDoneCounter;
+            if (count >= TotalChunks)
             {
-                if (gridDoneCounter >= TotalChunks)
-                {
-                    SignalBus.Instance.CallDeferred(
-                        "emit_signal",
-                        SignalBus.SignalName.AllLSystemVillageChunksGenerated
-                    );
-                    Interlocked.Exchange(ref gridDoneCounter, 0);
-                }
+                SignalBus.Instance.CallDeferred(
+                    "emit_signal",
+                    SignalBus.SignalName.AllLSystemVillageChunksGenerated
+                );
+                gridDoneCounter = 0;
             }
         }
     };

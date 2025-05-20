@@ -36,18 +36,19 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 	{
 		lock (LandscapeChunkCounterBlackboard.ChunkCountLock)
 		{
-			LandscapeChunkCounterBlackboard.ChunkCountDictionary[layerName] = LandscapeChunkCounterBlackboard.ChunkCountDictionary.GetValueOrDefault(layerName, 0) + 1;
+			LandscapeChunkCounterBlackboard.ChunkCountDictionary[layerName] =
+				LandscapeChunkCounterBlackboard.ChunkCountDictionary.GetValueOrDefault(layerName, 0) + 1;
 			// GD.Print($"🗺️ {layerName} chunk created, number created: {LandscapeChunkCounterBlackboard.ChunkCountDictionary[layerName]}");
 			LandscapeChunkCounterBlackboard.GridDoneCounter++;
 			// GD.Print($"{LandscapeChunkCounterBlackboard.GridDoneCounter} chunks done generating cf {TotalChunkDictionary.Values.Sum()}");
 			if (LandscapeChunkCounterBlackboard.GridDoneCounter >= TotalChunkDictionary.Values.Sum())
 			{
+				LandscapeChunkCounterBlackboard.LandscapeChunksAreReady = true;
 				GD.Print("✅ All chunks finished generating, emitting signal to TerrainManagerService");
 				SignalBus.Instance.CallDeferred(
 					"emit_signal",
 					SignalBus.SignalName.LandscapeChunksReady
 				);
-				LandscapeChunkCounterBlackboard.LandscapeChunksAreReady = true;
 				LandscapeChunkCounterBlackboard.GridDoneCounter = 0;
 			}
 		}
