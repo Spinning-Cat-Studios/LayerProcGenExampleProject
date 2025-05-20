@@ -25,6 +25,9 @@ public partial class SignalBus : Node
     [Signal]
     public delegate void LSystemVillageChunkReadyEventHandler();
 
+    [Signal]
+    public delegate void LandscapeChunksReadyEventHandler();
+
     // Singleton instance reference (set this script as an autoload in Project Settings).
     public static SignalBus Instance { get; private set; }
 
