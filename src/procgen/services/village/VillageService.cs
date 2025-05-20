@@ -147,12 +147,15 @@ namespace LayerProcGenExampleProject.Services
         public void PersistRoadChunk(
             Runevision.Common.Point chunkIndex,
             List<Vector3> roadEnds
-        ) {
+        )
+        {
+            var roadEndPositionsString = string.Join(", ", roadEnds.Select(p => p.ToString()));
+
             _databaseService.Insert(new RoadChunkData
             {
                 ChunkX = chunkIndex.x,
                 ChunkY = chunkIndex.y,
-                RoadEndPositions = roadEnds
+                RoadEndPositions = roadEndPositionsString
             });
         }
     }

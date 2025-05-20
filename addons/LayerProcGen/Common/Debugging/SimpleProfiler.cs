@@ -72,18 +72,20 @@ namespace Runevision.Common {
 		static Dictionary<int, ProfilerInfo> dict = new Dictionary<int, ProfilerInfo>();
 		static StringBuilder statusBuilder = new StringBuilder();
 		static int currentTotal;
-		
+		static bool isLoggingStatus = false;
 
-		public static bool AnyCurrent()
-		{
+		public static bool AnyCurrent() {
 			return currentTotal == 0;
 		}
 
 		public static string GetStatus() {
+			if (isLoggingStatus) return ""; // Prevent re-entrancy
+			isLoggingStatus = true;
 			statusBuilder.Clear();
 			lock (dict) {
 				StatusRecursive(statusBuilder, root, -1);
 			}
+			isLoggingStatus = false;
 			return statusBuilder.ToString();
 		}
 

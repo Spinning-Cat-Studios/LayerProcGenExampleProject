@@ -18,14 +18,14 @@ namespace LayerProcGenExampleProject.Services.Database.Entities
         public int ChunkY { get; set; }
 
         // SQLite does not directly store Vector3, so serialize as JSON
-        public string RoadEndPositionsJson { get; set; }
+        public string RoadEndPositions { get; set; }
 
-        [Ignore]
-        public List<Vector3> RoadEndPositions
-        {
-            get => JsonSerializer.Deserialize<List<Vector3>>(RoadEndPositionsJson);
-            set => RoadEndPositionsJson = JsonSerializer.Serialize(value);
-        }
+        // [Ignore]
+        // public List<Vector3> RoadEndPositions
+        // {
+        //     get => JsonSerializer.Deserialize<List<Vector3>>(RoadEndPositionsJson);
+        //     set => RoadEndPositionsJson = JsonSerializer.Serialize(value);
+        // }
     }
 }
 

@@ -100,6 +100,7 @@ namespace LayerProcGenExampleProject.Services.Database
             lock (_lock)
             {
                 var allChunks = _sharedConnection.Table<RoadChunkData>().ToList();
+
                 var chunkDict = allChunks.ToDictionary(c => (c.ChunkX, c.ChunkY));
 
                 var result = new List<((int, int), (int, int), string, string)>();
@@ -112,16 +113,18 @@ namespace LayerProcGenExampleProject.Services.Database
                     var right = (chunk.ChunkX + 1, chunk.ChunkY);
                     if (chunkDict.TryGetValue(right, out var rightChunk))
                     {
-                        result.Add((coord, right, chunk.RoadEndPositionsJson, rightChunk.RoadEndPositionsJson));
+                        result.Add((coord, right, chunk.RoadEndPositions, rightChunk.RoadEndPositions));
                     }
 
                     // Check top neighbor (x, y+1)
                     var up = (chunk.ChunkX, chunk.ChunkY + 1);
                     if (chunkDict.TryGetValue(up, out var upChunk))
                     {
-                        result.Add((coord, up, chunk.RoadEndPositionsJson, upChunk.RoadEndPositionsJson));
+                        result.Add((coord, up, chunk.RoadEndPositions, upChunk.RoadEndPositions));
                     }
                 }
+
+                GD.Print($"[DB] Retrieved {result.Count} adjacent road end pairs.");
 
                 return result;
             }
