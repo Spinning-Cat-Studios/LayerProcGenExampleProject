@@ -1,19 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using Godot;
-using Godot.Collections;
 using Godot.Util;
-using Runevision.Common;
 using Runevision.LayerProcGen;
 using Terrain3DBindings;
-using Terrain3D.Scripts.Generation.Layers;
-using Terrain3D.Scripts.Utilities;
+using SemaphoreSlim = System.Threading.SemaphoreSlim;
 
 public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 	where L : LandscapeLayer<L, C, S>, new()
@@ -28,7 +20,48 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 	public float terrainBaseHeight = -100;
 	public float terrainHeight = 200;
 
-	protected LandscapeLayer(int rollingGridWidth = 32, int rollingGridHeight = 0, int rollingGridMaxOverlap = 3) : base(rollingGridWidth, rollingGridHeight, rollingGridMaxOverlap)
+	// public static readonly SemaphoreSlim ChunkCountSemaphore = new(1, 1);
+
+	public static int gridDoneCounter { get; set; } = 0;
+
+    static readonly Godot.Collections.Dictionary<string, int> TotalChunkDictionary = new()
+	{
+		{ nameof(LandscapeLayerA), 25 },
+		{ nameof(LandscapeLayerB), 25 },
+		{ nameof(LandscapeLayerC), 81 },
+		{ nameof(LandscapeLayerD), 25 }
+	};
+
+	static void createChunkDoneDefault(string layerName)
+	{
+		lock (LandscapeChunkCounterBlackboard.ChunkCountLock)
+		{
+			LandscapeChunkCounterBlackboard.ChunkCountDictionary[layerName] = LandscapeChunkCounterBlackboard.ChunkCountDictionary.GetValueOrDefault(layerName, 0) + 1;
+			// GD.Print($"🗺️ {layerName} chunk created, number created: {LandscapeChunkCounterBlackboard.ChunkCountDictionary[layerName]}");
+			LandscapeChunkCounterBlackboard.GridDoneCounter++;
+			// GD.Print($"{LandscapeChunkCounterBlackboard.GridDoneCounter} chunks done generating cf {TotalChunkDictionary.Values.Sum()}");
+			if (LandscapeChunkCounterBlackboard.GridDoneCounter >= TotalChunkDictionary.Values.Sum())
+			{
+				GD.Print("✅ All chunks finished generating, emitting signal to TerrainManagerService");
+				SignalBus.Instance.CallDeferred(
+					"emit_signal",
+					SignalBus.SignalName.LandscapeChunksReady
+				);
+				LandscapeChunkCounterBlackboard.GridDoneCounter = 0;
+			}
+		}
+	}
+
+	protected LandscapeLayer(
+		int rollingGridWidth = 32,
+		int rollingGridHeight = 0,
+		int rollingGridMaxOverlap = 3,
+		Action createChunkDone = null
+	) : base(
+		rollingGridWidth,
+		rollingGridHeight,
+		rollingGridMaxOverlap,
+		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)))
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
 		if (lodLevel < 2)

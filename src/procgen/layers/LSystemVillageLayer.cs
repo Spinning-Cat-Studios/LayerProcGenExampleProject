@@ -15,7 +15,6 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     public static int gridDoneCounter { get; set; } = 0;
 
     public static string layerName { get; } = nameof(LSystemVillageLayer);
-    private static NodePath _terrainPath { get; set; } = new NodePath("TerrainPath");
     static readonly int TotalChunks = 25;
     
     static readonly Action createChunkReadyDefault = static () =>
@@ -31,7 +30,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         gridDoneCounter++;
         if (gridDoneCounter >= TotalChunks)
         {
-            GD.Print("✅  All chunks finished generating, emitting signal to VillageManagerService");
+            GD.Print("✅ All chunks finished generating, emitting signal to VillageManagerService");
             SignalBus.Instance.CallDeferred(
                 "emit_signal",
                 SignalBus.SignalName.AllLSystemVillageChunksGenerated
@@ -58,13 +57,6 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         if (args.parameters
                  .TryGetValue(myKey, out var layerParams))
         {
-            // Handle terrain path as before
-            if (layerParams.TryGetValue("TerrainPath", out var pathVariant))
-            {
-                var nodePath = new NodePath(pathVariant.AsString());
-                _terrainPath = nodePath;
-            }
-
             // Handle timer creation if specified
             if (layerParams.TryGetValue("Node:Timer", out var timerSignalVariant))
             {
