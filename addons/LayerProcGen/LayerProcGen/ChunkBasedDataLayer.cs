@@ -275,9 +275,20 @@ namespace Runevision.LayerProcGen {
 			// External dependencies on other layers.
 			foreach (LayerDependency dependency in dependencies[level])
 			{
+				// GD.Print($"Adding dependency {dependency.layer.GetType().Name} to {GetType().Name}");
 				GridBounds requiredBounds = chunkBounds;
 				requiredBounds.Expand(dependency.hPadding, dependency.hPadding, dependency.vPadding, dependency.vPadding);
-				dependency.layer.EnsureLoadedInBounds(requiredBounds, dependency.level, levelData);
+
+				if (dependency.Callback != null)
+				{
+					// Defer the dependency loading to the callback
+					dependency.Callback.Invoke(requiredBounds, dependency.level, levelData);
+				}
+				else
+				{
+					// Immediate loading as before
+					dependency.layer.EnsureLoadedInBounds(requiredBounds, dependency.level, levelData);
+				}
 			}
 		}
 
