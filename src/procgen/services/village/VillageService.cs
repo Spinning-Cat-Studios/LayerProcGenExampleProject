@@ -55,6 +55,7 @@ namespace LayerProcGenExampleProject.Services
             RoadPainterService roadPainterService)
             : base("Village") // Pass the required layerName to the base constructor
         {
+            GD.Print("VillageService: Constructor called.");
             _databaseService = databaseService;
             _turtleInterpreterService = turtleInterpreterService;
             _roadPainterService = roadPainterService;
@@ -64,8 +65,7 @@ namespace LayerProcGenExampleProject.Services
 
         private void OnAllLSystemVillageChunksGenerated()
         {
-            // Handle the event when all L-System village chunks are generated.
-            GD.Print("All L-System village chunks have been generated.");
+            GD.Print("VillageService: All L-System village chunks have been generated.");
         }
 
         private void OnLSystemVillageChunkReady() { }
