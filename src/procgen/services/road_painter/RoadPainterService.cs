@@ -101,7 +101,16 @@ public class RoadPainterService
 
         _needsUpdate = true;
     }
-    
+
+    public void GenerateRoadsBetweenHamlets(List<((int, int) a, (int, int) b, string aJson, string bJson)> adjacentHamletRoadEndpoints)
+    {
+        foreach (var (a, b, aJson, bJson) in adjacentHamletRoadEndpoints)
+        {
+            // Use the endpoints (a, b) to generate roads between the hamlets.
+            GD.Print($"Generating road between hamlets at {a} and {b}");
+        }
+    }
+
     // Flush the changes to the terrain.
     public void UpdateIfNeeded()
     {
