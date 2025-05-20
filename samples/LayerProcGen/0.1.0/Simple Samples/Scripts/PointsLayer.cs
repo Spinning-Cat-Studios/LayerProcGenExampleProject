@@ -2,13 +2,14 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
+using System;
 
-public class PointsChunk : LayerChunk<PointsLayer, PointsChunk> {
+public class PointsChunk : LayerChunk<PointsLayer, PointsChunk, LayerService> {
 	// Data for this chunk goes here.
 	// This could be any data structure, a List of points is just an example.
 	public List<Point> pointList = new List<Point>();
 
-	public override void Create(int level, bool destroy) {
+	public override void Create(int level, bool destroy, Action ready, Action done, LayerService? service = null) {
 		if (destroy) {
 			// Destroy data for this chunk here.
 			// Chunk objects are reused so keep data structures if possible
@@ -16,8 +17,10 @@ public class PointsChunk : LayerChunk<PointsLayer, PointsChunk> {
 			pointList.Clear();
 		}
 		else {
+			ready?.Invoke();
 			// Create data for this chunk here.
-			for (int i = 0; i < 3; i++) {
+			for (int i = 0; i < 3; i++)
+			{
 				// bounds and index are useful properties of the base LayerChunk class.
 				Point point = new Point(
 					// The first two Range arguments specify the range.
@@ -30,7 +33,7 @@ public class PointsChunk : LayerChunk<PointsLayer, PointsChunk> {
 	}
 }
 
-public class PointsLayer : ChunkBasedDataLayer<PointsLayer, PointsChunk> {
+public class PointsLayer : ChunkBasedDataLayer<PointsLayer, PointsChunk, LayerService> {
 	// Specify the world space dimensions of the chunks.
 	public override int chunkW { get { return 256; } }
 	public override int chunkH { get { return 256; } }

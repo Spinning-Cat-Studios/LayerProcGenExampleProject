@@ -16,6 +16,15 @@ public partial class SignalBus : Node
         Vector3[] roadEndPositions,
         Vector3 chunkIndex);
 
+    [Signal]
+    public delegate void AllLSystemVillageChunksGeneratedEventHandler();
+
+    [Signal]
+    public delegate void RoadPainterServiceTimerTimeoutEventHandler();
+
+    [Signal]
+    public delegate void LSystemVillageChunkReadyEventHandler();
+
     // Singleton instance reference (set this script as an autoload in Project Settings).
     public static SignalBus Instance { get; private set; }
 

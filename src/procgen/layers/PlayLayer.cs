@@ -3,13 +3,15 @@ using Godot;
 using Runevision.LayerProcGen;
 using Runevision.Common;
 
-public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk>
+public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 {
     public override int chunkW => 8;
     public override int chunkH => 8;
 
     public PlayLayer()
     {
+        TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
+
         AddLayerDependency(new LayerDependency(LandscapeLayerD.instance, 2048, 2048));
         AddLayerDependency(new LayerDependency(LandscapeLayerC.instance, 1024, 1024));
         AddLayerDependency(new LayerDependency(LandscapeLayerB.instance,  512,  512));
@@ -20,6 +22,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk>
             256,
             256
         ));
-        GD.Print("PlayLayer Create");
+        // GD.Print("PlayLayer Create");
     }
 }

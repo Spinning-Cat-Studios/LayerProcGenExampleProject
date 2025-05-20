@@ -13,7 +13,7 @@
 using Runevision.Common;
 using Godot;
 using System.Linq;
-using LayerProcGenExampleProject.Data;
+using LayerProcGenExampleProject.Services.Database;
 
 namespace Runevision.LayerProcGen;
 
@@ -23,14 +23,18 @@ namespace Runevision.LayerProcGen;
 
 public partial class GenerationSource : Node3D
 {
-	public LayerNamedReference layer = new LayerNamedReference();
+	public LayerNamedReference layer = new();
+
+	[Export(PropertyHint.ResourceType, nameof(LayerArgumentDictionary))]
+	public LayerArgumentDictionary layerArguments = new();
+
 	public Point size = Point.zero;
 
 	public TopLayerDependency dep { get; private set; }
 
 	public override void _EnterTree()
 	{
-		using (var db = new DatabaseContext())
+		using (var db = new DatabaseService())
 		{
 			db.ClearAllData();
 		}
@@ -59,7 +63,7 @@ public partial class GenerationSource : Node3D
 		{
 			if (dep != null)
 				dep.isActive = false;
-			dep = new TopLayerDependency(instance, size);
+			dep = new TopLayerDependency(instance, size, layerArguments);
 		}
 	}
 

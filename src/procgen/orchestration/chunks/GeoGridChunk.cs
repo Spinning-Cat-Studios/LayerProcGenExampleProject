@@ -7,7 +7,7 @@ using Godot;
 using Godot.Collections;
 using Godot.Util;
 
-public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
+public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk, LayerService>, IDisposable
 {
     public float[,] heights;
     public Vector3[,] dists;
@@ -26,7 +26,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
 
     }
 
-    public override void Create(int level, bool destroy)
+    public override void Create(int level, bool destroy, Action ready, Action done, LayerService? service = null)
     {
         if (destroy)
         {
@@ -36,14 +36,15 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         }
         else
         {
-            Build();
+            Build(ready, done);
         }
     }
 
     static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(64);
 
-    void Build()
+    void Build(Action ready, Action done)
     {
+        ready?.Invoke();
         Point gridChunkRes = layer.gridChunkRes;
         Point gridOrigin = index * gridChunkRes;
         SimpleProfiler.ProfilerHandle ph;
@@ -86,5 +87,6 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk>, IDisposable
         	});
         locationSpecListPool.Return(ref locationSpecs);
         SimpleProfiler.End(ph);
+        done?.Invoke();
     }
 }

@@ -2,8 +2,9 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
+using System;
 
-public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
+public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, LayerService> {
 	public List<PathSpec> paths = new List<PathSpec>();
 
 	float[,] heights;
@@ -18,9 +19,17 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 		controls = new uint[layer.gridSize.y, layer.gridSize.x];
 	}
 
-	public override void Create(int level, bool destroy) {
-		if (destroy) {
-			foreach (var path in paths) {
+	public override void Create(
+		int level,
+		bool destroy,
+		Action ready,
+		Action done,
+		LayerService service = null
+	) {
+		if (destroy)
+		{
+			foreach (var path in paths)
+			{
 				PathSpec pathCopy = path;
 				ObjectPool<PathSpec>.GlobalReturn(ref pathCopy);
 			}
@@ -29,14 +38,16 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 			dists.Clear();
 			controls.Clear();
 		}
-		else {
-			Build();
+		else
+		{
+			Build(ready, done);
 		}
 	}
 
 	static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(128);
 
-	void Build() {
+	void Build(Action ready, Action done) {
+		ready?.Invoke();
 		// We use a grid that covers an area larger than the chunk itself,
 		// so pathfinding can go beyond the chunk bounds.
 		Point gridSize = layer.gridSize; // larger than gridChunkRes!
@@ -90,6 +101,7 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk> {
 			CreatePath(locA, locB, HeightFunction, CostFunction);
 		}
 		connectionPairsPool.Return(ref connectionPairs);
+		done?.Invoke();
 	}
 
 	static ListPool<Location> connectionPairsPool = new ListPool<Location>(20);

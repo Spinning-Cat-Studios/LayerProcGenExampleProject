@@ -15,9 +15,10 @@ using Terrain3DBindings;
 using Terrain3D.Scripts.Generation.Layers;
 using Terrain3D.Scripts.Utilities;
 
-public struct MapQueuedTerrainCallback<L, C> : IQueuedAction
-	where L : LandscapeLayer<L, C>, new()
-	where C : LandscapeChunk<L, C>, new()
+public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
+	where L : LandscapeLayer<L, C, S>, new()
+	where C : LandscapeChunk<L, C, S>, new()
+	where S : LayerService
 {
 	public float[,] heightmap;
 	public uint[,] controlmap;

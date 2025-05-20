@@ -15,9 +15,10 @@ using Terrain3DBindings;
 using Terrain3D.Scripts.Generation.Layers;
 using Terrain3D.Scripts.Utilities;
 
-public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
-	where L : LandscapeLayer<L, C>, new()
-	where C : LandscapeChunk<L, C>, new()
+public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
+	where L : LandscapeLayer<L, C, S>, new()
+	where C : LandscapeChunk<L, C, S>, new()
+	where S : LayerService
 {
 	static ListPool<LocationSpec> locationSpecListPool = new ListPool<LocationSpec>(128);
 	static ListPool<PathSpec> pathSpecListPool = new ListPool<PathSpec>(128);
@@ -35,7 +36,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 		dists = new Vector3[layer.gridResolution, layer.gridResolution];
 	}
 
-	public override void Create(int level, bool destroy)
+	public override void Create(int level, bool destroy, Action ready, Action done, LayerService service)
 	{
 		if (destroy)
 		{
@@ -43,15 +44,16 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 		}
 		else
 		{
-			Build();
+			Build(ready, done);
 		}
 
 		// GD.Print($"{GetType().Name} ({bounds}) {MethodBase.GetCurrentMethod()}: {level}, {destroy}");
-		base.Create(level, destroy);
+		base.Create(level, destroy, done, null);
 	}
 
-	private void Build()
+	private void Build(Action ready, Action done)
 	{
+		ready?.Invoke();
 		SimpleProfiler.ProfilerHandle ph;
 
 		DPoint cellSize = (DPoint)layer.chunkSize / layer.chunkResolution;
@@ -118,7 +120,7 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 		IQueuedAction action;
 		if (layer.chunkW < (int)RegionSize.SIZE_1024)
 		{
-			action = new MapQueuedTerrainCallback<L, C>(
+			action = new MapQueuedTerrainCallback<L, C, S>(
 				heights, controls, null, null,
 				layer, index
 			);
@@ -147,13 +149,14 @@ public abstract class LandscapeChunk<L, C> : LayerChunk<L, C>
 
 				// CopyControls(layer.gridResolution, ref controls, ref controlImg);
 
-				action = new ImgQueuedTerrainCallback<L, C>(
+				action = new ImgQueuedTerrainCallback<L, C, S>(
 					heightImg, detailImg, null,
 					layer, startPos, index
 				);
 				MainThreadActionQueue.Enqueue(action);
 			}
 		}
+		done?.Invoke();
 	}
 
 	private void ControlBase(ref uint[,] controlMap)
