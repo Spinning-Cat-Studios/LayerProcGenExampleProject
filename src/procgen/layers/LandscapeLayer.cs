@@ -47,6 +47,7 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 					"emit_signal",
 					SignalBus.SignalName.LandscapeChunksReady
 				);
+				LandscapeChunkCounterBlackboard.LandscapeChunksAreReady = true;
 				LandscapeChunkCounterBlackboard.GridDoneCounter = 0;
 			}
 		}

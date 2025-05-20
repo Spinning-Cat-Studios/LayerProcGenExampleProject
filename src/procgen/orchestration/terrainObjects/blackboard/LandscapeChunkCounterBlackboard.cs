@@ -10,5 +10,7 @@ public static class LandscapeChunkCounterBlackboard
 
     public static int GridDoneCounter { get; set; } = 0;
 
+    public static bool LandscapeChunksAreReady = false;
+
     public static readonly object ChunkCountLock = new();
 }

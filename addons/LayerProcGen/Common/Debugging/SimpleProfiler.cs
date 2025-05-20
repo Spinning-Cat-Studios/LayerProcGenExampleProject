@@ -79,16 +79,23 @@ namespace Runevision.Common {
 		}
 
 		public static string GetStatus() {
-			if (isLoggingStatus)  {
-				return "SomeStatus";
+			if (isLoggingStatus)
+			{
+				System.Diagnostics.Debug.Assert(false,
+					"Profiler is already logging status. This is a bug.");
+				return string.Empty;
 			}
 			isLoggingStatus = true;
 			statusBuilder.Clear();
-			lock (dict) {
-				StatusRecursive(statusBuilder, root, -1);
+			try {
+				lock (dict) {
+					StatusRecursive(statusBuilder, root, -1);
+				}
+				return statusBuilder.ToString();
 			}
-			isLoggingStatus = false;
-			return statusBuilder.ToString();
+			finally {
+				isLoggingStatus = false;
+			}
 		}
 
 		public static ProfilerHandle Begin(string sectionName, int priority = 0) {
