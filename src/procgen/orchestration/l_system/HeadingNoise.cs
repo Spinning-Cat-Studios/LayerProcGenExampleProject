@@ -5,23 +5,28 @@ using System.Collections.Generic;
 public static class HeadingNoise
 {
     // One FastNoiseLite per world‑seed so result is deterministic.
+    private static readonly object _cacheLock = new();
     private static readonly Dictionary<int, FastNoiseLite> _cache = new();
 
     public static Vector3 PerturbDirection(
         Vector3 dir, Vector3 pos, int seed,
         float maxDeg = 8f, float freq = 0.002f
     ){
-        if (!_cache.TryGetValue(seed, out var noise))
+            FastNoiseLite noise;
+        lock (_cacheLock)
         {
-            noise = new FastNoiseLite();
-            noise.Seed            = seed;
-            noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Perlin);
-            noise.SetFrequency(freq);
-            noise.SetFractalType(FastNoiseLite.FractalTypeEnum.Fbm);
-            noise.SetFractalOctaves(3);
-            noise.SetFractalLacunarity(2f);
-            noise.SetFractalGain(0.5f);
-            _cache[seed] = noise;
+            if (!_cache.TryGetValue(seed, out noise))
+            {
+                noise = new FastNoiseLite();
+                noise.Seed = seed;
+                noise.SetNoiseType(FastNoiseLite.NoiseTypeEnum.Perlin);
+                noise.SetFrequency(freq);
+                noise.SetFractalType(FastNoiseLite.FractalTypeEnum.Fbm);
+                noise.SetFractalOctaves(3);
+                noise.SetFractalLacunarity(2f);
+                noise.SetFractalGain(0.5f);
+                _cache[seed] = noise;
+            }
         }
 
         // Sample 2D noise in [-1…1], convert to radians

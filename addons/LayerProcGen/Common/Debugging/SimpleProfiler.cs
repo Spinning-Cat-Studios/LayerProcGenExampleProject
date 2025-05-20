@@ -79,7 +79,9 @@ namespace Runevision.Common {
 		}
 
 		public static string GetStatus() {
-			if (isLoggingStatus) return ""; // Prevent re-entrancy
+			if (isLoggingStatus)  {
+				return "SomeStatus";
+			}
 			isLoggingStatus = true;
 			statusBuilder.Clear();
 			lock (dict) {

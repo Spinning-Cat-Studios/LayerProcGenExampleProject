@@ -3,6 +3,8 @@ using T3  = Terrain3DBindings;
 using static Terrain3D.Scripts.Utilities.ControlExtension;
 using System.Collections.Generic;
 using System;
+using System.Text.Json;
+using System.Linq;
 
 public class RoadPainterService
 {
@@ -15,14 +17,16 @@ public class RoadPainterService
     private float _vSpacing;
     private Vector2[] _brushOffsets;
     private bool _needsUpdate;
-
-
+    private readonly Random _rnd;
     private T3.Terrain3D Terrain => TerrainBlackboard.Terrain;
     private T3.Terrain3DStorage Storage => TerrainBlackboard.Storage;
 
     private bool IsTerrainSet => Terrain != null && Storage != null;
 
-    public RoadPainterService() { }
+    public RoadPainterService()
+    { 
+        _rnd = new Random(Constants.GLOBAL_SEED);
+    }
 
     private void BuildBrush()
     {
@@ -108,7 +112,63 @@ public class RoadPainterService
         {
             // Use the endpoints (a, b) to generate roads between the hamlets.
             GD.Print($"Generating road between hamlets at {a} and {b}");
+            // Compute intermediate point between a and b given the JSON data.
+            // This is a three step process:
+            // 1. Determine which pairs of road endpoints are closest to each other.
+            // 2. Compute the intermediate point between the two closest endpoints.
+            // 3. Add a certain amount of noise to the intermediate point to make it more natural, this should be proportional to the distance between the two endpoints.
+
+            // Step 1.
+            // Deserialize the string information to get the road endpoints.
+            var aRoadEndPositionsArrList = JsonSerializer.Deserialize<List<float[]>>(aJson);
+            var bRoadEndPositionsArrLlist = JsonSerializer.Deserialize<List<float[]>>(bJson);
+            var aRoadEndPositions = aRoadEndPositionsArrList.Select(arr => new Vector3(arr[0], arr[1], arr[2])).ToList();
+            var bRoadEndPositions = bRoadEndPositionsArrLlist.Select(arr => new Vector3(arr[0], arr[1], arr[2])).ToList();
+
+            // Find the closest pair of road endpoints between hamlet a and b.
+            Vector3 closestA = Vector3.Zero;
+            Vector3 closestB = Vector3.Zero;
+            float closestDistance = float.MaxValue;
+
+            foreach (var aPos in aRoadEndPositions)
+            {
+                foreach (var bPos in bRoadEndPositions)
+                {
+                    float distance = aPos.DistanceTo(bPos);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestA = aPos;
+                        closestB = bPos;
+                    }
+                }
+            }
+
+            // Step 2.
+            // Compute the intermediate point between the two closest endpoints.
+            Vector3 intermediatePoint = (closestA + closestB) / 2;
+
+            // Step 3.
+            // Add a certain amount of noise to the intermediate point to make it more natural,
+            // this should be proportional to the distance between the two endpoints.
+            float noiseAmount = closestDistance * 0.1f; // Adjust the noise factor as needed
+            var (jitterX, jitterZ) = GenerateJitter(noiseAmount);
+            intermediatePoint += new Vector3(jitterX, 0, jitterZ);
+
+            GD.Print($"Generated road between {a} and {b} with intermediate point {intermediatePoint}");
+
+            // Following this, we want to successively compute more intermediate points recursively
+            // i.e. through a stack of iterated function calls e.g. towers of hanoi-esque, until successive
+            // intermediate points are within a certain distance of each other.
+            // This will be done in a follow-up commit.
         }
+    }
+
+    public (float jitterX, float jitterZ) GenerateJitter(float range)
+    {
+        float jitterX = (float)(_rnd.NextDouble() * (2 * range) - range);
+        float jitterZ = (float)(_rnd.NextDouble() * (2 * range) - range);
+        return (jitterX, jitterZ);
     }
 
     // Flush the changes to the terrain.

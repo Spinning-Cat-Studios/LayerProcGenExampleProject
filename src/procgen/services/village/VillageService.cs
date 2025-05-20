@@ -5,16 +5,12 @@ using Godot;
 using Runevision.LayerProcGen;
 using System;
 using System.Linq;
+using System.Text.Json;
 
 namespace LayerProcGenExampleProject.Services
 {
     public class VillageService : LayerService
     {
-        const int GLOBAL_SEED = 12345; // TODO: make this configurable and/or random but stored in the database when finally hook this up to a backend.
-        const int CHUNK_X_RANDOM = 73856093;
-        const int CHUNK_Y_RANDOM = 19349663;
-        const int LSYSTEM_ITERATIONS = 5;
-
         private readonly DatabaseService _databaseService;
         private readonly TurtleInterpreterService _turtleInterpreterService;
         private readonly RoadPainterService _roadPainterService;
@@ -113,7 +109,7 @@ namespace LayerProcGenExampleProject.Services
             LSystemVillageLayer layer)
         {
             // (1) l-system
-            int seed = GLOBAL_SEED + chunkIndex.x * CHUNK_X_RANDOM + chunkIndex.y * CHUNK_Y_RANDOM;
+            int seed = Constants.GLOBAL_SEED + chunkIndex.x * Constants.CHUNK_X_RANDOM + chunkIndex.y * Constants.CHUNK_Y_RANDOM;
             var lSystemService = new LSystemService(seed);
             var axiom = lSystemService.SelectRandomAxiom();
 
@@ -128,7 +124,7 @@ namespace LayerProcGenExampleProject.Services
             var config = new LSystemConfig
             {
                 ChunkSeed = seed,
-                Iterations = LSYSTEM_ITERATIONS,
+                Iterations = Constants.LSYSTEM_ITERATIONS,
                 WorldOrigin = worldOrigin,
                 Axiom = axiom
             };
@@ -149,7 +145,8 @@ namespace LayerProcGenExampleProject.Services
             List<Vector3> roadEnds
         )
         {
-            var roadEndPositionsString = string.Join(", ", roadEnds.Select(p => p.ToString()));
+            var serializableList = roadEnds.Select(v => new float[] { v.X, v.Y, v.Z }).ToList();
+            var roadEndPositionsString = JsonSerializer.Serialize(serializableList);
 
             _databaseService.Insert(new RoadChunkData
             {
