@@ -81,6 +81,9 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             index.ToVector3()
         );
 
+        // GD.Print($"Chunk {index.x}, {index.y} generated with {result.HousePositions.Count} houses and {result.RoadEndPositions.Count} road ends.");
+        // convert List<Vector3> to String
+        // GD.Print($"Road end positions: {roadEndPositionsString}");
         // 4. Persist to DB
         villageService.PersistRoadChunk(index, result.RoadEndPositions);
 

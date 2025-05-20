@@ -72,19 +72,30 @@ namespace Runevision.Common {
 		static Dictionary<int, ProfilerInfo> dict = new Dictionary<int, ProfilerInfo>();
 		static StringBuilder statusBuilder = new StringBuilder();
 		static int currentTotal;
-		
+		static bool isLoggingStatus = false;
 
-		public static bool AnyCurrent()
-		{
+		public static bool AnyCurrent() {
 			return currentTotal == 0;
 		}
 
 		public static string GetStatus() {
-			statusBuilder.Clear();
-			lock (dict) {
-				StatusRecursive(statusBuilder, root, -1);
+			if (isLoggingStatus)
+			{
+				System.Diagnostics.Debug.Assert(false,
+					"Profiler is already logging status. This is a bug.");
+				return string.Empty;
 			}
-			return statusBuilder.ToString();
+			isLoggingStatus = true;
+			statusBuilder.Clear();
+			try {
+				lock (dict) {
+					StatusRecursive(statusBuilder, root, 0);
+				}
+				return statusBuilder.ToString();
+			}
+			finally {
+				isLoggingStatus = false;
+			}
 		}
 
 		public static ProfilerHandle Begin(string sectionName, int priority = 0) {

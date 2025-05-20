@@ -6,17 +6,19 @@ using LayerProcGenExampleProject.Services;
 using LayerProcGenExampleProject.Services.Database;
 using Godot.Util;
 using System.Linq;
+using System.Threading;
 
 public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk, VillageService>, ILayerVisualization
 {
 	public override int chunkW { get { return 128; } }
 	public override int chunkH { get { return 128; } }
 
-    public static int gridDoneCounter { get; set; } = 0;
+    private static int gridDoneCounter = 0;
 
     public static string layerName { get; } = nameof(LSystemVillageLayer);
     static readonly int TotalChunks = 25;
-    
+    private static readonly object _gridDoneLock = new();
+
     static readonly Action createChunkReadyDefault = static () =>
     {
         SignalBus.Instance.CallDeferred(
@@ -27,15 +29,17 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     static readonly Action createChunkDoneDefault = static () =>
     {
-        gridDoneCounter++;
-        if (gridDoneCounter >= TotalChunks)
+        lock (_gridDoneLock)
         {
-            GD.Print("✅ All chunks finished generating, emitting signal to VillageManagerService");
-            SignalBus.Instance.CallDeferred(
-                "emit_signal",
-                SignalBus.SignalName.AllLSystemVillageChunksGenerated
-            );
-            gridDoneCounter = 0;
+            int count = ++gridDoneCounter;
+            if (count >= TotalChunks)
+            {
+                SignalBus.Instance.CallDeferred(
+                    "emit_signal",
+                    SignalBus.SignalName.AllLSystemVillageChunksGenerated
+                );
+                gridDoneCounter = 0;
+            }
         }
     };
     static readonly Action removeChunkDoneDefault = static () => GD.Print("🗑️  A chunk level got removed");
@@ -63,7 +67,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
                 string signalMethod = timerSignalVariant.AsString();
                 // GD.Print($"Creating Timer node for {myKey}, connecting to {signalMethod}");
 
-                var timer = new Timer();
+                var timer = new Godot.Timer();
                 timer.WaitTime = 0.5f; // Or make this configurable
                 timer.Autostart = true;
                 timer.OneShot = false;
@@ -76,25 +80,37 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
                     // GD.Print($"Timer node scheduled to be added to {sceneRoot.Name}");
 
                     // Connect the timeout signal to a method on SignalBus.Instance
-                    timer.Timeout += () =>
-                    {
-                        SignalBus.Instance.CallDeferred(
-                            "emit_signal",
-                            signalMethod // this is the string, e.g. "RoadPainterServiceTimerTimeout"
-                        );
-                    };
+                    timer.CallDeferred(
+                        "connect",
+                        "timeout",
+                        Callable.From((Action)(() =>
+                        {
+                            SignalBus.Instance.CallDeferred(
+                                "emit_signal",
+                                signalMethod
+                            );
+                        }))
+                    );
 
-                    timer.TreeEntered += () =>
-                    {
-                        timer.Start();
-                        // GD.Print($"Timer started with wait time: {timer.WaitTime}");
-                    };
+                    timer.CallDeferred(
+                        "connect",
+                        "tree_entered",
+                        Callable.From((Action)(() =>
+                        {
+                            // GD.Print($"Timer tree entered");
+                            timer.Start();
+                        }))
+                    );
 
-                    timer.TreeExited += () =>
-                    {
-                        timer.Stop();
-                        // GD.Print($"Timer stopped");
-                    };
+                    timer.CallDeferred(
+                        "connect",
+                        "tree_exited",
+                        Callable.From((Action)(() =>
+                        {
+                            // GD.Print($"Timer tree exited");
+                            timer.Stop();
+                        }))
+                    );
                 }
                 else
                 {
@@ -148,7 +164,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
                removeChunkDone ?? removeChunkDoneDefault,
                service ?? _villageService)
     {
-        // GD.Print("LSystemVillageLayer created");
+        GD.Print("LSystemVillageLayer constructor called");
 
         layerParent = new Node3D { Name = "LSystemVillageLayer" };
 

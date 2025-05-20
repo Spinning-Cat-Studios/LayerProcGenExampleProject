@@ -4,6 +4,7 @@ using LayerProcGenExampleProject.Services.Database.Entities;
 using System.IO;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace LayerProcGenExampleProject.Services.Database
 {
@@ -87,6 +88,45 @@ namespace LayerProcGenExampleProject.Services.Database
             lock (_lock)
             {
                 return _sharedConnection.Table<T>();
+            }
+        }
+
+        // Retrieves road end pairs from adjacent hamlets,
+        // which were built in different LSystemVillageChunks.
+        // This is useful for road generation, as it allows us to connect roads
+        // between hamlets that are in different chunks.
+        public List<((int, int) a, (int, int) b, string aJson, string bJson)> RetrieveAdjacentRoadEndPairs()
+        {
+            lock (_lock)
+            {
+                var allChunks = _sharedConnection.Table<RoadChunkData>().ToList();
+
+                var chunkDict = allChunks.ToDictionary(c => (c.ChunkX, c.ChunkY));
+
+                var result = new List<((int, int), (int, int), string, string)>();
+
+                foreach (var chunk in allChunks)
+                {
+                    var coord = (chunk.ChunkX, chunk.ChunkY);
+
+                    // Check right neighbor (x+1, y)
+                    var right = (chunk.ChunkX + 1, chunk.ChunkY);
+                    if (chunkDict.TryGetValue(right, out var rightChunk))
+                    {
+                        result.Add((coord, right, chunk.RoadEndPositions, rightChunk.RoadEndPositions));
+                    }
+
+                    // Check top neighbor (x, y+1)
+                    var up = (chunk.ChunkX, chunk.ChunkY + 1);
+                    if (chunkDict.TryGetValue(up, out var upChunk))
+                    {
+                        result.Add((coord, up, chunk.RoadEndPositions, upChunk.RoadEndPositions));
+                    }
+                }
+
+                GD.Print($"[DB] Retrieved {result.Count} adjacent road end pairs.");
+
+                return result;
             }
         }
     }
