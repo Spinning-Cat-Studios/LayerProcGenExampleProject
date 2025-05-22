@@ -12,6 +12,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     private NodePath _terrainNodePath = new();
     private Dictionary<string, object> _layerArguments = new();
 
+    private LayerArgumentDictionary _layerArgumentsResource = new();
+
     private Dictionary<string, object> _layers = new()
     {
         { nameof(LandscapeLayerA), LandscapeLayerA.instance },
@@ -34,8 +36,15 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         );
     }
 
+    public PlayLayer(LayerArgumentDictionary layerGlobalArgs): base()
+    {
+        _layerArgumentsResource = layerGlobalArgs;
+        GD.Print($"PlayLayer constructor called with arguments: {layerGlobalArgs}");
+    }
+
     public PlayLayer()
     {
+        GD.Print("PlayLayer constructor called with no arguments.");
         Callable.From(HookSignalsDeferred).CallDeferred();
 
         var landscapeLayerD = _layers[nameof(LandscapeLayerD)] as LandscapeLayerD;

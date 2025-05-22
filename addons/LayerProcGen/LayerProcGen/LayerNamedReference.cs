@@ -6,6 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+using Godot;
 using Runevision.Common;
 using System;
 using System.Linq;
@@ -37,16 +38,25 @@ namespace Runevision.LayerProcGen {
 			return cachedLayerType;
 		}
 
-		public AbstractChunkBasedDataLayer GetLayerInstance() {
-			if (cachedLayerInstance == null || className != cachedClassName) {
-				Type t = GetLayerType();
-				if (t == null)
-					return null;
-				PropertyInfo propInfo = t.GetProperty("instance",
-					BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-				cachedLayerInstance = (AbstractChunkBasedDataLayer)propInfo?.GetValue(null);
+		public AbstractChunkBasedDataLayer GetLayerInstance(LayerArgumentDictionary layerArguments = null) {
+			Type t = GetLayerType();
+			if (t == null)
+				return null;
+
+			if (layerArguments != null && layerArguments.parameters != null && layerArguments.parameters.Count > 0)
+			{
+				// Look for the static InstanceWithArguments method
+				var method = t.GetMethod("InstanceWithArguments", BindingFlags.Public | BindingFlags.Static);
+				if (method != null)
+				{
+					return (AbstractChunkBasedDataLayer)method.Invoke(null, new object[] { layerArguments.parameters });
+				}
 			}
-			return cachedLayerInstance;
+
+			// Fallback to singleton instance
+			PropertyInfo propInfo = t.GetProperty("instance",
+				BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+			return (AbstractChunkBasedDataLayer)propInfo?.GetValue(null);
 		}
 	}
 

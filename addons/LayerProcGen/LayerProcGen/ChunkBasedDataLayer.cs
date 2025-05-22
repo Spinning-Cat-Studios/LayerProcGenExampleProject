@@ -106,6 +106,23 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
+		public static L InstanceWithArguments(LayerArgumentDictionary args)
+		{
+			// Try to find a constructor that takes LayerArgumentDictionary
+			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+			if (ctor != null)
+			{
+				return (L)ctor.Invoke(new object[] { args });
+			}
+			else
+			{
+				// fallback to default constructor
+				var layer = new L();
+				layer.SetLayerArguments(args.parameters);
+				return layer;
+			}
+		}
+
 		internal override void ResetInstance()
 		{
 			s_Instance = null;

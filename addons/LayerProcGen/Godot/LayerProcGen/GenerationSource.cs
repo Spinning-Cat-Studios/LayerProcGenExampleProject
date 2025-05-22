@@ -34,6 +34,9 @@ public partial class GenerationSource : Node3D
 
 	public override void _EnterTree()
 	{
+		// TODO: this (the DatabaseService) should be an interface and not a concrete class
+		// in order to be able to use this in other projects
+		// Regardless should not be a direct reference to part of the implementation.
 		using (var db = new DatabaseService())
 		{
 			db.ClearAllData();
@@ -56,7 +59,7 @@ public partial class GenerationSource : Node3D
 			return;
 
 		// Get layer instance.
-		AbstractChunkBasedDataLayer instance = layer.GetLayerInstance();
+		AbstractChunkBasedDataLayer instance = layer.GetLayerInstance(layerArguments);
 
 		// Create top layer dependency based on layer.
 		if (instance != null && (dep == null || dep.layer != instance))
