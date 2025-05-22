@@ -48,7 +48,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         Callable.From(HookSignalsDeferred).CallDeferred();
 
         var landscapeLayerD = _layers[nameof(LandscapeLayerD)] as LandscapeLayerD;
-        landscapeLayerD.SetLayerArguments(_layerArguments);
+        // landscapeLayerD.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerD,
@@ -59,7 +59,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var landscapeLayerC = _layers[nameof(LandscapeLayerC)] as LandscapeLayerC;
-        landscapeLayerC.SetLayerArguments(_layerArguments);
+        // landscapeLayerC.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerC,
@@ -70,7 +70,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var landscapeLayerB = _layers[nameof(LandscapeLayerB)] as LandscapeLayerB;
-        landscapeLayerB.SetLayerArguments(_layerArguments);
+        // landscapeLayerB.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerB,
@@ -81,7 +81,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var landscapeLayerA = _layers[nameof(LandscapeLayerA)] as LandscapeLayerA;
-        landscapeLayerA.SetLayerArguments(_layerArguments);
+        // landscapeLayerA.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerA,
@@ -92,7 +92,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var villageLayer = LSystemVillageLayer.instance;
-        villageLayer.SetLayerArguments(_layerArguments);
+        // villageLayer.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             villageLayer,
@@ -143,25 +143,25 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                 TerrainBlackboard.Initialize(terrainPathVariant.ToString());
             }
         }
-        foreach(var layer in _layers)
-        {
-            var layerInstance = layer.Value as IChunkBasedDataLayer;
-            // Debugging output
-            // GD.Print($"Setting layer arguments for {layer.Key}");
-            // foreach (var kvp in _layerArguments)
-            // {
-            //     GD.Print($"  {kvp.Key}: {kvp.Value}");
-            // }
-            // Note, this runs _after_ the layer is constructed,
-            // so we will need a signal in order to use the arguments
-            // in the relevant layer.
-            //
-            // Since one of these determines how much to construct,
-            // we need to have a default LOD to use in the interim until a 
-            // timer timeout runs.
-            //
-            // Feels a bit convoluted ... will think about this a bit more.
-            layerInstance.SetLayerArguments(_layerArguments);
-        }
+        // foreach(var layer in _layers)
+        // {
+        //     var layerInstance = layer.Value as IChunkBasedDataLayer;
+        //     // Debugging output
+        //     // GD.Print($"Setting layer arguments for {layer.Key}");
+        //     // foreach (var kvp in _layerArguments)
+        //     // {
+        //     //     GD.Print($"  {kvp.Key}: {kvp.Value}");
+        //     // }
+        //     // Note, this runs _after_ the layer is constructed,
+        //     // so we will need a signal in order to use the arguments
+        //     // in the relevant layer.
+        //     //
+        //     // Since one of these determines how much to construct,
+        //     // we need to have a default LOD to use in the interim until a 
+        //     // timer timeout runs.
+        //     //
+        //     // Feels a bit convoluted ... will think about this a bit more.
+        //     layerInstance.SetLayerArguments(_layerArguments);
+        // }
     }
 }

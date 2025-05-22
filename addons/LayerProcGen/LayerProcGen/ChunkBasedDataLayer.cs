@@ -21,8 +21,8 @@ namespace Runevision.LayerProcGen {
 		int chunkH { get; }
 		Point chunkSize { get; }
 		int GetLevelCount();
-		Dictionary<string, object> layerArguments { get; }
-		void SetLayerArguments(Dictionary<string, object> args);
+		LayerArgumentDictionary layerArguments { get; }
+		void SetLayerArguments(LayerArgumentDictionary args);
 		void LayerPostmount(LayerArgumentDictionary layerArguments);
 		void HandleDependenciesForLevel(int level, Action<LayerDependency> func);
 		void HandleAllAbstractChunks(int minChunkLevel, Action<AbstractLayerChunk> func);
@@ -47,11 +47,11 @@ namespace Runevision.LayerProcGen {
 		public abstract int chunkW { get; }
 		public abstract int chunkH { get; }
 		public Point chunkSize { get { return new Point(chunkW, chunkH); } }
-		private Dictionary<string, object> _layerArguments = new();
+		private LayerArgumentDictionary _layerArguments = new();
 
-		public virtual Dictionary<string, object> layerArguments => _layerArguments;
+		public virtual LayerArgumentDictionary layerArguments => _layerArguments;
 
-		public void SetLayerArguments(Dictionary<string, object> args)
+		public void SetLayerArguments(LayerArgumentDictionary args)
 		{
 			// GD.Print($"SetLayerArguments {GetType().Name} {args}");
 			// foreach (var kvp in args)
@@ -108,17 +108,20 @@ namespace Runevision.LayerProcGen {
 
 		public static L InstanceWithArguments(LayerArgumentDictionary args)
 		{
+			GD.Print($"InstanceWithArguments {typeof(L).Name} {args}");
 			// Try to find a constructor that takes LayerArgumentDictionary
 			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
 			if (ctor != null)
 			{
+				GD.Print($"Found constructor for {typeof(L).Name} with LayerArgumentDictionary");
 				return (L)ctor.Invoke(new object[] { args });
 			}
 			else
 			{
+				GD.Print($"No constructor found for {typeof(L).Name} with LayerArgumentDictionary, using default constructor");
 				// fallback to default constructor
 				var layer = new L();
-				layer.SetLayerArguments(args.parameters);
+				layer.SetLayerArguments(args);
 				return layer;
 			}
 		}
