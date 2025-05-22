@@ -1,4 +1,5 @@
 using Godot;
+using Runevision.LayerProcGen;
 
 public partial class SignalBus : Node
 {
@@ -27,6 +28,11 @@ public partial class SignalBus : Node
 
     [Signal]
     public delegate void LandscapeChunksReadyEventHandler();
+
+    [Signal]
+    public delegate void PlayLayerReadyEventHandler(
+        LayerArgumentDictionary layerGlobalArgs
+    );
 
     // Singleton instance reference (set this script as an autoload in Project Settings).
     public static SignalBus Instance { get; private set; }

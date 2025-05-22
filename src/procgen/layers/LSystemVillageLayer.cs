@@ -7,6 +7,7 @@ using LayerProcGenExampleProject.Services.Database;
 using Godot.Util;
 using System.Linq;
 using System.Threading;
+using System.Collections.Generic;
 
 public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk, VillageService>, ILayerVisualization
 {
@@ -50,22 +51,20 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         return TerrainNoise.GetHeight(coords2D);
     }
 
-    public override void ApplyArguments(LayerArgumentDictionary args)
+    public override void LayerPostmount(LayerArgumentDictionary layerGlobalArgs)
     {
-        // GD.Print("LSystemVillageLayer.ApplyArguments");
-        // GD.Print(args.parameters);
         // outer key is the layer’s name (you could also use GetType().Name)
-        var myKey = nameof(LSystemVillageLayer);
+        var villageLayerKey = nameof(LSystemVillageLayer);
 
         // look up the inner map for this layer
-        if (args.parameters
-                 .TryGetValue(myKey, out var layerParams))
+        if (layerGlobalArgs.parameters
+                 .TryGetValue(villageLayerKey, out var layerParams))
         {
             // Handle timer creation if specified
             if (layerParams.TryGetValue("Node:Timer", out var timerSignalVariant))
             {
                 string signalMethod = timerSignalVariant.AsString();
-                // GD.Print($"Creating Timer node for {myKey}, connecting to {signalMethod}");
+                // GD.Print($"Creating Timer node for {villageLayerKey}, connecting to {signalMethod}");
 
                 var timer = new Godot.Timer();
                 timer.WaitTime = 0.5f; // Or make this configurable
@@ -164,7 +163,9 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
                removeChunkDone ?? removeChunkDoneDefault,
                service ?? _villageService)
     {
-        GD.Print("LSystemVillageLayer constructor called");
+        // GD.Print("LSystemVillageLayer constructor called");
+        // Convert this.layerArguments from a Dictionary to a String
+        // for easier debugging
 
         layerParent = new Node3D { Name = "LSystemVillageLayer" };
 
