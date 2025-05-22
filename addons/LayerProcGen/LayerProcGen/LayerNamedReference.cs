@@ -42,14 +42,13 @@ namespace Runevision.LayerProcGen {
 			Type t = GetLayerType();
 			if (t == null)
 				return null;
-
-			if (layerArguments != null && layerArguments.parameters != null && layerArguments.parameters.Count > 0)
+			if (layerArguments != null)
 			{
-				// Look for the static InstanceWithArguments method
-				var method = t.GetMethod("InstanceWithArguments", BindingFlags.Public | BindingFlags.Static);
-				if (method != null)
+				// Try to find a constructor that takes LayerArgumentDictionary
+				var ctor = t.GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				if (ctor != null)
 				{
-					return (AbstractChunkBasedDataLayer)method.Invoke(null, new object[] { layerArguments.parameters });
+					return (AbstractChunkBasedDataLayer)ctor.Invoke(new object[] { layerArguments });
 				}
 			}
 

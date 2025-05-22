@@ -36,13 +36,20 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         );
     }
 
-    public PlayLayer(LayerArgumentDictionary layerGlobalArgs): base()
+    public PlayLayer(LayerArgumentDictionary layerGlobalArgs)
     {
         _layerArgumentsResource = layerGlobalArgs;
         GD.Print($"PlayLayer constructor called with arguments: {layerGlobalArgs}");
+        InitializePlayLayer();
     }
 
     public PlayLayer()
+    {
+        GD.Print("PlayLayer constructor called with no arguments.");
+        InitializePlayLayer();
+    }
+
+    private void InitializePlayLayer()
     {
         GD.Print("PlayLayer constructor called with no arguments.");
         Callable.From(HookSignalsDeferred).CallDeferred();
