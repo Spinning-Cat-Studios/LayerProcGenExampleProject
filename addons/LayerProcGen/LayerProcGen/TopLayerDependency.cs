@@ -6,6 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+using System.Collections.Generic;
 using Runevision.Common;
 
 namespace Runevision.LayerProcGen {
@@ -40,11 +41,12 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size, int level, LayerArgumentDictionary layerArguments) {
+		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size, int level, LayerArgumentDictionary layerArguments)
+		{
 			abstractLayer = layer;
 			this.size = size;
 			this.level = level;
-			this.layerArguments = layerArguments;	
+			this.layerArguments = layerArguments;
 		}
 
 		public TopLayerDependency(AbstractChunkBasedDataLayer layer, Point size, LayerArgumentDictionary layerArguments)

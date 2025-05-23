@@ -8,6 +8,7 @@
 
 using Runevision.Common;
 using System;
+using System.Collections.Generic;
 
 namespace Runevision.LayerProcGen {
 

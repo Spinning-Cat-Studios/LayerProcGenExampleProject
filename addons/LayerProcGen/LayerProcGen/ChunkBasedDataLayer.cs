@@ -21,9 +21,9 @@ namespace Runevision.LayerProcGen {
 		int chunkH { get; }
 		Point chunkSize { get; }
 		int GetLevelCount();
-
-		void ApplyArguments(LayerArgumentDictionary layerArguments);
-
+		LayerArgumentDictionary layerArguments { get; }
+		void SetLayerArguments(LayerArgumentDictionary args);
+		void LayerPostmount(LayerArgumentDictionary layerArguments);
 		void HandleDependenciesForLevel(int level, Action<LayerDependency> func);
 		void HandleAllAbstractChunks(int minChunkLevel, Action<AbstractLayerChunk> func);
 
@@ -47,14 +47,26 @@ namespace Runevision.LayerProcGen {
 		public abstract int chunkW { get; }
 		public abstract int chunkH { get; }
 		public Point chunkSize { get { return new Point(chunkW, chunkH); } }
+		private LayerArgumentDictionary _layerArguments = new();
+
+		public virtual LayerArgumentDictionary layerArguments => _layerArguments;
+
+		public void SetLayerArguments(LayerArgumentDictionary args)
+		{
+			// GD.Print($"SetLayerArguments {GetType().Name} {args}");
+			// foreach (var kvp in args)
+			// {
+			// 	GD.Print($"  {kvp.Key}: {kvp.Value}");
+			// }
+			_layerArguments = args;
+		}
 
 		/// <summary>
 		/// Override to specify the number of generation levels in the layer. Default is 1.
 		/// </summary>
 		public virtual int GetLevelCount() { return 1; }
 
-		public virtual void ApplyArguments(LayerArgumentDictionary layerArguments) { }
-
+		public virtual void LayerPostmount(LayerArgumentDictionary layerArguments) { }
 		internal AbstractChunkBasedDataLayer() { }
 
 		internal abstract void ProcessTopDependency(TopLayerDependency dep);
@@ -91,6 +103,26 @@ namespace Runevision.LayerProcGen {
 				if (s_Instance == null)
 					s_Instance = new L();
 				return s_Instance;
+			}
+		}
+
+		public static L InstanceWithArguments(LayerArgumentDictionary args)
+		{
+			GD.Print($"InstanceWithArguments {typeof(L).Name} {args}");
+			// Try to find a constructor that takes LayerArgumentDictionary
+			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+			if (ctor != null)
+			{
+				GD.Print($"Found constructor for {typeof(L).Name} with LayerArgumentDictionary");
+				return (L)ctor.Invoke(new object[] { args });
+			}
+			else
+			{
+				GD.Print($"No constructor found for {typeof(L).Name} with LayerArgumentDictionary, using default constructor");
+				// fallback to default constructor
+				var layer = new L();
+				layer.SetLayerArguments(args);
+				return layer;
 			}
 		}
 
@@ -138,7 +170,12 @@ namespace Runevision.LayerProcGen {
 			removeChunkDone,
 			service: null   // <–– we forward null here
 		)
-		{ }
+		{
+			// foreach (var kvp in this.layerArguments)
+			// {
+			// 	GD.Print($"ChunkBasedDataLayer constructor for {GetType().Name}, {kvp.Key}: {kvp.Value}");
+			// }
+		}
 
 		/// <summary>
 		/// The layer constructor in inherited classes can be used to setup dependencies on other layers.
@@ -292,19 +329,19 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		void ApplyArgumentsToLayers(TopLayerDependency dep)
+		void ApplyLayerPostmount(TopLayerDependency dep)
 		{
 			if (dep.layerArguments != null)
 			{
 				// 1) apply to the top layer
-				dep.layer.ApplyArguments(dep.layerArguments);
+				dep.layer.LayerPostmount(dep.layerArguments);
 
 				// 2) also apply to any explicitly‐added dependencies
 				for (int lvl = 0; lvl < dependencies.Length; lvl++)
 				{
 					foreach (var link in dependencies[lvl])
 					{
-						link.layer.ApplyArguments(dep.layerArguments);
+						link.layer.LayerPostmount(dep.layerArguments);
 					}
 				}
 			}
@@ -312,7 +349,7 @@ namespace Runevision.LayerProcGen {
 
 		internal sealed override void ProcessTopDependency(TopLayerDependency dep)
 		{
-			ApplyArgumentsToLayers(dep);
+			ApplyLayerPostmount(dep);
 			dep.GetPendingBounds(out GridBounds requiredBounds, out int requiredLevel);
 			ChunkLevelData oldRootUsage = dep.currentRootUsage;
 
