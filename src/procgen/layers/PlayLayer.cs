@@ -55,7 +55,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         Callable.From(HookSignalsDeferred).CallDeferred();
 
         var landscapeLayerD = _layers[nameof(LandscapeLayerD)] as LandscapeLayerD;
-        // landscapeLayerD.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerD,
@@ -66,7 +65,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var landscapeLayerC = _layers[nameof(LandscapeLayerC)] as LandscapeLayerC;
-        // landscapeLayerC.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerC,
@@ -77,7 +75,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var landscapeLayerB = _layers[nameof(LandscapeLayerB)] as LandscapeLayerB;
-        // landscapeLayerB.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerB,
@@ -88,7 +85,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var landscapeLayerA = _layers[nameof(LandscapeLayerA)] as LandscapeLayerA;
-        // landscapeLayerA.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             landscapeLayerA,
@@ -99,7 +95,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         ));
 
         var villageLayer = LSystemVillageLayer.instance;
-        // villageLayer.SetLayerArguments(_layerArguments);
 
         AddLayerDependency(new LayerDependency(
             villageLayer,
@@ -133,42 +128,20 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
     private void OnPlayLayerReady(LayerArgumentDictionary layerArguments)
     {
-        var playLayerKey = nameof(PlayLayer);
-
-        if (layerArguments.parameters
-                 .TryGetValue(playLayerKey, out var layerParams))
-        {
-            if (layerParams.TryGetValue("PlayerPath", out var playerPathVariant))
-            {
-                _playerNodePath = new NodePath(playerPathVariant.ToString());
-                _layerArguments["PlayerNodePath"] = playerPathVariant.ToString();
-            }
-            if (layerParams.TryGetValue("TerrainPath", out var terrainPathVariant))
-            {
-                _terrainNodePath = new NodePath(terrainPathVariant.ToString());
-                _layerArguments["TerrainNodePath"] = terrainPathVariant.ToString();
-                TerrainBlackboard.Initialize(terrainPathVariant.ToString());
-            }
-        }
-        // foreach(var layer in _layers)
-        // {
-        //     var layerInstance = layer.Value as IChunkBasedDataLayer;
-        //     // Debugging output
-        //     // GD.Print($"Setting layer arguments for {layer.Key}");
-        //     // foreach (var kvp in _layerArguments)
-        //     // {
-        //     //     GD.Print($"  {kvp.Key}: {kvp.Value}");
-        //     // }
-        //     // Note, this runs _after_ the layer is constructed,
-        //     // so we will need a signal in order to use the arguments
-        //     // in the relevant layer.
-        //     //
-        //     // Since one of these determines how much to construct,
-        //     // we need to have a default LOD to use in the interim until a 
-        //     // timer timeout runs.
-        //     //
-        //     // Feels a bit convoluted ... will think about this a bit more.
-        //     layerInstance.SetLayerArguments(_layerArguments);
-        // }
+        GD.Print("PlayLayer ready signal received.");
+        // Leave this empty for now, the view is to use the overload constructor
+        // in order to pass the layer arguments during construction,
+        // rather than running this after the constructor.
+        //
+        // In this way we avoid too much in the way of spaghetti flow of control.
+        //
+        // Even though spaghetti is highly nutritious and a very popular dish,
+        // it is probably not the best option for organising the flow of logic in
+        // this instance.
+        //
+        // We can retain this for now, but likely we might want to alter the
+        // arguments passed to it in future, maybe YAGNI, but maybe not.
+        //
+        // Will see!
     }
 }
