@@ -57,6 +57,7 @@ namespace Runevision.LayerProcGen
 		{
 			public readonly IChunkBasedDataLayer layer;
 			public readonly int level;
+			public readonly LayerArgumentDictionary layerArguments;
 			public string name;
 			public Label nameContent;
 			public float depthValue;
@@ -69,9 +70,10 @@ namespace Runevision.LayerProcGen
 
 			public Color color => layerSpec.color;
 
-			public LayerLevelVis(IChunkBasedDataLayer layer, int level, LayerSpec layerSpec)
+			public LayerLevelVis(IChunkBasedDataLayer layer, int level, LayerSpec layerSpec, LayerArgumentDictionary layerArguments)
 			{
 				this.layer = layer;
+				this.layerArguments = layerArguments;
 				this.level = level;
 				name = layer.GetType().PrettyName();
 				if (((AbstractChunkBasedDataLayer)layer).GetLevelCount() > 1)
@@ -110,7 +112,7 @@ namespace Runevision.LayerProcGen
 			layerLevels = new List<LayerLevelVis>();
 			foreach (LayerSpec spec in layers)
 			{
-				AddLayer(spec);
+				AddLayer(spec, layerArguments);
 			}
 
 			debugSeparate.animValueDuration = 0.5f;
@@ -146,13 +148,14 @@ namespace Runevision.LayerProcGen
 			// UnityEditor.SceneView.duringSceneGui -= OnDuringSceneGui;
 		}
 
-		void AddLayer(LayerSpec layerSpec)
+		void AddLayer(LayerSpec layerSpec, LayerArgumentDictionary layerArguments)
 		{
 			var layerNamedReference = new LayerNamedReference
 			{
-				className = layerSpec.layerClassName
+				className = layerSpec.layerClassName,
+				layerArguments = layerArguments
 			};
-			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerNamedReference.GetLayerInstance();
+			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerNamedReference.GetLayerInstance(layerArguments);
 			if (layer == null)
 				return;
 			for (int i = layer.GetLevelCount() - 1; i >= 0; i--)

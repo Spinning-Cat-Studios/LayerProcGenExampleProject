@@ -99,7 +99,7 @@ namespace Runevision.LayerProcGen {
 		void Start() {
 			layerLevels = new List<LayerLevelVis>();
 			foreach (LayerSpec spec in layers) {
-				AddLayer(spec);
+				AddLayer(spec, layerArguments);
 			}
 			debugSeparate.animValueDuration = 0.5f;
 			instance = this;
@@ -128,13 +128,13 @@ namespace Runevision.LayerProcGen {
 		}
 		#endif
 
-		void AddLayer(LayerSpec layerSpec) {
+		void AddLayer(LayerSpec layerSpec, LayerArgumentDictionary layerArguments = null) {
 			GD.Print("Adding layer " + layerSpec.layerClassName);
-			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerSpec.layerClassName.GetLayerInstance();
+			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerSpec.layerClassName.GetLayerInstance(layerArguments);
 			if (layer == null)
 				return;
 			for (int i = layer.GetLevelCount() - 1; i >= 0; i--) {
-				layerLevels.Add(new LayerLevelVis(layer, i, layerSpec));
+				layerLevels.Add(new LayerLevelVis(layer, i, layerSpec, layerArguments));
 			}
 		}
 
