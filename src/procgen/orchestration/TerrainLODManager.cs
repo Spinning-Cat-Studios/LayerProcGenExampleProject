@@ -3,7 +3,7 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Terrain3D.Scripts.Utilities;
-using Terrain3DBindings;
+using TokisanGames;
 
 namespace Terrain3D.Scripts.Generation.Layers;
 
@@ -11,10 +11,10 @@ public partial class TerrainLODManager : Node
 {
 	public static TerrainLODManager instance;
 
-	[Export(PropertyHint.NodeType, nameof(Terrain3DBindings.Terrain3D))]
+	[Export(PropertyHint.NodeType, nameof(TokisanGames.Terrain3D))]
 	public Node3D Terrain3D { get; set; }
 
-	public Terrain3DBindings.Terrain3D terrain3DWrapper;
+	public TokisanGames.Terrain3D terrain3D;
 
 	static DebugToggle showCollision = DebugToggle.Create(">Terrain3D/Debug/Show Collision");
 	static DebugToggle showCheckered = DebugToggle.Create(">Terrain3D/Checkered");
@@ -52,24 +52,23 @@ public partial class TerrainLODManager : Node
 	public override void _Ready()
 	{
 		instance = this;
-		showCollision.Callback += toggled => terrain3DWrapper.DebugShowCollision = toggled;
-		showCheckered.Callback += toggled => terrain3DWrapper.Material.ShowCheckered = toggled;
-		showGrey.Callback += toggled => terrain3DWrapper.Material.ShowGrey = toggled;
-		showHeightmap.Callback += toggled => terrain3DWrapper.Material.ShowHeightmap = toggled;
-		showRoughmap.Callback += toggled => terrain3DWrapper.Material.ShowRoughmap = toggled;
-		showControlTexture.Callback += toggled => terrain3DWrapper.Material.ShowControlTexture = toggled;
-		showControlBlend.Callback += toggled => terrain3DWrapper.Material.ShowControlBlend = toggled;
-		showAutoShader.Callback += toggled => terrain3DWrapper.Material.ShowAutoshader = toggled;
-		showNavigation.Callback += toggled => terrain3DWrapper.Material.ShowNavigation = toggled;
-		showTextureHeight.Callback += toggled => terrain3DWrapper.Material.ShowTextureHeight = toggled;
-		showTextureNormal.Callback += toggled => terrain3DWrapper.Material.ShowTextureNormal = toggled;
-		showTextureRough.Callback += toggled => terrain3DWrapper.Material.ShowTextureRough = toggled;
-		showVertexGrid.Callback += toggled => terrain3DWrapper.Material.ShowVertexGrid = toggled;
+		showCollision.Callback += toggled => terrain3D.CollisionEnabled = toggled;
+		showCheckered.Callback += toggled => terrain3D.Material.ShowCheckered = toggled;
+		showGrey.Callback += toggled => terrain3D.Material.ShowGrey = toggled;
+		showHeightmap.Callback += toggled => terrain3D.Material.ShowHeightmap = toggled;
+		showRoughmap.Callback += toggled => terrain3D.Material.ShowRoughmap = toggled;
+		showControlTexture.Callback += toggled => terrain3D.Material.ShowControlTexture = toggled;
+		showControlBlend.Callback += toggled => terrain3D.Material.ShowControlBlend = toggled;
+		showAutoShader.Callback += toggled => terrain3D.Material.ShowAutoshader = toggled;
+		showNavigation.Callback += toggled => terrain3D.Material.ShowNavigation = toggled;
+		showTextureHeight.Callback += toggled => terrain3D.Material.ShowTextureHeight = toggled;
+		showTextureNormal.Callback += toggled => terrain3D.Material.ShowTextureNormal = toggled;
+		showTextureRough.Callback += toggled => terrain3D.Material.ShowTextureRough = toggled;
+		showVertexGrid.Callback += toggled => terrain3D.Material.ShowVertexGrid = toggled;
 		// terrain3D = new Terrain3D(terrain3D);
 		// terrain3D.Material = new Terrain3DMaterial();
 		// terrain3D.Material.WorldBackground = WorldBackground.NONE;
 		// AddChild(terrain3D.AsNode3D);
-		terrain3DWrapper = new Terrain3DBindings.Terrain3D(Terrain3D);
 		layers = new TerrainLODLayer[1];
 		SetupLODLayer(0, LandscapeLayerA.instance);
 	}
@@ -89,9 +88,9 @@ public partial class TerrainLODManager : Node
 		if (idx > 0)
 			layers[lodLevel].chunks[p] = new TerrainInfo
 			{
-				heightMap = terrain.HeightMaps[idx],
-				colorMap = terrain.ColorMaps[idx],
-				controlMap = terrain.ControlMaps[idx]
+				heightMap = (Image)terrain.HeightMaps[idx],
+				colorMap = (Image)terrain.ColorMaps[idx],
+				controlMap = (Image)terrain.ControlMaps[idx]
 			};
 		else
 			GD.Print($"Point: {p} doesn't actually correspond to a region in Terrain3D ({string.Join(',', terrain.RegionOffsets)}");
@@ -308,12 +307,19 @@ public partial class TerrainLODManager : Node
 
 	public bool HasChunkAt(Vector3 position)
 	{
-		return terrain3DWrapper.Storage.HasRegion(position);
+		var data = terrain3D.Get("data").As<Terrain3DData>();
+		Vector2I regionPos = new Vector2I((int)position.X, (int)position.Z);
+
+		return data.HasRegion(regionPos);
 	}
 
 	public void CreateNewChunkAt(Vector3 position)
 	{
-		var addRegionError = terrain3DWrapper.Storage.AddRegion(position, null, false);
+		Vector2I regionPos = new Vector2I((int)position.X, (int)position.Z);
+		var region = Terrain3DRegion.Instantiate();
+		region.Location = regionPos;
+
+		var addRegionError = terrain3D.Get("data").As<Terrain3DData>().AddRegion(region, false);
 		switch (addRegionError)
 		{
 			case Error.Ok:
@@ -324,8 +330,9 @@ public partial class TerrainLODManager : Node
 		}
 	}
 
-	public Terrain3DRegion GetChunkAt(Vector3 position)
+	public RegionView GetChunkAtLOD(Vector3 position)
 	{
-		return Terrain3DRegion.Create(terrain3DWrapper.Storage.GetRegionIndex(position));
+		Vector2I regionPos = new Vector2I((int)position.X, (int)position.Z);
+		return RegionView.Create((int)Terrain3DData.GetRegionMapIndex(regionPos));
 	}
 }

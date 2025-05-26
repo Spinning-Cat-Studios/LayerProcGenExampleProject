@@ -33,27 +33,27 @@ public static class ControlExtension
     public static void SetUvAngle(this ref uint control, byte uVAngle)
         => control = (control & ~((uint)0xF << 10)) | (uint)((uVAngle & 0xF) << 10);
 
-    public static byte GetUvScale(this uint control) 
+    public static byte GetUvScale(this uint control)
         => (byte)(control >> 6 & 0x7);
 
-    public static void SetUvScale(this ref uint control, byte uvScale) 
+    public static void SetUvScale(this ref uint control, byte uvScale)
         => control = (control & ~((uint)0x7 << 6)) | (uint)((uvScale & 0x7) << 6);
 
-    public static bool IsHole(this uint control) 
+    public static bool IsHole(this uint control)
         => Convert.ToBoolean(control >> 2 & 0x1);
 
-    public static void SetHole(this ref uint control, bool hole) 
+    public static void SetHole(this ref uint control, bool hole)
         => control = (control & ~((uint)0x1 << 2)) | (uint)((hole ? 1 : 0) << 2);
 
-    public static bool IsNavigation(this uint control) 
+    public static bool IsNavigation(this uint control)
         => Convert.ToBoolean(control >> 1 & 0x1);
 
-    public static void SetNavigation(this ref uint control, bool navigation) 
+    public static void SetNavigation(this ref uint control, bool navigation)
         => control = (control & ~((uint)0x1 << 1)) | (uint)((navigation ? 1 : 0) << 1);
 
-    public static bool IsAutoshaded(this uint control) 
+    public static bool IsAutoshaded(this uint control)
         => Convert.ToBoolean(control & 0x1);
 
-    public static void SetAutoshaded(this ref uint control, bool autoShaded) 
+    public static void SetAutoshaded(this ref uint control, bool autoShaded)
         => control = (control & ~(uint)0x1) | (uint)(autoShaded ? 1 : 0);
 }

@@ -1,5 +1,6 @@
 using Godot;
-using T3  = Terrain3DBindings;
+using T3 = Terrain3DWrapper;
+using TokisanGames;
 using static Terrain3D.Scripts.Utilities.ControlExtension;
 using System.Collections.Generic;
 using System;
@@ -18,8 +19,9 @@ public class RoadPainterService
     private Vector2[] _brushOffsets;
     private bool _needsUpdate;
     private readonly Random _rnd;
-    private T3.Terrain3D Terrain => TerrainBlackboard.Terrain;
-    private T3.Terrain3DStorage Storage => TerrainBlackboard.Storage;
+    private T3.Terrain3DWrapper Terrain => TerrainBlackboard.TerrainWrapper;
+    private Terrain3DStorage Storage => TerrainBlackboard.Storage;
+    private Terrain3DData Data => TerrainBlackboard.Data;
 
     private bool IsTerrainSet => Terrain != null && Storage != null;
 
@@ -101,7 +103,7 @@ public class RoadPainterService
                 Vector3 c = a.Lerp(b, (float)s / n);
 
                 foreach (var o in _brushOffsets)
-                    Storage.SetControl(c + new Vector3(o.X, 0, o.Y), roadCtrl);
+                    Data.SetControl(c + new Vector3(o.X, 0, o.Y), roadCtrl);
             }
         }
 
@@ -196,7 +198,7 @@ public class RoadPainterService
     public void UpdateIfNeeded()
     {
         if (!_needsUpdate) return;
-        Storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        Data.ForceUpdateMaps(Terrain3DRegion.MapType.Control);
         _needsUpdate = false;
     }
 }

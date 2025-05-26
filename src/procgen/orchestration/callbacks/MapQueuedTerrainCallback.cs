@@ -11,7 +11,7 @@ using Godot.Collections;
 using Godot.Util;
 using Runevision.Common;
 using Runevision.LayerProcGen;
-using Terrain3DBindings;
+using TokisanGames;
 using Terrain3D.Scripts.Generation.Layers;
 using Terrain3D.Scripts.Utilities;
 
@@ -46,11 +46,11 @@ public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 		regionSize = (int)RegionSize.SIZE_1024;
 	}
 
-	static Terrain3DRegion? GetOrCreateTerrain(Vector3 position, L layer)
+	static RegionView? GetOrCreateTerrain(Vector3 position, L layer)
 	{
 		if (!TerrainLODManager.instance.HasChunkAt(position))
 			TerrainLODManager.instance.CreateNewChunkAt(position);
-		var chunk = TerrainLODManager.instance.GetChunkAt(position);
+		var chunk = TerrainLODManager.instance.GetChunkAtLOD(position);
 		return chunk.LoD < layer.lodLevel ? null : chunk;
 	}
 
@@ -63,7 +63,7 @@ public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 	public IEnumerator ProcessRoutine()
 	{
 		var startPos = index * layer.chunkW;
-		Terrain3DRegion? terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
+		RegionView? terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
 		if (terrain == null)
 			yield break;
 
@@ -77,12 +77,12 @@ public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 			for (var z = 0; z < layer.chunkSize.y; z++)
 			{
 				Vector3 globalPosition = new Vector3(startPos.x + x, 0, startPos.y + z);
-				TerrainLODManager.instance.terrain3DWrapper.Storage.SetHeight(globalPosition, heightmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
-				TerrainLODManager.instance.terrain3DWrapper.Storage.SetControl(globalPosition, controlmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
+				TerrainLODManager.instance.terrain3D.Get("data").As<Terrain3DData>().SetHeight(globalPosition, heightmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
+				TerrainLODManager.instance.terrain3D.Get("data").As<Terrain3DData>().SetControl(globalPosition, controlmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
 			}
 		}
 
-		TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps();
+		TerrainLODManager.instance.terrain3D.Get("data").As<Terrain3DData>().ForceUpdateMaps();
 		yield return null;
 	}
 }

@@ -10,7 +10,9 @@ namespace TokisanGames;
 
 public partial class Terrain3DStorage : Resource
 {
+    public GodotObject Instance { get; protected set; }
 
+    private Resource AsResource => Instance as Resource;
     private new static readonly StringName NativeName = new StringName("Terrain3DStorage");
 
     [Obsolete("Wrapper types cannot be constructed with constructors (it only instantiate the underlying Terrain3DStorage object), please use the Instantiate() method instead.")]
@@ -146,7 +148,7 @@ public partial class Terrain3DStorage : Resource
         public new static readonly StringName GetMaps = "get_maps";
     }
 
-    public new void SetMaps(Terrain3DStorage.MapType mapType, Godot.Collections.Array maps) => 
+    public new void SetMaps(Terrain3DStorage.MapType mapType, Godot.Collections.Array maps) =>
         Call(GDExtensionMethodName.SetMaps, [Variant.From(mapType), maps]);
 
     public new Godot.Collections.Array GetMaps(Terrain3DStorage.MapType mapType) => 
