@@ -11,7 +11,7 @@ using Godot.Collections;
 using Godot.Util;
 using Runevision.Common;
 using Runevision.LayerProcGen;
-using Terrain3DBindings;
+using TokisanGames;
 using Terrain3D.Scripts.Generation.Layers;
 using Terrain3D.Scripts.Utilities;
 
@@ -44,11 +44,11 @@ public struct ImgQueuedTerrainCallback<L, C, S> : IQueuedAction
 		this.index = index;
 	}
 
-	static Terrain3DRegion? GetOrCreateTerrain(Vector3 position, L layer)
+	static RegionView? GetOrCreateTerrain(Vector3 position, L layer)
 	{
 		if (!TerrainLODManager.instance.HasChunkAt(position))
 			TerrainLODManager.instance.CreateNewChunkAt(position);
-		var chunk = TerrainLODManager.instance.GetChunkAt(position);
+		var chunk = TerrainLODManager.instance.GetChunkAtLOD(position);
 		return chunk.LoD < layer.lodLevel ? null : chunk;
 	}
 
@@ -59,7 +59,7 @@ public struct ImgQueuedTerrainCallback<L, C, S> : IQueuedAction
 
 	public IEnumerator ProcessRoutine()
 	{
-		Terrain3DRegion? terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
+		RegionView? terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
 		if (terrain == null)
 			yield break;
 		terrain.HeightMap = heightmap;
@@ -73,7 +73,7 @@ public struct ImgQueuedTerrainCallback<L, C, S> : IQueuedAction
 		// if (treeInstances != null)
 		//     terrain.treeInstances = treeInstances;
 
-		TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps();
+		TerrainLODManager.instance.terrain3D.Get("data").As<Terrain3DData>().ForceUpdateMaps();
 		yield return null;
 	}
 }

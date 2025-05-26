@@ -11,7 +11,7 @@ using Godot.Collections;
 using Godot.Util;
 using Runevision.Common;
 using Runevision.LayerProcGen;
-using Terrain3DBindings;
+using TokisanGames;
 using Terrain3D.Scripts.Generation.Layers;
 using Terrain3D.Scripts.Utilities;
 

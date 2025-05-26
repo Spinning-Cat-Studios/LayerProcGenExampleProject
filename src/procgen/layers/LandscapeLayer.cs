@@ -4,7 +4,7 @@ using System.Linq;
 using Godot;
 using Godot.Util;
 using Runevision.LayerProcGen;
-using Terrain3DBindings;
+using TokisanGames;
 using SemaphoreSlim = System.Threading.SemaphoreSlim;
 
 public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
