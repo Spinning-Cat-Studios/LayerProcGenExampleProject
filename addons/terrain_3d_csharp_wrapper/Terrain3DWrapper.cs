@@ -8,29 +8,6 @@ using TokisanGames;
 
 namespace Terrain3DWrapper;
 
-public class _Terrain3DInstanceWrapper_ : IDisposable
-{
-    public _Terrain3DInstanceWrapper_(GodotObject instance)
-    {
-        if (instance == null) throw new ArgumentNullException(nameof(instance));
-        if (!ClassDB.IsParentClass(instance.GetClass(), GetType().Name)) throw new ArgumentException("\"_instance\" has the wrong type.");
-        Instance = instance;
-    }
-
-    public GodotObject Instance { get; protected set; }
-
-    public void Dispose()
-    {
-        Instance?.Dispose();
-        Instance = null!;
-    }
-
-    public void ClearNativePointer()
-    {
-        Instance = null!;
-    }
-}
-
 public class Terrain3DWrapper : _Terrain3DInstanceWrapper_
 {
     private static readonly StringName storage_name = "storage";
@@ -44,29 +21,45 @@ public class Terrain3DWrapper : _Terrain3DInstanceWrapper_
     {
     }
 
+    public Terrain3DWrapper() : base(ClassDB.Instantiate(nameof(Terrain3D)).AsGodotObject())
+	{
+	}
+
     public float MeshVertexSpacing
     {
         get => Instance.Get(mesh_vertex_spacing_name).AsSingle();
         set => Instance.Set(mesh_vertex_spacing_name, value);
     }
 
-    public TokisanGames.Terrain3DStorage Storage
+    public Terrain3DStorageWrapper Storage
     {
         get
         {
-            storage ??= new Terrain3DStorageWrapper(Instance.Get(storage_name).AsGodotObject());
-            return (TokisanGames.Terrain3DStorage)storage.Instance;
+            var storageObj = Instance.Get(storage_name).AsGodotObject();
+            if (storageObj == null)
+            {
+                GD.PrintErr("Terrain3D 'storage' property is null!");
+                return null;
+            }
+            storage ??= new Terrain3DStorageWrapper(storageObj);
+            return storage;
         }
-        set => Instance.Set(storage_name, value.Instance); //TODO: maybe cleanup the old one
+        set => Instance.Set(storage_name, value?.Instance);
     }
 
-    public Terrain3DData Data
+    public Terrain3DDataWrapper Data
     {
         get
         {
-            data ??= new Terrain3DDataWrapper(Instance.Get(data_name).AsGodotObject());
-            return (TokisanGames.Terrain3DData)data.Instance;
+            var dataObj = Instance.Get(data_name).AsGodotObject();
+            if (dataObj == null)
+            {
+                GD.PrintErr("Terrain3D 'data' property is null!");
+                return null;
+            }
+            data ??= new Terrain3DDataWrapper(dataObj);
+            return data;
         }
-        set => Instance.Set(data_name, value);
+        set => Instance.Set(data_name, value?.Instance);
     }
 }

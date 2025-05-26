@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.Text.Json;
 using System.Linq;
+using Terrain3DWrapper;
 
 public class RoadPainterService
 {
@@ -20,8 +21,8 @@ public class RoadPainterService
     private bool _needsUpdate;
     private readonly Random _rnd;
     private T3.Terrain3DWrapper Terrain => TerrainBlackboard.TerrainWrapper;
-    private Terrain3DStorage Storage => TerrainBlackboard.Storage;
-    private Terrain3DData Data => TerrainBlackboard.Data;
+    private Terrain3DStorageWrapper Storage => TerrainBlackboard.Storage;
+    private Terrain3DDataWrapper Data => TerrainBlackboard.Data;
 
     private bool IsTerrainSet => Terrain != null && Storage != null;
 
