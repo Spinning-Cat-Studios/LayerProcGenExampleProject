@@ -17,17 +17,22 @@ namespace Runevision.LayerProcGen {
 	[Serializable]
 	public class LayerNamedReference {
 		public string className;
+		public LayerArgumentDictionary layerArguments;
 
 		Type cachedLayerType;
 		AbstractChunkBasedDataLayer cachedLayerInstance;
 		string cachedClassName;
+		
 
-		public Type GetLayerType() {
-			if (string.IsNullOrEmpty(className)) {
+		public Type GetLayerType()
+		{
+			if (string.IsNullOrEmpty(className))
+			{
 				cachedLayerType = null;
 				cachedClassName = className;
 			}
-			else if (cachedLayerType == null || className != cachedClassName) {
+			else if (cachedLayerType == null || className != cachedClassName)
+			{
 				cachedLayerType = AppDomain.CurrentDomain.GetAssemblies()
 					.Select(domainAssembly => domainAssembly.GetType(className))
 					.FirstOrDefault(type => type != null);
