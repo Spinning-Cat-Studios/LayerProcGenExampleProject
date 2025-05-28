@@ -57,7 +57,7 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, L
 
 		// Fill the grid with data from the GeoGridLayer.
 		ph = SimpleProfiler.Begin(phc, "Retrieve Data");
-		GeoGridLayer.instance.GetDataInBounds(
+		GeoGridLayer.GetInstance(layer.layerArguments).GetDataInBounds(
 			this, new GridBounds(gridOrigin, gridSize), heights, dists, controls);
 		SimpleProfiler.End(ph);
 
@@ -94,7 +94,7 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, L
 		// Get connections between locations from the LocationLayer
 		// and create a path for each connection.
 		List<Location> connectionPairs = connectionPairsPool.Get();
-		LocationLayer.instance.GetConnectionsOwnedInBounds(this, connectionPairs, bounds);
+		LocationLayer.GetInstance(layer.layerArguments).GetConnectionsOwnedInBounds(this, connectionPairs, bounds);
 		for (int i = 0; i < connectionPairs.Count; i += 2) {
 			Location locA = connectionPairs[i];
 			Location locB = connectionPairs[i + 1];

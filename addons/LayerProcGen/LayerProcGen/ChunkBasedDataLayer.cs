@@ -107,6 +107,26 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
+		private static Dictionary<LayerArgumentDictionary, L> _instances = new();
+
+		public static L GetInstance(LayerArgumentDictionary args) {
+			if (!_instances.TryGetValue(args, out var instance)) {
+				// Try to find a constructor that takes LayerArgumentDictionary
+				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				if (ctor != null)
+				{
+					instance = (L)ctor.Invoke([args]);
+				}
+				else
+				{
+					instance = new L();
+					instance.SetLayerArguments(args);
+				}
+				_instances[args] = instance;
+			}
+			return instance;
+		}
+
 		public static L InstanceWithArguments(LayerArgumentDictionary args)
 		{
 			GD.Print($"InstanceWithArguments {typeof(L).Name} {args}");
@@ -242,6 +262,9 @@ namespace Runevision.LayerProcGen {
 			{
 				Logg.LogError("Chunk is null in CreateAndRegisterChunk");
 			}
+
+		    // Set the LayerInstance reference so the chunk knows its parent layer
+			chunk.LayerInstance = (L)this;
 
 			if (chunk.level < level)
 			{

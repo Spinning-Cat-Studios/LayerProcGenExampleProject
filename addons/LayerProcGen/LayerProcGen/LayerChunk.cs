@@ -241,6 +241,7 @@ namespace Runevision.LayerProcGen {
 		where C : LayerChunk<L, C, S>, new()
 		where S : LayerService
 	{
+		public L LayerInstance { get; set; }
 		/// <summary>
 		/// The layer for this chunk type.
 		/// </summary>
@@ -249,12 +250,12 @@ namespace Runevision.LayerProcGen {
 		/// and other chunk-related properties specified in a layer due to them being
 		/// identical for all chunks of that layer.
 		/// </remarks>
-		public L layer { get { return ChunkBasedDataLayer<L, C, S>.instance; } }
+		public L layer => LayerInstance;
 
 		/// <summary>
 		/// Needed for C# covariance reasons. The layer property can be used instead.
 		/// </summary>
-		public override AbstractChunkBasedDataLayer abstractLayer { get { return layer; } }
+		public override AbstractChunkBasedDataLayer abstractLayer => LayerInstance;
 	}
 
 }

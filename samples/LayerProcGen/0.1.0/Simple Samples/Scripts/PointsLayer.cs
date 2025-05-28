@@ -37,11 +37,28 @@ public class PointsLayer : ChunkBasedDataLayer<PointsLayer, PointsChunk, LayerSe
 	// Specify the world space dimensions of the chunks.
 	public override int chunkW { get { return 256; } }
 	public override int chunkH { get { return 256; } }
+	private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, PointsLayer> _instances = new();
+
+    public new static PointsLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new PointsLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
 
 	// Data common for all chunks of this layer goes here.
 	public RandomHash rand = new RandomHash(1234);
 
-	public PointsLayer() {
+	public PointsLayer()
+	{
+        GD.Print("PointsLayer constructor called with no arguments.");
+        // TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
+    
+	}
+
+	public PointsLayer(LayerArgumentDictionary layerArguments)
+	{
 		// Dependencies on other layers are set up here with appropriate padding.
 		//AddLayerDependency(new LayerDependency(OtherLayer.instance, new Point(16, 16)));
 

@@ -71,7 +71,7 @@ public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
 			// Apply deformation from locations.
 			ph = SimpleProfiler.Begin(phc, "Deform-Locations");
 			List<LocationSpec> locationSpecs = locationSpecListPool.Get();
-			LocationLayer.instance.GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
+			LocationLayer.GetInstance(layer.layerArguments).GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
 			TerrainDeformation.ApplySpecs(
 				ref heights, ref dists, ref controls,
 				index * layer.chunkResolution - Point.one * GridOffset,
@@ -91,7 +91,7 @@ public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
 				// Apply deformation from paths.
 				ph = SimpleProfiler.Begin(phc, "Deform-Paths");
 				List<PathSpec> pathSpecs = pathSpecListPool.Get();
-				CultivationLayer.instance.GetPathsOverlappingBounds(this, pathSpecs, bounds);
+				CultivationLayer.GetInstance(layer.layerArguments).GetPathsOverlappingBounds(this, pathSpecs, bounds);
 				TerrainDeformation.ApplySpecs(
 					ref heights, ref dists, ref controls,
 					index * layer.chunkResolution - Point.one * GridOffset,

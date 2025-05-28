@@ -68,7 +68,7 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk, LayerService>
         // Apply deformation from locations.
         ph = SimpleProfiler.Begin(phc, "Deform-LocationDeformation");
         List<LocationSpec> locationSpecs = locationSpecListPool.Get();
-        LocationLayer.instance.GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
+        LocationLayer.GetInstance(layer.layerArguments).GetLocationSpecsOverlappingBounds(this, locationSpecs, bounds);
         TerrainDeformation.ApplySpecs(
         	ref heights, ref dists, ref controls,
         	gridOrigin,

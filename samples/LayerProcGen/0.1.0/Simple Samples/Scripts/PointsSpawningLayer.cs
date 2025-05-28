@@ -27,14 +27,14 @@ public class PointsSpawningChunk : LayerChunk<PointsSpawningLayer, PointsSpawnin
 			List<Point> points = pointsListPool.Get();
 			
 			// Fill it with the points from the PointsLayer that are within the chunk bounds.
-			PointsLayer.instance.GetPointsInBounds(this, points, bounds);
+			PointsLayer.GetInstance(layer.layerArguments).GetPointsInBounds(this, points, bounds);
 			
 			// Instantiate a sphere for each point.
 			// We need to capture the current value of relevant outer variables by copying them.
 			// Otherwise the action executing delayed on the main thread may use incorrect
 			// newer values stored in the same outer variables, which may even reference a
 			// newer incarnation of a chunk that has been recycled and reused in the mean time.
-			chunkParent = new TransformWrapper(PointsSpawningLayer.instance.layerParent, index);
+			chunkParent = new TransformWrapper(PointsSpawningLayer.GetInstance(layer.layerArguments).layerParent, index);
 			TransformWrapper currentChunkParent = chunkParent; // Capture current chunk parent.
 			foreach (Point point in points) {
 				Point currentPoint = point; // Capture current point in foreach loop.
@@ -61,16 +61,33 @@ public class PointsSpawningLayer : ChunkBasedDataLayer<PointsSpawningLayer, Poin
 	public override int chunkW { get { return 100; } }
 	public override int chunkH { get { return 100; } }
 
+	private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, PointsSpawningLayer> _instances = new();
+
+    public new static PointsSpawningLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new PointsSpawningLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
+
 	// A Transform parent for all objects spawned by this layer.
 	public Node3D layerParent;
 
-	public PointsSpawningLayer() {
+	public PointsSpawningLayer()
+	{
+        GD.Print("PointsSpawningLayer constructor called with no arguments.");
+        // TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
+    }
+
+	public PointsSpawningLayer(LayerArgumentDictionary layerArguments)
+	{
 		// Create the layer parent Transform. We're on the main thread, so it's ok.
 
 		layerParent = new Node3D { Name = "PointsSpawnLayer" };
-		
+
 		// Dependencies on other layers are set up here with appropriate padding.
-		AddLayerDependency(new LayerDependency(PointsLayer.instance, new Point(0, 0)));
+		AddLayerDependency(new LayerDependency(PointsLayer.GetInstance(layerArguments), new Point(0, 0)));
 	}
 
 	public Node LayerRoot() => layerParent;
