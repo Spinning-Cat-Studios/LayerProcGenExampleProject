@@ -127,10 +127,21 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     public Node3D layerParent;
 
+
+    private static Dictionary<LayerArgumentDictionary, LSystemVillageLayer> _instances = new();
+
+    public static LSystemVillageLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new LSystemVillageLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
+
     /// <summary>
     /// Default constructor required for generic constraints.
     /// </summary>
-    public LSystemVillageLayer() : this(
+    public LSystemVillageLayer(LayerArgumentDictionary args = null) : this(
             rollingGridWidth: 32,
             rollingGridHeight: 0,
             rollingGridMaxOverlap: 3,
@@ -138,30 +149,39 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
             createChunkDone: createChunkDoneDefault,
             removeChunkDone: removeChunkDoneDefault,
             service: _villageService
-        ) { }
+        )
+    { }
+
+    public LSystemVillageLayer()
+    {
+        GD.Print("LSystemVillageLayer constructor called with no arguments.");
+        // TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
+    }
 
     /// <summary>
-    /// Builds the layer and optionally lets you plug in delegates that are
-    /// invoked when a chunk has finished generating or being removed.
-    /// 
-    /// All parameters have default values so the type still satisfies the
-    /// `new()` constraint used by <see cref="ChunkBasedDataLayer{L,C}.instance"/>.
-    /// </summary>
+        /// Builds the layer and optionally lets you plug in delegates that are
+        /// invoked when a chunk has finished generating or being removed.
+        /// 
+        /// All parameters have default values so the type still satisfies the
+        /// `new()` constraint used by <see cref="ChunkBasedDataLayer{L,C}.instance"/>.
+        /// </summary>
     public LSystemVillageLayer(
-        int    rollingGridWidth      = 32,
-        int    rollingGridHeight     = 0,
-        int    rollingGridMaxOverlap = 3,
-        Action createChunkReady      = null,
-        Action createChunkDone       = null,
-        Action removeChunkDone       = null,
-        VillageService service       = null)
-        : base(rollingGridWidth,
-               rollingGridHeight,
-               rollingGridMaxOverlap,
-               createChunkReady ?? createChunkReadyDefault,
-               createChunkDone ?? createChunkDoneDefault,
-               removeChunkDone ?? removeChunkDoneDefault,
-               service ?? _villageService)
+        int rollingGridWidth = 32,
+        int rollingGridHeight = 0,
+        int rollingGridMaxOverlap = 3,
+        Action createChunkReady = null,
+        Action createChunkDone = null,
+        Action removeChunkDone = null,
+        VillageService service = null,
+        LayerArgumentDictionary layerArguments = null)
+        : base(rollingGridWidth: rollingGridWidth,
+               rollingGridHeight: rollingGridHeight,
+               rollingGridMaxOverlap: rollingGridMaxOverlap,
+               createChunkReady: createChunkReady ?? createChunkReadyDefault,
+               createChunkDone: createChunkDone ?? createChunkDoneDefault,
+               removeChunkDone: removeChunkDone ?? removeChunkDoneDefault,
+               service: service ?? _villageService,
+               layerArguments: layerArguments ?? new LayerArgumentDictionary())
     {
         // GD.Print("LSystemVillageLayer constructor called");
         // Convert this.layerArguments from a Dictionary to a String
@@ -177,7 +197,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
 	public static DebugToggle debugLayer = DebugToggle.Create(">Layers/LSystemVillageLayer");
 
-    public void VisualizationUpdate() { 
+    public void VisualizationUpdate(LayerArgumentDictionary layerArguments) { 
         if (!debugLayer.visible)
 			return;
 		for (int i = 0; i < GetLevelCount(); i++) {

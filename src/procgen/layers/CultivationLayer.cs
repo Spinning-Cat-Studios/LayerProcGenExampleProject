@@ -22,7 +22,18 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 	static DebugToggle debugHeights = DebugToggle.Create(">Layers/CultivationLayer/Heights");
 	static DebugToggle debugDirections = DebugToggle.Create(">Layers/CultivationLayer/Directions");
 
-	public CultivationLayer() {
+    private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, CultivationLayer> _instances = new();
+
+    public static CultivationLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new CultivationLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
+
+	public CultivationLayer(LayerArgumentDictionary layerGlobalArgs)
+	{
 		gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
 		// Make the grid for each chunk cover an area extending further our than the chunk.
 		// This ensures the pathfinding can succeed even when it extends partially beyond the chunk.
@@ -32,29 +43,41 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 
 		layerParent = new Node3D { Name = "CultivationLayer" };
 
-		AddLayerDependency(new LayerDependency(GeoGridLayer.instance, worldSpacePadding, 0));
-		AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 2));
+		AddLayerDependency(new LayerDependency(GeoGridLayer.GetInstance(layerGlobalArgs), worldSpacePadding, 0));
+		AddLayerDependency(new LayerDependency(LocationLayer.GetInstance(layerGlobalArgs), LocationLayer.requiredPadding, 2));
 	}
 
-	public void VisualizationUpdate() {
+	public CultivationLayer()
+	{
+		GD.Print("CultivationLayer constructor called with no arguments.");
+		// TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
+	}
+
+	public void VisualizationUpdate(LayerArgumentDictionary layerArguments)
+	{
 		VisualizationManager.BeginDebugDraw(this, 0);
 		if (debugPaths.visible || debugPathsRaw.visible || debugPathBounds.visible)
 			HandleAllChunks(0, c => c.DebugDraw(debugPaths.animAlpha, debugPathsRaw.animAlpha, debugPathBounds.animAlpha));
 		VisualizationManager.EndDebugDraw();
 
 		GridBounds focusBounds = GridBounds.Empty();
-		if (debugHeights.enabled || debugDirections.enabled) {
-			foreach (var dep in LayerManager.instance.topDependencies) {
-				if (dep.layer == PlayLayer.instance) {
+		if (debugHeights.enabled || debugDirections.enabled)
+		{
+			foreach (var dep in LayerManager.instance.topDependencies)
+			{
+				if (dep.layer == PlayLayer.GetInstance(layerArguments))
+				{
 					focusBounds = new GridBounds(dep.focus - Point.one * 50, Point.one * 100);
 					break;
 				}
 			}
 		}
-		if (debugHeights.enabled) {
+		if (debugHeights.enabled)
+		{
 			HandleChunksInBounds(null, focusBounds, 0, c => c.DrawHeights(focusBounds));
 		}
-		if (debugDirections.enabled) {
+		if (debugDirections.enabled)
+		{
 			HandleChunksInBounds(null, focusBounds, 0, c => c.DrawDirections(focusBounds));
 		}
 	}

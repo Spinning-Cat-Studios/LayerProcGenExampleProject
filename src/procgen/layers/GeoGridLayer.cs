@@ -21,11 +21,27 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, Laye
 
     public Point gridChunkRes;
 
-    public GeoGridLayer()
+    private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, GeoGridLayer> _instances = new();
+
+    public static GeoGridLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new GeoGridLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
+
+    public GeoGridLayer(LayerArgumentDictionary layerGlobalArgs)
     {
         gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
 
-        AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+        AddLayerDependency(new LayerDependency(LocationLayer.GetInstance(layerGlobalArgs), LocationLayer.requiredPadding, 1));
+    }
+
+    public GeoGridLayer()
+    {
+        GD.Print("GeoGridLayer constructor called with no arguments.");
+        // TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
     }
 
     public void GetDataInBounds(ILC q, GridBounds bounds, float[,] heights, Vector3[,] dists, uint[,] controls)

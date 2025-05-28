@@ -10,11 +10,28 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, L
 
 	public static readonly Point requiredPadding = new Point(180, 180);
 
-	public LocationLayer() {
+    private static Dictionary<LayerArgumentDictionary, LocationLayer> _instances = new();
+
+    public static LocationLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new LocationLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
+
+	public LocationLayer(LayerArgumentDictionary layerGlobalArgs)
+	{
 
 	}
 
-	public override int GetLevelCount() {
+	public LocationLayer()
+	{
+		// TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
+	}
+
+	public override int GetLevelCount()
+	{
 		return 3;
 	}
 
@@ -61,7 +78,7 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, L
 	public static DebugToggle debugRadiuses = DebugToggle.Create(">Layers/LocationLayer/Radiuses");
 	public static DebugToggle debugConnections = DebugToggle.Create(">Layers/LocationLayer/Connections");
 
-	public void VisualizationUpdate() {
+	public void VisualizationUpdate(LayerArgumentDictionary layerArguments) {
 		if (!debugLayer.visible)
 			return;
 		for (int i = 0; i < GetLevelCount(); i++) {

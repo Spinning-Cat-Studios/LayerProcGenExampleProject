@@ -10,18 +10,31 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     private bool _subscribedToPlayLayerReady = false;
     private NodePath _playerNodePath = new();
     private NodePath _terrainNodePath = new();
-    private Dictionary<string, object> _layerArguments = new();
+    private static Dictionary<LayerArgumentDictionary, PlayLayer> _instances = new();
 
+    public static PlayLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new PlayLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
     private LayerArgumentDictionary _layerArgumentsResource = new();
 
-    private Dictionary<string, object> _layers = new()
+    private Dictionary<string, object> _layers = new();
+
+    public void GenerateChildLayers(LayerArgumentDictionary layerGlobalArgs)
     {
-        { nameof(LandscapeLayerA), LandscapeLayerA.instance },
-        { nameof(LandscapeLayerB), LandscapeLayerB.instance },
-        { nameof(LandscapeLayerC), LandscapeLayerC.instance },
-        { nameof(LandscapeLayerD), LandscapeLayerD.instance },
-        { nameof(LSystemVillageLayer), LSystemVillageLayer.instance }
-    };
+        _layers = new Dictionary<string, object>
+        {
+            { nameof(LandscapeLayerA), LandscapeLayerA.GetInstance(layerGlobalArgs) },
+            { nameof(LandscapeLayerB), LandscapeLayerB.GetInstance(layerGlobalArgs) },
+            { nameof(LandscapeLayerC), LandscapeLayerC.GetInstance(layerGlobalArgs) },
+            { nameof(LandscapeLayerD), LandscapeLayerD.GetInstance(layerGlobalArgs) },
+            { nameof(LSystemVillageLayer), LSystemVillageLayer.GetInstance(layerGlobalArgs) }
+        };
+    }
+
     public override int chunkW => 8;
     public override int chunkH => 8;
 
@@ -39,6 +52,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     public PlayLayer(LayerArgumentDictionary layerGlobalArgs)
     {
         _layerArgumentsResource = layerGlobalArgs;
+        GenerateChildLayers(layerGlobalArgs);
         GD.Print($"PlayLayer constructor called with arguments: {layerGlobalArgs}");
         InitializePlayLayer();
     }
@@ -47,6 +61,11 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     {
         GD.Print("PlayLayer constructor called with no arguments.");
         InitializePlayLayer();
+    }
+
+    public static PlayLayer Create(LayerArgumentDictionary args)
+    {
+        return new PlayLayer(args);
     }
 
     private void InitializePlayLayer()
@@ -94,7 +113,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             null
         ));
 
-        var villageLayer = LSystemVillageLayer.instance;
+        var villageLayer = _layers[nameof(LSystemVillageLayer)] as LSystemVillageLayer;
 
         AddLayerDependency(new LayerDependency(
             villageLayer,

@@ -95,8 +95,9 @@ namespace Runevision.LayerProcGen {
 
 		protected readonly S service;
 		public LayerService Service => service;
+		public LayerArgumentDictionary layerArguments;
 		int[] chunkLevelCount;
-		public static L instance
+		private static L instance
 		{
 			get
 			{
@@ -197,7 +198,8 @@ namespace Runevision.LayerProcGen {
 			Action createChunkReady = null,
 			Action createChunkDone = null,
 			Action removeChunkDone = null,
-			S service = null
+			S service = null,
+			LayerArgumentDictionary layerArguments = null
 		)
 		{
 			if (rollingGridHeight == 0)
@@ -207,6 +209,7 @@ namespace Runevision.LayerProcGen {
 			this.createChunkDone = createChunkDone;
 			this.removeChunkDone = removeChunkDone;
 			this.service = service;
+			this.layerArguments = layerArguments ?? new LayerArgumentDictionary();
 			int levelCount = GetLevelCount();
 			dependencies = new List<LayerDependency>[levelCount];
 			for (int i = 0; i < levelCount; i++)
