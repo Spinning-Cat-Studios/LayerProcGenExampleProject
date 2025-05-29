@@ -83,7 +83,9 @@ public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, 
 	private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, LandscapeLayerA> _instances = new();
 
 	public LandscapeLayerA(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { }
+    	: base(layerArguments: args) { 
+		GD.Print("LandscapeLayerA constructor called with arguments: " + args);
+	}
 
 	public LandscapeLayerA()
 	{
@@ -111,11 +113,13 @@ public class LandscapeLayerB : LandscapeLayer<LandscapeLayerB, LandscapeChunkB, 
 	private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, LandscapeLayerB> _instances = new();
 
 	public LandscapeLayerB(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { }
+    	: base(layerArguments: args) { 
+		GD.Print("LandscapeLayerB constructor called with arguments: " + args);
+	}
 
 	public LandscapeLayerB()
 	{
-		GD.Print("LandscapeLayerA constructor called with no arguments.");
+		GD.Print("LandscapeLayerB constructor called with no arguments.");
 		// TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
 	}
 
@@ -138,11 +142,14 @@ public class LandscapeLayerC : LandscapeLayer<LandscapeLayerC, LandscapeChunkC, 
 	private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, LandscapeLayerC> _instances = new();
 
 	public LandscapeLayerC(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { }
+		: base(layerArguments: args)
+	{ 
+		GD.Print("LandscapeLayerC constructor called with arguments: " + args);
+	}
 
 	public LandscapeLayerC()
 	{
-		GD.Print("LandscapeLayerA constructor called with no arguments.");
+		GD.Print("LandscapeLayerC constructor called with no arguments.");
 		// TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
 	}
 
@@ -172,7 +179,7 @@ public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD, 
 
 	public LandscapeLayerD()
 	{
-		GD.Print("LandscapeLayerA constructor called with no arguments.");
+		GD.Print("LandscapeLayerD constructor called with no arguments.");
 		// TODO: refactor chunk based data layer not to require parameterless constructor in inherited classes.
 	}
 
