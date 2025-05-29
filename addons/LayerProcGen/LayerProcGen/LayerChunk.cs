@@ -247,7 +247,7 @@ namespace Runevision.LayerProcGen {
 		/// </remarks>
 		public L layer => LayerInstance;
 
-		public void Initialize(L layerInstance, Point index)
+		public virtual void Initialize(L layerInstance, Point index)
 		{
 			this.LayerInstance = layerInstance;
 			this.index = index;

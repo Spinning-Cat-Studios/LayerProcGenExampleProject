@@ -406,6 +406,7 @@ namespace Runevision.LayerProcGen {
 
 		internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
 		{
+			// GD.Print($"EnsureLoadedInBounds {GetType().Name} {bounds} level {level}");
 			if (LayerManager.instance.aborting)
 				return;
 
@@ -417,6 +418,7 @@ namespace Runevision.LayerProcGen {
 			{
 				for (int y = indices.min.y; y < indices.max.y; y++)
 				{
+					// GD.Print($"Processing chunk at {x}, {y} for {GetType().Name} level {level}");
 					Point index = new Point(x, y);
 					PrepareChunkForLayer(
 						index,
@@ -451,8 +453,10 @@ namespace Runevision.LayerProcGen {
 				chunk = chunks[index];
 				if (chunk == null)
 				{
+					// GD.Print($"Creating new chunk at {index} for {GetType().Name} level {level}");
 					chunk = ObjectPool<C>.GlobalGet();
 					chunk.Initialize((L)this, index);
+					// GD.Print($"Initialized chunk at {index} for {GetType().Name} level {level}");
 					chunk.index = index;
 					chunks[index] = chunk;
 				}
@@ -519,7 +523,7 @@ namespace Runevision.LayerProcGen {
 						{
 							if (chunks[index].level < level)
 							{
-								GD.Print($"Creating chunk {index} at level {level} in {GetType().Name}");
+								// GD.Print($"Creating chunk {index} at level {level} in {GetType().Name}");
 								CreateAndRegisterChunk(index, level);
 							}
 							WorkTracker.AddWorkDone(1, GetType());
