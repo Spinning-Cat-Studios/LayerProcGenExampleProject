@@ -473,12 +473,31 @@ namespace Runevision.LayerProcGen {
 			int chunkW,
 			int chunkH,
 			ChunkLevelData levelData
-		) {
+		)
+		{
 			Point center = bounds.center;
 			createIndices = createIndices
 				.OrderBy(i => Math.Pow(i.x * chunkW - center.x, 2) + Math.Pow(i.y * chunkH - center.y, 2))
 				.ToList();
 
+			// Process chunk creations.
+			ProcessChunkCreations(createIndices, level);
+
+			if (LayerManager.instance.aborting)
+				return;
+
+			foreach (Point index in dependIndices)
+			{
+				C chunk = chunks[index];
+				chunk.IncrementUserCountOfLevel(level);
+				levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
+			}
+		}
+
+		private void ProcessChunkCreations(
+			List<Point> createIndices,
+			int level
+		) {
 			if (!LayerManager.instance.useParallelThreads)
 			{
 				foreach (Point index in createIndices)
@@ -495,25 +514,19 @@ namespace Runevision.LayerProcGen {
 						if (LayerManager.instance.aborting)
 							return;
 						SimpleProfiler.BeginThread("Gen", $"{GetType().Name} {level} {index}");
+						
 						lock (chunks[index].levelLocks[level])
 						{
 							if (chunks[index].level < level)
+							{
+								GD.Print($"Creating chunk {index} at level {level} in {GetType().Name}");
 								CreateAndRegisterChunk(index, level);
+							}
 							WorkTracker.AddWorkDone(1, GetType());
 						}
 						SimpleProfiler.EndThread();
 					});
 			}
-
-			// if (LayerManager.instance.aborting)
-			// 	return;
-
-			// foreach (Point index in dependIndices)
-			// {
-			// 	C chunk = chunks[index];
-			// 	chunk.IncrementUserCountOfLevel(level);
-			// 	levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
-			// }
 		}
 
 		/// <summary>
