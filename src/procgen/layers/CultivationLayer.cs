@@ -3,7 +3,7 @@ using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
 
-public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk, LayerService>, ILayerVisualization ,IGodotInstance {
+public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk, LayerService>, ILayerVisualization, IGodotInstance {
 	public override int chunkW { get { return 360; } }
 	public override int chunkH { get { return 360; } }
 
@@ -27,6 +27,7 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
     public static CultivationLayer GetInstance(LayerArgumentDictionary args) {
         if (!_instances.TryGetValue(args, out var instance)) {
             instance = new CultivationLayer(args);
+			// instance.Initialize(args);
             _instances[args] = instance;
         }
         return instance;
@@ -42,10 +43,22 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 		gridSize = gridChunkRes + gridPadding * 2;
 
 		layerParent = new Node3D { Name = "CultivationLayer" };
-
-		AddLayerDependency(new LayerDependency(GeoGridLayer.GetInstance(layerGlobalArgs), worldSpacePadding, 0));
-		AddLayerDependency(new LayerDependency(LocationLayer.GetInstance(layerGlobalArgs), LocationLayer.requiredPadding, 2));
 	}
+
+	public void Initialize(LayerArgumentDictionary layerGlobalArgs)
+    {
+        // Now add dependencies and do any logic that might trigger other layers
+        AddLayerDependency(new LayerDependency(
+            layer: GeoGridLayer.GetInstance(layerGlobalArgs),
+            padding: worldSpacePadding,
+            level: 0
+        ));
+        AddLayerDependency(new LayerDependency(
+            layer: LocationLayer.GetInstance(layerGlobalArgs),
+            padding: LocationLayer.requiredPadding,
+            level: 2
+        ));
+    }
 
 	public CultivationLayer()
 	{

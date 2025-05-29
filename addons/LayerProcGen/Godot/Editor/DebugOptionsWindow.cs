@@ -84,45 +84,45 @@ public partial class DebugOptionsWindow : ScrollContainer
 			switch (option)
 			{
 				case DebugButton:
-				{
-					control.AddButton(0, ButtonTexture);
-					wrapper.ButtonClicked += WrapperOnButtonClicked;
-
-					void WrapperOnButtonClicked(TreeItem item, long column, long id, long mousebuttonindex)
 					{
-						if (item == control)
-							option.HandleClick();
-					}
+						control.AddButton(0, ButtonTexture);
+						wrapper.ButtonClicked += WrapperOnButtonClicked;
 
-					break;
-				}
+						void WrapperOnButtonClicked(TreeItem item, long column, long id, long mousebuttonindex)
+						{
+							if (item == control)
+								option.HandleClick();
+						}
+
+						break;
+					}
 				case DebugToggle toggle:
-				{
-					control.AddButton(0, toggle.enabledSelf ? ToggleOn : ToggleOff);
-					wrapper.ButtonClicked += WrapperOnButtonClicked;
-
-					void WrapperOnButtonClicked(TreeItem item, long column, long id, long mousebuttonindex)
 					{
-						if (item != control) return;
-						toggle.HandleClick();
-						foreach (var child in ChildrenRecursive(toggle).OfType<DebugToggle>())
-							child.SetEnabled(toggle.enabledSelf);
-						RefreshUI();
-					}
+						control.AddButton(0, toggle.enabledSelf ? ToggleOn : ToggleOff);
+						wrapper.ButtonClicked += WrapperOnButtonClicked;
 
-					break;
-				}
+						void WrapperOnButtonClicked(TreeItem item, long column, long id, long mousebuttonindex)
+						{
+							if (item != control) return;
+							toggle.HandleClick();
+							foreach (var child in ChildrenRecursive(toggle).OfType<DebugToggle>())
+								child.SetEnabled(toggle.enabledSelf);
+							RefreshUI();
+						}
+
+						break;
+					}
 				case DebugFoldout foldout:
-				{
-					break;
-				}
+					{
+						break;
+					}
 				default:
 					GD.PushWarning($"No case for: {option.GetType()}");
 					break;
 			}
 
 		Vector2 minSize = GetThemeDefaultFont().GetStringSize(option.name) * ((level + 1) * .7f); //magic number, should be changed to the inset of the foldout
-		// aka: Vector2 minSize = GetThemeDefaultFont().GetStringSize(option.name) + ((level + 1) * foldoutWidth);
+																								  // aka: Vector2 minSize = GetThemeDefaultFont().GetStringSize(option.name) + ((level + 1) * foldoutWidth);
 		if (minSize > calculatedMinSize)
 			calculatedMinSize = minSize;
 		control.SetText(0, option.name /*+ $" ({option.GetType().Name})"*/);

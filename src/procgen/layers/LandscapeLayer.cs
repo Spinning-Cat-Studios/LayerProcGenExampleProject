@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Godot;
 using Godot.Util;
 using Runevision.LayerProcGen;
@@ -24,7 +25,7 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 
 	public static int gridDoneCounter { get; set; } = 0;
 
-    static readonly Godot.Collections.Dictionary<string, int> TotalChunkDictionary = new()
+	static readonly Godot.Collections.Dictionary<string, int> TotalChunkDictionary = new()
 	{
 		{ nameof(LandscapeLayerA), 25 },
 		{ nameof(LandscapeLayerB), 25 },
@@ -67,10 +68,18 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)))
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
-		if (lodLevel < 2)
-			AddLayerDependency(new LayerDependency(CultivationLayer.GetInstance(layerArguments), CultivationLayer.requiredPadding, 0));
+		// if (lodLevel < 2)
+		// 	AddLayerDependency(new LayerDependency(
+		// 		layer: CultivationLayer.GetInstance(layerArguments),
+		// 		padding: CultivationLayer.requiredPadding,
+		// 		level: 0
+		// 	));
 		if (lodLevel < 3)
-			AddLayerDependency(new LayerDependency(LocationLayer.GetInstance(layerArguments), LocationLayer.requiredPadding, 1));
+			AddLayerDependency(new LayerDependency(
+				layer: LocationLayer.GetInstance(layerArguments),
+				padding: LocationLayer.requiredPadding,
+				level: 1
+			));
 	}
 }
 

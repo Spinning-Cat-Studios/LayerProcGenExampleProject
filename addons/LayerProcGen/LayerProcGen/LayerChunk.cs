@@ -249,6 +249,7 @@ namespace Runevision.LayerProcGen {
 
 		public virtual void Initialize(L layerInstance, Point index)
 		{
+			// GD.Print($"Initializing {GetType().PrettyName()} at index {index} for layer {layerInstance.GetType().PrettyName()}");
 			this.LayerInstance = layerInstance;
 			this.index = index;
 

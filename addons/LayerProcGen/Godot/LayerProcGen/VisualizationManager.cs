@@ -74,6 +74,7 @@ namespace Runevision.LayerProcGen
 				int level,
 				LayerSpec layerSpec
 			) {
+				GD.Print("Creating LayerLevelVis for layer: " + layer.GetType().Name + ", level: " + level);
 				this.layer = layer;
 				this.level = level;
 				name = layer.GetType().PrettyName();

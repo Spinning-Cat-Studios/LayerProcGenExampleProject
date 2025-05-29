@@ -426,6 +426,7 @@ namespace Runevision.LayerProcGen {
 						createIndices,
 						dependIndices
 					);
+					// GD.Print($"Prepared chunk at {index} for {GetType().Name} level {level}");
 				}
 			}
 
