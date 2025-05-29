@@ -79,7 +79,6 @@ namespace Runevision.LayerProcGen {
 			chunkIndices = bounds.GetDivided(layer.chunkSize);
 			if (chunkIndices != oldIndices || !isActive)
 				changed = true;
-			isActive = true;
 		}
 
 		internal void GetPendingBounds(out GridBounds bounds, out int level) {

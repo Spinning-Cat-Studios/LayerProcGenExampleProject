@@ -418,28 +418,66 @@ namespace Runevision.LayerProcGen {
 				for (int y = indices.min.y; y < indices.max.y; y++)
 				{
 					Point index = new Point(x, y);
-					dependIndices.Add(index);
-					C chunk;
-					lock (chunks)
-					{
-						chunk = chunks[index];
-						if (chunk == null)
-						{
-							chunk = ObjectPool<C>.GlobalGet();
-							chunk.index = index;
-							chunks[index] = chunk;
-						}
-					}
-					if (chunk.level < level)
-					{
-						createIndices.Add(index);
-						WorkTracker.AddWorkNeeded(1, GetType());
-					}
+					PrepareChunkForLayer(
+						index,
+						level,
+						createIndices,
+						dependIndices
+					);
 				}
 			}
 
+			ProcessChunkIndices(
+				createIndices,
+				dependIndices,
+				level,
+				bounds,
+				chunkW,
+				chunkH,
+				levelData
+			);
+		}
+
+		private void PrepareChunkForLayer(
+			Point index,
+			int level,
+			List<Point> createIndices,
+			List<Point> dependIndices
+		) {
+			dependIndices.Add(index);
+			C chunk;
+			lock (chunks)
+			{
+				chunk = chunks[index];
+				if (chunk == null)
+				{
+					chunk = ObjectPool<C>.GlobalGet();
+					chunk.Initialize((L)this, index);
+					chunk.index = index;
+					chunks[index] = chunk;
+				}
+				chunk.LayerInstance = (L)this;
+			}
+			if (chunk.level < level)
+			{
+				createIndices.Add(index);
+				WorkTracker.AddWorkNeeded(1, GetType());
+			}
+		}
+
+		private void ProcessChunkIndices(
+			List<Point> createIndices,
+			List<Point> dependIndices,
+			int level,
+			GridBounds bounds,
+			int chunkW,
+			int chunkH,
+			ChunkLevelData levelData
+		) {
 			Point center = bounds.center;
-			createIndices = createIndices.OrderBy(i => Math.Pow(i.x * chunkW - center.x, 2) + Math.Pow(i.y * chunkH - center.y, 2)).ToList();
+			createIndices = createIndices
+				.OrderBy(i => Math.Pow(i.x * chunkW - center.x, 2) + Math.Pow(i.y * chunkH - center.y, 2))
+				.ToList();
 
 			if (!LayerManager.instance.useParallelThreads)
 			{
@@ -467,15 +505,15 @@ namespace Runevision.LayerProcGen {
 					});
 			}
 
-			if (LayerManager.instance.aborting)
-				return;
+			// if (LayerManager.instance.aborting)
+			// 	return;
 
-			foreach (Point index in dependIndices)
-			{
-				C chunk = chunks[index];
-				chunk.IncrementUserCountOfLevel(level);
-				levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
-			}
+			// foreach (Point index in dependIndices)
+			// {
+			// 	C chunk = chunks[index];
+			// 	chunk.IncrementUserCountOfLevel(level);
+			// 	levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
+			// }
 		}
 
 		/// <summary>

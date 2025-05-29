@@ -14,6 +14,7 @@ using Runevision.Common;
 using Godot;
 using System.Linq;
 using LayerProcGenExampleProject.Services.Database;
+using System;
 
 namespace Runevision.LayerProcGen;
 
@@ -61,38 +62,44 @@ public partial class GenerationSource : Node3D
 		// Get layer instance.
 		AbstractChunkBasedDataLayer instance = layer.GetLayerInstance(layerArguments);
 
-		// // Create top layer dependency based on layer.
-		// if (instance != null && (dep == null || dep.layer != instance))
-		// {
-		// 	if (dep != null)
-		// 		dep.isActive = false;
-		// 	dep = new TopLayerDependency(instance, size, layerArguments);
-		// }
+		// Create top layer dependency based on layer.
+		if (instance != null && (dep == null || dep.layer != instance))
+		{
+			if (dep != null)
+				dep.isActive = false;
+			dep = new TopLayerDependency(instance, size, layerArguments);
+		}
 	}
 
-	// public override void _Process(double delta)
-	// {
-	// 	if(Engine.IsEditorHint()) return;
-	// 	base._Process(delta);
-	// 	UpdateState();
-	// 	if (dep == null)
-	// 		return;
+	public override void _Process(double delta)
+	{
+		if(Engine.IsEditorHint()) return;
+		base._Process(delta);
+		UpdateState();
+		if (dep == null)
+			return;
 
-	// 	foreach (IGodotInstance layer in AbstractDataLayer.layers.OfType<IGodotInstance>())
-	// 	{
-	// 		// Node? layerRoot = layer.LayerRoot(); //temporarily disabled for debugging
-	// 		// if(layerRoot != null && layerRoot.GetParent() == null)
-	// 		//     CallDeferred("add_child", layerRoot); //TODO: would be cool to do this after build end
-	// 	}
+		foreach (IGodotInstance layer in AbstractDataLayer.layers.OfType<IGodotInstance>())
+		{
+			// Node? layerRoot = layer.LayerRoot(); //temporarily disabled for debugging
+			// if(layerRoot != null && layerRoot.GetParent() == null)
+			//     CallDeferred("add_child", layerRoot); //TODO: would be cool to do this after build end
+		}
 		
-	// 	Vector3 focusPos = Position;
-	// 	Point focus;
-	// 	if (LayerManagerBehavior.instance?.generationPlane == LayerManagerBehavior.GenerationPlane.XZ)
-	// 		focus = (Point)(focusPos.xz());
-	// 	else
-	// 		focus = (Point)(focusPos.xy());
-	// 	dep.SetFocus(focus);
-	// 	dep.SetSize(Point.Max(Point.one, size));
-	// }
+		Vector3 focusPos = Position;
+		Point focus;
+		if (LayerManagerBehavior.instance?.generationPlane == LayerManagerBehavior.GenerationPlane.XZ)
+			focus = (Point)(focusPos.xz());
+		else
+			focus = (Point)(focusPos.xy());
+		dep.SetFocus(focus);
+		dep.SetSize(Point.Max(Point.one, size));
+		// Only set isActive if it isn't already active
+		if (!dep.isActive)
+		{
+			GD.Print($"Activating layer {layer.className} with size {size} at focus {focus}");
+			dep.isActive = true;
+		}
+	}
 }
 #endif

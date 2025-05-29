@@ -47,22 +47,24 @@ namespace Runevision.LayerProcGen {
 			Type t = GetLayerType();
 			if (t == null)
 				return null;
-			if (layerArguments != null)
+
+			// Always use the static GetInstance method if available
+			var getInstanceMethod = t.GetMethod("GetInstance", BindingFlags.Public | BindingFlags.Static);
+			if (getInstanceMethod != null)
 			{
-				// Try to find a constructor that takes LayerArgumentDictionary
-				var ctor = t.GetConstructor(new[] { typeof(LayerArgumentDictionary) });
-				if (ctor != null)
-				{
-					GD.Print("Creating layer instance of " + t.Name + " with arguments.");
-					return (AbstractChunkBasedDataLayer)ctor.Invoke(new object[] { layerArguments });
-				}
+				return (AbstractChunkBasedDataLayer)getInstanceMethod.Invoke(null, new object[] { layerArguments });
 			}
 
-			GD.Print("Creating layer instance of " + t.Name + " with no arguments.");
-			// Fallback to singleton instance
+			// Fallback to singleton instance property
 			PropertyInfo propInfo = t.GetProperty("instance",
 				BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-			return (AbstractChunkBasedDataLayer)propInfo?.GetValue(null);
+			if (propInfo != null)
+			{
+				return (AbstractChunkBasedDataLayer)propInfo.GetValue(null);
+			}
+
+			GD.PrintErr($"Could not find GetInstance method or instance property for {t.Name}.");
+			return null;
 		}
 	}
 

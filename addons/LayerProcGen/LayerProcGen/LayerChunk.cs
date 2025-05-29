@@ -114,7 +114,7 @@ namespace Runevision.LayerProcGen {
 
 		// Each level of the chunk keeps track of what things it depends on,
 		// and how many things depends on itself.
-		ChunkLevelData[] chunkLevels;
+		internal ChunkLevelData[] chunkLevels;
 
 		internal ChunkLevelData GetLevelData(int requestedLevel) {
 			return chunkLevels[requestedLevel];
@@ -125,17 +125,12 @@ namespace Runevision.LayerProcGen {
 		}
 
 		internal AbstractLayerChunk() {
-			int levelCount = abstractLayer.GetLevelCount();
-
-			chunkLevels = new ChunkLevelData[levelCount];
-			levelLocks = new object[levelCount];
-			for (int i = 0; i < levelCount; i++) {
-				levelLocks[i] = new object();
-			}
 		}
 
-		internal void IncrementUserCountOfLevel(int requestedLevel) {
-			lock (chunkLevels) {
+		internal void IncrementUserCountOfLevel(int requestedLevel)
+		{
+			lock (chunkLevels)
+			{
 				chunkLevels[requestedLevel].userCount++;
 			}
 		}
@@ -251,6 +246,18 @@ namespace Runevision.LayerProcGen {
 		/// identical for all chunks of that layer.
 		/// </remarks>
 		public L layer => LayerInstance;
+
+		public void Initialize(L layerInstance, Point index)
+		{
+			this.LayerInstance = layerInstance;
+			this.index = index;
+
+			int levelCount = layerInstance.GetLevelCount();
+			chunkLevels = new ChunkLevelData[levelCount];
+			levelLocks = new object[levelCount];
+			for (int i = 0; i < levelCount; i++)
+				levelLocks[i] = new object();
+		}
 
 		/// <summary>
 		/// Needed for C# covariance reasons. The layer property can be used instead.
