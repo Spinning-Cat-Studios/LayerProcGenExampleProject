@@ -95,7 +95,7 @@ namespace Runevision.LayerProcGen {
 
 		protected readonly S service;
 		public LayerService Service => service;
-		public LayerArgumentDictionary layerArguments;
+		public new LayerArgumentDictionary layerArguments;
 		int[] chunkLevelCount;
 		private static L instance
 		{

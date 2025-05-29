@@ -42,10 +42,8 @@ namespace Runevision.LayerProcGen {
 		internal abstract void ResetInstance();
 
 		internal AbstractDataLayer() {
-			if (s_LayerDict.ContainsKey(GetType()))
-				Logg.LogError($"Layer {GetType().Name} already created!");
-
-			s_LayerDict.Add(GetType(), this);
+			if (!s_LayerDict.ContainsKey(GetType()))
+        		s_LayerDict.Add(GetType(), this);
 		}
 	}
 

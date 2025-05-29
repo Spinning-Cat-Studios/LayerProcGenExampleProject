@@ -9,6 +9,8 @@ namespace Terrain3D.Scripts.Generation.Layers;
 
 public partial class TerrainLODManager : Node
 {
+	[Export(PropertyHint.ResourceType, nameof(LayerArgumentDictionary))]
+	public LayerArgumentDictionary layerArguments = new();
 	public static TerrainLODManager instance;
 
 	[Export(PropertyHint.NodeType, nameof(Terrain3DBindings.Terrain3D))]
@@ -71,7 +73,7 @@ public partial class TerrainLODManager : Node
 		// AddChild(terrain3D.AsNode3D);
 		terrain3DWrapper = new Terrain3DBindings.Terrain3D(Terrain3D);
 		layers = new TerrainLODLayer[1];
-		SetupLODLayer(0, LandscapeLayerA.instance);
+		SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments));
 	}
 
 	public void SetupLODLayer(int lodLevel, IChunkBasedDataLayer layer)

@@ -53,10 +53,12 @@ namespace Runevision.LayerProcGen {
 				var ctor = t.GetConstructor(new[] { typeof(LayerArgumentDictionary) });
 				if (ctor != null)
 				{
+					GD.Print("Creating layer instance of " + t.Name + " with arguments.");
 					return (AbstractChunkBasedDataLayer)ctor.Invoke(new object[] { layerArguments });
 				}
 			}
 
+			GD.Print("Creating layer instance of " + t.Name + " with no arguments.");
 			// Fallback to singleton instance
 			PropertyInfo propInfo = t.GetProperty("instance",
 				BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);

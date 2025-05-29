@@ -165,7 +165,10 @@ public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD, 
 	private static System.Collections.Generic.Dictionary<LayerArgumentDictionary, LandscapeLayerD> _instances = new();
 
 	public LandscapeLayerD(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { }
+		: base(layerArguments: args)
+	{ 
+		GD.Print("LandscapeLayerD constructor called with arguments: " + args);
+	}
 
 	public LandscapeLayerD()
 	{

@@ -70,7 +70,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
     private void InitializePlayLayer()
     {
-        GD.Print("PlayLayer constructor called with no arguments.");
         Callable.From(HookSignalsDeferred).CallDeferred();
 
         var landscapeLayerD = _layers[nameof(LandscapeLayerD)] as LandscapeLayerD;
