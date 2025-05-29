@@ -68,12 +68,12 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)))
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
-		// if (lodLevel < 2)
-		// 	AddLayerDependency(new LayerDependency(
-		// 		layer: CultivationLayer.GetInstance(layerArguments),
-		// 		padding: CultivationLayer.requiredPadding,
-		// 		level: 0
-		// 	));
+		if (lodLevel < 2)
+			AddLayerDependency(new LayerDependency(
+				layer: CultivationLayer.GetInstance(layerArguments),
+				padding: CultivationLayer.requiredPadding,
+				level: 0
+			));
 		if (lodLevel < 3)
 			AddLayerDependency(new LayerDependency(
 				layer: LocationLayer.GetInstance(layerArguments),

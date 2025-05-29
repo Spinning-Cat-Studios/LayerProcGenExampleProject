@@ -27,7 +27,6 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
     public static CultivationLayer GetInstance(LayerArgumentDictionary args) {
         if (!_instances.TryGetValue(args, out var instance)) {
             instance = new CultivationLayer(args);
-			// instance.Initialize(args);
             _instances[args] = instance;
         }
         return instance;
@@ -43,21 +42,19 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 		gridSize = gridChunkRes + gridPadding * 2;
 
 		layerParent = new Node3D { Name = "CultivationLayer" };
-	}
 
-	public void Initialize(LayerArgumentDictionary layerGlobalArgs)
-    {
-        // Now add dependencies and do any logic that might trigger other layers
-        AddLayerDependency(new LayerDependency(
-            layer: GeoGridLayer.GetInstance(layerGlobalArgs),
-            padding: worldSpacePadding,
-            level: 0
-        ));
-        AddLayerDependency(new LayerDependency(
-            layer: LocationLayer.GetInstance(layerGlobalArgs),
-            padding: LocationLayer.requiredPadding,
-            level: 2
-        ));
+		// Now add dependencies and do any logic that might trigger other layers
+		AddLayerDependency(new LayerDependency(
+			layer: GeoGridLayer.GetInstance(layerGlobalArgs),
+			padding: worldSpacePadding,
+			level: 0
+		));
+		AddLayerDependency(new LayerDependency(
+			layer: LocationLayer.GetInstance(layerGlobalArgs),
+			padding: LocationLayer.requiredPadding,
+			level: 2
+		));
+		GD.Print($"CultivationLayer constructor called with arguments: {layerGlobalArgs}");
     }
 
 	public CultivationLayer()
@@ -68,6 +65,7 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 
 	public void VisualizationUpdate(LayerArgumentDictionary layerArguments)
 	{
+		GD.Print("Begin visualization update for CultivationLayer");
 		VisualizationManager.BeginDebugDraw(this, 0);
 		if (debugPaths.visible || debugPathsRaw.visible || debugPathBounds.visible)
 			HandleAllChunks(0, c => c.DebugDraw(debugPaths.animAlpha, debugPathsRaw.animAlpha, debugPathBounds.animAlpha));

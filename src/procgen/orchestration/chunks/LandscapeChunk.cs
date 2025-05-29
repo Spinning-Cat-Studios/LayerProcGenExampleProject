@@ -93,21 +93,21 @@ public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
 			locationSpecListPool.Return(ref locationSpecs);
 			SimpleProfiler.End(ph);
 
-			if (layer.lodLevel < 2)
-			{
-				// Apply deformation from paths.
-				ph = SimpleProfiler.Begin(phc, "Deform-Paths");
-				List<PathSpec> pathSpecs = pathSpecListPool.Get();
-				CultivationLayer.GetInstance(layer.layerArguments).GetPathsOverlappingBounds(this, pathSpecs, bounds);
-				TerrainDeformation.ApplySpecs(
-					ref heights, ref dists, ref controls,
-					index * layer.chunkResolution - Point.one * GridOffset,
-					Point.one * (layer.gridResolution),
-					((Vector2)layer.chunkSize) / layer.chunkResolution,
-					pathSpecs);
-				pathSpecListPool.Return(ref pathSpecs);
-				SimpleProfiler.End(ph);
-			}
+			// if (layer.lodLevel < 2)
+			// {
+			// 	// Apply deformation from paths.
+			// 	ph = SimpleProfiler.Begin(phc, "Deform-Paths");
+			// 	List<PathSpec> pathSpecs = pathSpecListPool.Get();
+			// 	CultivationLayer.GetInstance(layer.layerArguments).GetPathsOverlappingBounds(this, pathSpecs, bounds);
+			// 	TerrainDeformation.ApplySpecs(
+			// 		ref heights, ref dists, ref controls,
+			// 		index * layer.chunkResolution - Point.one * GridOffset,
+			// 		Point.one * (layer.gridResolution),
+			// 		((Vector2)layer.chunkSize) / layer.chunkResolution,
+			// 		pathSpecs);
+			// 	pathSpecListPool.Return(ref pathSpecs);
+			// 	SimpleProfiler.End(ph);
+			// }
 		}
 
 		RandomHash rand = new RandomHash(123);
