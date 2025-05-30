@@ -273,6 +273,7 @@ namespace Runevision.LayerProcGen
 		/// identical for all chunks of that layer.
 		/// </remarks>
 		public L layer { get { return ChunkBasedDataLayer<L, C, S>.instance; } }
+
 		public virtual void Initialize(L layerInstance, Point index)
 		{
 			// GD.Print($"Initializing {GetType().PrettyName()} at index {index} for layer {layerInstance.GetType().PrettyName()}");
