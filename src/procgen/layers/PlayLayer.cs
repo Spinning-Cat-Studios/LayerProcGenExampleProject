@@ -3,14 +3,32 @@ using Godot;
 using Runevision.LayerProcGen;
 using Runevision.Common;
 using System;
+using System.Collections.Generic;
 
-public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
+public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>, ILayerWithArguments
 {
     public override int chunkW => 8;
     public override int chunkH => 8;
+    
+    private static Dictionary<LayerArgumentDictionary, PlayLayer> _instances = new();
 
-    public PlayLayer()
+    public static PlayLayer GetInstance(LayerArgumentDictionary args) {
+        if (!_instances.TryGetValue(args, out var instance)) {
+            instance = new PlayLayer(args);
+            _instances[args] = instance;
+        }
+        return instance;
+    }
+
+    public PlayLayer() { }
+
+    public PlayLayer(LayerArgumentDictionary layerArguments)
     {
+        GD.Print($"PlayLayer created with arguments: {layerArguments}");
+        InitializePlayLayer();
+    }
+
+    private void InitializePlayLayer() {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
         AddLayerDependency(new LayerDependency(LandscapeLayerD.instance, 2048, 2048));
@@ -23,8 +41,10 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             256,
             256,
             LSystemVillageLayer.instance.GetLevelCount() - 1,
-            (bounds, level, levelData) => {
-                void Handler() {
+            (bounds, level, levelData) =>
+            {
+                void Handler()
+                {
                     LSystemVillageLayer.instance.EnsureLoadedInBounds(bounds, level, levelData);
                     GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
                 }
@@ -36,6 +56,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                     Handler();
             }
         ));
-        // GD.Print("PlayLayer Create");
+        GD.Print("PlayLayer Create");
     }
 }

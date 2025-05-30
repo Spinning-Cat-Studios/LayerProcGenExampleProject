@@ -15,7 +15,7 @@ using UnityEngine;
 namespace Runevision.LayerProcGen {
 
 	public interface ILayerVisualization {
-		void VisualizationUpdate();
+		void VisualizationUpdate(LayerArgumentDictionary layerArguments = null);
 	}
 
 	/// <summary>

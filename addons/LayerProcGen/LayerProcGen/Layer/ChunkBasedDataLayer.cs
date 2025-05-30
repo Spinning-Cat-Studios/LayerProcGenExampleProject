@@ -22,7 +22,9 @@ namespace Runevision.LayerProcGen {
 		Point chunkSize { get; }
 		int GetLevelCount();
 
-		void ApplyArguments(LayerArgumentDictionary layerArguments);
+		LayerArgumentDictionary layerArguments { get; }
+
+		void SetLayerArguments(LayerArgumentDictionary layerArguments);
 
 		void HandleDependenciesForLevel(int level, Action<LayerDependency> func);
 		void HandleAllAbstractChunks(int minChunkLevel, Action<AbstractLayerChunk> func);
@@ -53,7 +55,7 @@ namespace Runevision.LayerProcGen {
 		/// </summary>
 		public virtual int GetLevelCount() { return 1; }
 
-		public virtual void ApplyArguments(LayerArgumentDictionary layerArguments) { }
+		public virtual void SetLayerArguments(LayerArgumentDictionary layerArguments) { }
 
 		internal AbstractChunkBasedDataLayer() { }
 
@@ -80,6 +82,9 @@ namespace Runevision.LayerProcGen {
 		private Action createChunkReady;
 		private Action createChunkDone;
 		private Action removeChunkDone;
+		private LayerArgumentDictionary _layerArguments = new();
+
+		public virtual LayerArgumentDictionary layerArguments => _layerArguments;
 
 		protected readonly S service;
 		public LayerService Service => service;
@@ -91,6 +96,46 @@ namespace Runevision.LayerProcGen {
 				if (s_Instance == null)
 					s_Instance = new L();
 				return s_Instance;
+			}
+		}
+
+		private static Dictionary<LayerArgumentDictionary, L> _instances = new();
+
+		public static L GetInstance(LayerArgumentDictionary args) {
+			if (!_instances.TryGetValue(args, out var instance)) {
+				// Try to find a constructor that takes LayerArgumentDictionary
+				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				if (ctor != null)
+				{
+					instance = (L)ctor.Invoke([args]);
+				}
+				else
+				{
+					instance = new L();
+					instance.SetLayerArguments(args);
+				}
+				_instances[args] = instance;
+			}
+			return instance;
+		}
+
+		public static L InstanceWithArguments(LayerArgumentDictionary args)
+		{
+			GD.Print($"InstanceWithArguments {typeof(L).Name} {args}");
+			// Try to find a constructor that takes LayerArgumentDictionary
+			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+			if (ctor != null)
+			{
+				GD.Print($"Found constructor for {typeof(L).Name} with LayerArgumentDictionary");
+				return (L)ctor.Invoke(new object[] { args });
+			}
+			else
+			{
+				GD.Print($"No constructor found for {typeof(L).Name} with LayerArgumentDictionary, using default constructor");
+				// fallback to default constructor
+				var layer = new L();
+				layer.SetLayerArguments(args);
+				return layer;
 			}
 		}
 
@@ -297,14 +342,14 @@ namespace Runevision.LayerProcGen {
 			if (dep.layerArguments != null)
 			{
 				// 1) apply to the top layer
-				dep.layer.ApplyArguments(dep.layerArguments);
+				dep.layer.SetLayerArguments(dep.layerArguments);
 
 				// 2) also apply to any explicitly‐added dependencies
 				for (int lvl = 0; lvl < dependencies.Length; lvl++)
 				{
 					foreach (var link in dependencies[lvl])
 					{
-						link.layer.ApplyArguments(dep.layerArguments);
+						link.layer.SetLayerArguments(dep.layerArguments);
 					}
 				}
 			}
@@ -318,6 +363,7 @@ namespace Runevision.LayerProcGen {
 
 			if (dep.isActive)
 			{
+				GD.Print($"Processing top dependency {dep.layer.GetType().Name} at level {requiredLevel} with bounds {requiredBounds}");
 				ChunkLevelData newRootUsage = ObjectPool<ChunkLevelData>.GlobalGet();
 
 				// Load according to new dependencies.
