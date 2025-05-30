@@ -15,15 +15,21 @@ public class GeoGridChunk : LayerChunk<GeoGridLayer, GeoGridChunk, LayerService>
 
     public GeoGridChunk()
     {
-        heights = new float[layer.gridChunkRes.y, layer.gridChunkRes.x];
-        dists = new Vector3[layer.gridChunkRes.y, layer.gridChunkRes.x];
-        controls = new uint[layer.gridChunkRes.y, layer.gridChunkRes.x];
         // LayerManager.instance.abort += Dispose;
     }
 
     public void Dispose()
     {
 
+    }
+
+    public override void Initialize(GeoGridLayer layerInstance, Point index)
+    {
+        base.Initialize(layerInstance, index);
+
+        heights = new float[layer.gridChunkRes.y, layer.gridChunkRes.x];
+        dists = new Vector3[layer.gridChunkRes.y, layer.gridChunkRes.x];
+        controls = new uint[layer.gridChunkRes.y, layer.gridChunkRes.x];
     }
 
     public override void Create(int level, bool destroy, Action ready, Action done, LayerService? service = null)

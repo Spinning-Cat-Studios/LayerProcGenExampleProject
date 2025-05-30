@@ -56,6 +56,11 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         return _chunkParent;
     }
 
+    public override void Initialize(LSystemVillageLayer layerInstance, Point index)
+    {
+        base.Initialize(layerInstance, index);
+    }
+
     void Build(Action ready, Action done, VillageService villageService)
     {
         ready?.Invoke();

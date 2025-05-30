@@ -139,13 +139,6 @@ namespace Runevision.LayerProcGen
 
 		internal AbstractLayerChunk()
 		{
-			int levelCount = abstractLayer.GetLevelCount();
-
-			chunkLevels = new ChunkLevelData[levelCount];
-			levelLocks = new object[levelCount];
-			for (int i = 0; i < levelCount; i++) {
-					levelLocks[i] = new object();
-			}
 		}
 
 		internal void IncrementUserCountOfLevel(int requestedLevel)
@@ -272,11 +265,10 @@ namespace Runevision.LayerProcGen
 		/// and other chunk-related properties specified in a layer due to them being
 		/// identical for all chunks of that layer.
 		/// </remarks>
-		public L layer { get { return ChunkBasedDataLayer<L, C, S>.instance; } }
+		public L layer => LayerInstance;
 
 		public virtual void Initialize(L layerInstance, Point index)
 		{
-			// GD.Print($"Initializing {GetType().PrettyName()} at index {index} for layer {layerInstance.GetType().PrettyName()}");
 			this.LayerInstance = layerInstance;
 			this.index = index;
 

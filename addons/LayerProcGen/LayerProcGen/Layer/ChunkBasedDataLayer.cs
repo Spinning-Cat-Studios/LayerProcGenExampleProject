@@ -363,7 +363,6 @@ namespace Runevision.LayerProcGen {
 
 			if (dep.isActive)
 			{
-				GD.Print($"Processing top dependency {dep.layer.GetType().Name} at level {requiredLevel} with bounds {requiredBounds}");
 				ChunkLevelData newRootUsage = ObjectPool<ChunkLevelData>.GlobalGet();
 
 				// Load according to new dependencies.
@@ -387,8 +386,9 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-				internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
+		internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
 		{
+			// GD.Print($"EnsureLoadedInBounds {GetType().Name} {bounds} level {level}");
 			if (LayerManager.instance.aborting)
 				return;
 
@@ -400,30 +400,89 @@ namespace Runevision.LayerProcGen {
 			{
 				for (int y = indices.min.y; y < indices.max.y; y++)
 				{
+					// GD.Print($"Processing chunk at {x}, {y} for {GetType().Name} level {level}");
 					Point index = new Point(x, y);
-					dependIndices.Add(index);
-					C chunk;
-					lock (chunks)
-					{
-						chunk = chunks[index];
-						if (chunk == null)
-						{
-							chunk = ObjectPool<C>.GlobalGet();
-							chunk.index = index;
-							chunks[index] = chunk;
-						}
-					}
-					if (chunk.level < level)
-					{
-						createIndices.Add(index);
-						WorkTracker.AddWorkNeeded(1, GetType());
-					}
+					PrepareChunkForLayer(
+						index,
+						level,
+						createIndices,
+						dependIndices
+					);
+					// GD.Print($"Prepared chunk at {index} for {GetType().Name} level {level}");
 				}
 			}
 
-			Point center = bounds.center;
-			createIndices = createIndices.OrderBy(i => Math.Pow(i.x * chunkW - center.x, 2) + Math.Pow(i.y * chunkH - center.y, 2)).ToList();
+			ProcessChunkIndices(
+				createIndices,
+				dependIndices,
+				level,
+				bounds,
+				chunkW,
+				chunkH,
+				levelData
+			);
+		}
 
+		private void PrepareChunkForLayer(
+			Point index,
+			int level,
+			List<Point> createIndices,
+			List<Point> dependIndices
+		) {
+			dependIndices.Add(index);
+			C chunk;
+			lock (chunks)
+			{
+				chunk = chunks[index];
+				if (chunk == null)
+				{
+					chunk = ObjectPool<C>.GlobalGet();
+					chunk.Initialize((L)this, index);
+					chunk.index = index;
+					chunks[index] = chunk;
+				}
+				chunk.LayerInstance = (L)this;
+			}
+			if (chunk.level < level)
+			{
+				createIndices.Add(index);
+				WorkTracker.AddWorkNeeded(1, GetType());
+			}
+		}
+
+		private void ProcessChunkIndices(
+			List<Point> createIndices,
+			List<Point> dependIndices,
+			int level,
+			GridBounds bounds,
+			int chunkW,
+			int chunkH,
+			ChunkLevelData levelData
+		)
+		{
+			Point center = bounds.center;
+			createIndices = createIndices
+				.OrderBy(i => Math.Pow(i.x * chunkW - center.x, 2) + Math.Pow(i.y * chunkH - center.y, 2))
+				.ToList();
+
+			// Process chunk creations.
+			ProcessChunkCreations(createIndices, level);
+
+			// if (LayerManager.instance.aborting)
+			// 	return;
+
+			// foreach (Point index in dependIndices)
+			// {
+			// 	C chunk = chunks[index];
+			// 	chunk.IncrementUserCountOfLevel(level);
+			// 	levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
+			// }
+		}
+
+		private void ProcessChunkCreations(
+			List<Point> createIndices,
+			int level
+		) {
 			if (!LayerManager.instance.useParallelThreads)
 			{
 				foreach (Point index in createIndices)
@@ -440,24 +499,18 @@ namespace Runevision.LayerProcGen {
 						if (LayerManager.instance.aborting)
 							return;
 						SimpleProfiler.BeginThread("Gen", $"{GetType().Name} {level} {index}");
+						
 						lock (chunks[index].levelLocks[level])
 						{
 							if (chunks[index].level < level)
+							{
+								// GD.Print($"Creating chunk {index} at level {level} in {GetType().Name}");
 								CreateAndRegisterChunk(index, level);
+							}
 							WorkTracker.AddWorkDone(1, GetType());
 						}
 						SimpleProfiler.EndThread();
 					});
-			}
-
-			if (LayerManager.instance.aborting)
-				return;
-
-			foreach (Point index in dependIndices)
-			{
-				C chunk = chunks[index];
-				chunk.IncrementUserCountOfLevel(level);
-				levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
 			}
 		}
 

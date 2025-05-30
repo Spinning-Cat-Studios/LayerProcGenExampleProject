@@ -14,10 +14,17 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, L
 	Point gridOrigin;
 
 	public CultivationChunk() {
+		
+	}
+
+	public override void Initialize(CultivationLayer layerInstance, Point index)
+	{
+		base.Initialize(layerInstance, index);
+		
 		heights = new float[layer.gridSize.y, layer.gridSize.x];
 		dists = new Vector3[layer.gridSize.y, layer.gridSize.x];
 		controls = new uint[layer.gridSize.y, layer.gridSize.x];
-	}
+    }
 
 	public override void Create(
 		int level,
@@ -25,7 +32,8 @@ public class CultivationChunk : LayerChunk<CultivationLayer, CultivationChunk, L
 		Action ready,
 		Action done,
 		LayerService service = null
-	) {
+	)
+	{
 		if (destroy)
 		{
 			foreach (var path in paths)
