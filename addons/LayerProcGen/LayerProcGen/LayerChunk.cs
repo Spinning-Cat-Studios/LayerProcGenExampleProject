@@ -12,19 +12,23 @@ using Runevision.SaveState;
 using System.Collections.Generic;
 using System;
 
-namespace Runevision.LayerProcGen {
+namespace Runevision.LayerProcGen
+{
 
 	/// <summary>
 	/// Internal. A level of a chunk, or alternatively a root usage of a layer.
 	/// </summary>
-	public class ChunkLevelData : IPoolable {
+	public class ChunkLevelData : IPoolable
+	{
 		/// <summary>
 		/// A provider chunk and level that another chunk and level depends on.
 		/// </summary>
-		internal struct ProviderStruct {
+		internal struct ProviderStruct
+		{
 			public AbstractLayerChunk chunk;
 			public int level;
-			public ProviderStruct(AbstractLayerChunk chunk, int level) {
+			public ProviderStruct(AbstractLayerChunk chunk, int level)
+			{
 				this.chunk = chunk;
 				this.level = level;
 			}
@@ -37,7 +41,8 @@ namespace Runevision.LayerProcGen {
 		internal int userCount;
 
 		/// Called when recycled into pool.
-		public void Reset() {
+		public void Reset()
+		{
 			providers.Clear();
 			userCount = 0;
 		}
@@ -46,7 +51,8 @@ namespace Runevision.LayerProcGen {
 	/// <summary>
 	/// Represents a layer "user" that requires data within the specified bounds.
 	/// </summary>
-	public interface ILC {
+	public interface ILC
+	{
 		AbstractChunkBasedDataLayer abstractLayer { get; }
 		GridBounds bounds { get; }
 	}
@@ -54,7 +60,8 @@ namespace Runevision.LayerProcGen {
 	/// <summary>
 	/// Internal. Non-generic class that LayerChunk inherits from.
 	/// </summary>
-	public abstract class AbstractLayerChunk : ILC, IPoolable {
+	public abstract class AbstractLayerChunk : ILC, IPoolable
+	{
 		/// <summary>
 		/// The coordinate index this chunk is for.
 		/// </summary>
@@ -86,8 +93,10 @@ namespace Runevision.LayerProcGen {
 		/// <remarks>
 		/// Based on index * layer.chunkSize.
 		/// </remarks>
-		public Point worldOffset {
-			get {
+		public Point worldOffset
+		{
+			get
+			{
 				return new Point(index.x * abstractLayer.chunkW, index.y * abstractLayer.chunkH);
 			}
 		}
@@ -98,8 +107,10 @@ namespace Runevision.LayerProcGen {
 		/// <remarks>
 		/// Based on worldOffset and layer.chunkSize.
 		/// </remarks>
-		public GridBounds bounds {
-			get {
+		public GridBounds bounds
+		{
+			get
+			{
 				return new GridBounds(worldOffset, abstractLayer.chunkSize);
 			}
 		}
@@ -114,34 +125,41 @@ namespace Runevision.LayerProcGen {
 
 		// Each level of the chunk keeps track of what things it depends on,
 		// and how many things depends on itself.
-		ChunkLevelData[] chunkLevels;
+		public ChunkLevelData[] chunkLevels;
 
-		internal ChunkLevelData GetLevelData(int requestedLevel) {
+		internal ChunkLevelData GetLevelData(int requestedLevel)
+		{
 			return chunkLevels[requestedLevel];
 		}
 
-		internal void SetLevelData(ChunkLevelData dependency, int requestedLevel) {
+		internal void SetLevelData(ChunkLevelData dependency, int requestedLevel)
+		{
 			chunkLevels[requestedLevel] = dependency;
 		}
 
-		internal AbstractLayerChunk() {
+		internal AbstractLayerChunk()
+		{
 			int levelCount = abstractLayer.GetLevelCount();
 
 			chunkLevels = new ChunkLevelData[levelCount];
 			levelLocks = new object[levelCount];
 			for (int i = 0; i < levelCount; i++) {
-				levelLocks[i] = new object();
+					levelLocks[i] = new object();
 			}
 		}
 
-		internal void IncrementUserCountOfLevel(int requestedLevel) {
-			lock (chunkLevels) {
+		internal void IncrementUserCountOfLevel(int requestedLevel)
+		{
+			lock (chunkLevels)
+			{
 				chunkLevels[requestedLevel].userCount++;
 			}
 		}
 
-		internal void DecrementUserCountOfLevel(int requestedLevel) {
-			lock (chunkLevels) {
+		internal void DecrementUserCountOfLevel(int requestedLevel)
+		{
+			lock (chunkLevels)
+			{
 				chunkLevels[requestedLevel].userCount--;
 			}
 			if (chunkLevels[requestedLevel].userCount <= 0)
@@ -157,9 +175,11 @@ namespace Runevision.LayerProcGen {
 		/// happen in the Create method when the destroy parameter is true.
 		/// If overriding this method anyway, ensure the the base method is called.
 		/// </remarks>
-		public virtual void Reset() {
+		public virtual void Reset()
+		{
 			int levelCount = abstractLayer.GetLevelCount();
-			for (int i = 0; i < levelCount; i++) {
+			for (int i = 0; i < levelCount; i++)
+			{
 				chunkLevels[i] = null;
 			}
 		}
@@ -216,13 +236,15 @@ namespace Runevision.LayerProcGen {
 			System.Action ready = null,
 			System.Action done = null,
 			LayerService service = null
-		) { }
+		)
+		{ }
 
 		/// <summary>
 		/// Example output: "[TerrainChunk (3,-4) level 0]"
 		/// </summary>
 		/// <returns></returns>
-		public override string ToString() {
+		public override string ToString()
+		{
 			return $"[{GetType().PrettyName()} {index} level {level}]";
 		}
 	}
@@ -241,6 +263,7 @@ namespace Runevision.LayerProcGen {
 		where C : LayerChunk<L, C, S>, new()
 		where S : LayerService
 	{
+		public L LayerInstance { get; set; }
 		/// <summary>
 		/// The layer for this chunk type.
 		/// </summary>
@@ -250,11 +273,23 @@ namespace Runevision.LayerProcGen {
 		/// identical for all chunks of that layer.
 		/// </remarks>
 		public L layer { get { return ChunkBasedDataLayer<L, C, S>.instance; } }
+		public virtual void Initialize(L layerInstance, Point index)
+		{
+			// GD.Print($"Initializing {GetType().PrettyName()} at index {index} for layer {layerInstance.GetType().PrettyName()}");
+			this.LayerInstance = layerInstance;
+			this.index = index;
+
+			int levelCount = layerInstance.GetLevelCount();
+			chunkLevels = new ChunkLevelData[levelCount];
+			levelLocks = new object[levelCount];
+			for (int i = 0; i < levelCount; i++)
+				levelLocks[i] = new object();
+		}
 
 		/// <summary>
 		/// Needed for C# covariance reasons. The layer property can be used instead.
 		/// </summary>
-		public override AbstractChunkBasedDataLayer abstractLayer { get { return layer; } }
+		 public override AbstractChunkBasedDataLayer abstractLayer { get { return layer; } }
 	}
 
 }
