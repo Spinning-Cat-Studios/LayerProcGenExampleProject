@@ -110,6 +110,24 @@ namespace Runevision.LayerProcGen {
 
 		protected readonly List<LayerDependency>[] dependencies;
 
+		public static L GetInstance(LayerArgumentDictionary args) {
+			if (!_instances.TryGetValue(args, out var instance)) {
+				// Try to find a constructor that takes LayerArgumentDictionary
+				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				if (ctor != null)
+				{
+					instance = (L)ctor.Invoke(new object[] { args });
+				}
+				else
+				{
+					instance = new L();
+					instance.SetLayerArguments(args);
+				}
+				_instances[args] = instance;
+			}
+			return instance;
+		}
+
 		/// <summary>
 		/// Call from constructor to add a dependency on another layer.
 		/// The dependency is added to the lowest level of the current layer.
@@ -167,7 +185,8 @@ namespace Runevision.LayerProcGen {
 			Action createChunkReady = null,
 			Action createChunkDone = null,
 			Action removeChunkDone = null,
-			S service = null
+			S service = null,
+			LayerArgumentDictionary layerArguments = null
 		)
 		{
 			if (rollingGridHeight == 0)
@@ -177,6 +196,7 @@ namespace Runevision.LayerProcGen {
 			this.createChunkDone = createChunkDone;
 			this.removeChunkDone = removeChunkDone;
 			this.service = service;
+			this._layerArguments = layerArguments ?? new LayerArgumentDictionary();
 			int levelCount = GetLevelCount();
 			dependencies = new List<LayerDependency>[levelCount];
 			for (int i = 0; i < levelCount; i++)
@@ -282,7 +302,6 @@ namespace Runevision.LayerProcGen {
 			// External dependencies on other layers.
 			foreach (LayerDependency dependency in dependencies[level])
 			{
-				// GD.Print($"Adding dependency {dependency.layer.GetType().Name} to {GetType().Name}");
 				GridBounds requiredBounds = chunkBounds;
 				requiredBounds.Expand(dependency.hPadding, dependency.hPadding, dependency.vPadding, dependency.vPadding);
 

@@ -8,7 +8,7 @@ using Godot.Util;
 using System.Linq;
 using System.Threading;
 
-public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk, VillageService>, ILayerVisualization
+public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSystemVillageChunk, VillageService>, ILayerVisualization, ILayerWithArguments
 {
 	public override int chunkW { get { return 128; } }
 	public override int chunkH { get { return 128; } }
@@ -128,9 +128,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     public Node3D layerParent;
 
-    /// <summary>
-    /// Default constructor required for generic constraints.
-    /// </summary>
+
     public LSystemVillageLayer() : this(
             rollingGridWidth: 32,
             rollingGridHeight: 0,
@@ -138,8 +136,29 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
             createChunkReady: createChunkReadyDefault,
             createChunkDone: createChunkDoneDefault,
             removeChunkDone: removeChunkDoneDefault,
-            service: _villageService
-        ) { }
+            service: _villageService,
+            layerArguments: new LayerArgumentDictionary()
+        )
+    { 
+        GD.Print("LSystemVillageLayer default constructor called");
+    }
+
+    /// <summary>
+    /// Default constructor required for generic constraints.
+    /// </summary>
+    public LSystemVillageLayer(LayerArgumentDictionary layerArguments) : this(
+            rollingGridWidth: 32,
+            rollingGridHeight: 0,
+            rollingGridMaxOverlap: 3,
+            createChunkReady: createChunkReadyDefault,
+            createChunkDone: createChunkDoneDefault,
+            removeChunkDone: removeChunkDoneDefault,
+            service: _villageService,
+            layerArguments: layerArguments
+        )
+    { 
+        GD.Print("LSystemVillageLayer constructor with LayerArgumentDictionary called");
+    }
 
     /// <summary>
     /// Builds the layer and optionally lets you plug in delegates that are
@@ -155,17 +174,17 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         Action createChunkReady      = null,
         Action createChunkDone       = null,
         Action removeChunkDone       = null,
-        VillageService service       = null)
+        VillageService service       = null,
+        LayerArgumentDictionary layerArguments = null)
         : base(rollingGridWidth,
                rollingGridHeight,
                rollingGridMaxOverlap,
                createChunkReady ?? createChunkReadyDefault,
                createChunkDone ?? createChunkDoneDefault,
                removeChunkDone ?? removeChunkDoneDefault,
-               service ?? _villageService)
+               service ?? _villageService,
+               layerArguments ?? new LayerArgumentDictionary())
     {
-        GD.Print("LSystemVillageLayer constructor called");
-
         layerParent = new Node3D { Name = "LSystemVillageLayer" };
 
         // If you ever need layer‑to‑layer dependencies, add them here:
