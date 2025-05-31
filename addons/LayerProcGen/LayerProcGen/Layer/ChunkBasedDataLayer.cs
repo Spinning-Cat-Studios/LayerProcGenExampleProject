@@ -101,44 +101,6 @@ namespace Runevision.LayerProcGen {
 
 		private static Dictionary<LayerArgumentDictionary, L> _instances = new();
 
-		public static L GetInstance(LayerArgumentDictionary args) {
-			if (!_instances.TryGetValue(args, out var instance)) {
-				// Try to find a constructor that takes LayerArgumentDictionary
-				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
-				if (ctor != null)
-				{
-					instance = (L)ctor.Invoke([args]);
-				}
-				else
-				{
-					instance = new L();
-					instance.SetLayerArguments(args);
-				}
-				_instances[args] = instance;
-			}
-			return instance;
-		}
-
-		public static L InstanceWithArguments(LayerArgumentDictionary args)
-		{
-			GD.Print($"InstanceWithArguments {typeof(L).Name} {args}");
-			// Try to find a constructor that takes LayerArgumentDictionary
-			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
-			if (ctor != null)
-			{
-				GD.Print($"Found constructor for {typeof(L).Name} with LayerArgumentDictionary");
-				return (L)ctor.Invoke(new object[] { args });
-			}
-			else
-			{
-				GD.Print($"No constructor found for {typeof(L).Name} with LayerArgumentDictionary, using default constructor");
-				// fallback to default constructor
-				var layer = new L();
-				layer.SetLayerArguments(args);
-				return layer;
-			}
-		}
-
 		internal override void ResetInstance()
 		{
 			s_Instance = null;
@@ -468,15 +430,15 @@ namespace Runevision.LayerProcGen {
 			// Process chunk creations.
 			ProcessChunkCreations(createIndices, level);
 
-			// if (LayerManager.instance.aborting)
-			// 	return;
+			if (LayerManager.instance.aborting)
+				return;
 
-			// foreach (Point index in dependIndices)
-			// {
-			// 	C chunk = chunks[index];
-			// 	chunk.IncrementUserCountOfLevel(level);
-			// 	levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
-			// }
+			foreach (Point index in dependIndices)
+			{
+				C chunk = chunks[index];
+				chunk.IncrementUserCountOfLevel(level);
+				levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
+			}
 		}
 
 		private void ProcessChunkCreations(

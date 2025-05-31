@@ -9,11 +9,13 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 {
     public override int chunkW => 8;
     public override int chunkH => 8;
-    
+
     private static Dictionary<LayerArgumentDictionary, PlayLayer> _instances = new();
 
-    public static PlayLayer GetInstance(LayerArgumentDictionary args) {
-        if (!_instances.TryGetValue(args, out var instance)) {
+    public static PlayLayer GetInstance(LayerArgumentDictionary args)
+    {
+        if (!_instances.TryGetValue(args, out var instance))
+        {
             instance = new PlayLayer(args);
             _instances[args] = instance;
         }
@@ -28,7 +30,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         InitializePlayLayer();
     }
 
-    private void InitializePlayLayer() {
+    private void InitializePlayLayer()
+    {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
         AddLayerDependency(new LayerDependency(LandscapeLayerD.instance, 2048, 2048));
@@ -56,6 +59,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                     Handler();
             }
         ));
-        GD.Print("PlayLayer Create");
+        // GD.Print("PlayLayer Create");
     }
 }
