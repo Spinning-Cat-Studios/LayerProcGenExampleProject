@@ -25,9 +25,16 @@ public class LocationChunk : LayerChunk<LocationLayer, LocationChunk, LayerServi
 	static RandomHash rand = new RandomHash(-1869717989);
 
 	public LocationChunk() {
+		
+	}
+
+	public override void Initialize(LocationLayer layerInstance, Point index)
+	{
+		base.Initialize(layerInstance, index);
+		
 		initPositions = new Point[3];
 		locations = new List<Location>(initPositions.Length);
-	}
+    }
 
 	// Used temporarily during generation.
 	List<Point> allPositions = new List<Point>();

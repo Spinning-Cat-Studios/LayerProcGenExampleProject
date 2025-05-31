@@ -50,9 +50,9 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         return TerrainNoise.GetHeight(coords2D);
     }
 
-    public override void ApplyArguments(LayerArgumentDictionary args)
+    public override void SetLayerArguments(LayerArgumentDictionary args)
     {
-        // GD.Print("LSystemVillageLayer.ApplyArguments");
+        // GD.Print("LSystemVillageLayer.SetLayerArguments");
         // GD.Print(args.parameters);
         // outer key is the layer’s name (you could also use GetType().Name)
         var myKey = nameof(LSystemVillageLayer);
@@ -176,7 +176,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
 	public static DebugToggle debugLayer = DebugToggle.Create(">Layers/LSystemVillageLayer");
 
-    public void VisualizationUpdate() { 
+    public void VisualizationUpdate(LayerArgumentDictionary layerArguments) { 
         if (!debugLayer.visible)
 			return;
 		for (int i = 0; i < GetLevelCount(); i++) {

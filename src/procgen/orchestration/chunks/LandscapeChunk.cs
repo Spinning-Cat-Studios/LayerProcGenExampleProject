@@ -31,6 +31,13 @@ public abstract class LandscapeChunk<L, C, S> : LayerChunk<L, C, S>
 
 	protected LandscapeChunk()
 	{
+		
+	}
+
+	public override void Initialize(L layerInstance, Point index)
+	{
+		base.Initialize(layerInstance, index);
+
 		heights = new float[layer.gridResolution, layer.gridResolution];
 		controls = new uint[layer.gridResolution, layer.gridResolution];
 		dists = new Vector3[layer.gridResolution, layer.gridResolution];

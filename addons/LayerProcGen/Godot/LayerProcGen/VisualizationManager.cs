@@ -20,7 +20,7 @@ namespace Runevision.LayerProcGen
 {
 	public interface ILayerVisualization
 	{
-		void VisualizationUpdate();
+		void VisualizationUpdate(LayerArgumentDictionary layerArguments = null);
 	}
 
 	/// <summary>
@@ -274,7 +274,7 @@ namespace Runevision.LayerProcGen
 				{
 					lastLayer = vis.layer;
 					if (vis.layer is ILayerVisualization layerVisualization)
-						layerVisualization.VisualizationUpdate();
+						layerVisualization.VisualizationUpdate(lastLayer.layerArguments);
 				}
 			}
 		}

@@ -36,7 +36,7 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 		AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 2));
 	}
 
-	public void VisualizationUpdate() {
+	public void VisualizationUpdate(LayerArgumentDictionary layerArguments) {
 		VisualizationManager.BeginDebugDraw(this, 0);
 		if (debugPaths.visible || debugPathsRaw.visible || debugPathBounds.visible)
 			HandleAllChunks(0, c => c.DebugDraw(debugPaths.animAlpha, debugPathsRaw.animAlpha, debugPathBounds.animAlpha));
@@ -45,7 +45,7 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 		GridBounds focusBounds = GridBounds.Empty();
 		if (debugHeights.enabled || debugDirections.enabled) {
 			foreach (var dep in LayerManager.instance.topDependencies) {
-				if (dep.layer == PlayLayer.instance) {
+				if (dep.layer == PlayLayer.GetInstance(layerArguments)) {
 					focusBounds = new GridBounds(dep.focus - Point.one * 50, Point.one * 100);
 					break;
 				}

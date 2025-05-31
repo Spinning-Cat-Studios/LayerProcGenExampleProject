@@ -61,7 +61,7 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, L
 	public static DebugToggle debugRadiuses = DebugToggle.Create(">Layers/LocationLayer/Radiuses");
 	public static DebugToggle debugConnections = DebugToggle.Create(">Layers/LocationLayer/Connections");
 
-	public void VisualizationUpdate() {
+	public void VisualizationUpdate(LayerArgumentDictionary layerArguments) {
 		if (!debugLayer.visible)
 			return;
 		for (int i = 0; i < GetLevelCount(); i++) {

@@ -22,7 +22,9 @@ namespace Runevision.LayerProcGen {
 		Point chunkSize { get; }
 		int GetLevelCount();
 
-		void ApplyArguments(LayerArgumentDictionary layerArguments);
+		LayerArgumentDictionary layerArguments { get; }
+
+		void SetLayerArguments(LayerArgumentDictionary layerArguments);
 
 		void HandleDependenciesForLevel(int level, Action<LayerDependency> func);
 		void HandleAllAbstractChunks(int minChunkLevel, Action<AbstractLayerChunk> func);
@@ -53,7 +55,7 @@ namespace Runevision.LayerProcGen {
 		/// </summary>
 		public virtual int GetLevelCount() { return 1; }
 
-		public virtual void ApplyArguments(LayerArgumentDictionary layerArguments) { }
+		public virtual void SetLayerArguments(LayerArgumentDictionary layerArguments) { }
 
 		internal AbstractChunkBasedDataLayer() { }
 
@@ -80,6 +82,9 @@ namespace Runevision.LayerProcGen {
 		private Action createChunkReady;
 		private Action createChunkDone;
 		private Action removeChunkDone;
+		private LayerArgumentDictionary _layerArguments = new();
+
+		public virtual LayerArgumentDictionary layerArguments => _layerArguments;
 
 		protected readonly S service;
 		public LayerService Service => service;
@@ -93,6 +98,8 @@ namespace Runevision.LayerProcGen {
 				return s_Instance;
 			}
 		}
+
+		private static Dictionary<LayerArgumentDictionary, L> _instances = new();
 
 		internal override void ResetInstance()
 		{
@@ -297,14 +304,14 @@ namespace Runevision.LayerProcGen {
 			if (dep.layerArguments != null)
 			{
 				// 1) apply to the top layer
-				dep.layer.ApplyArguments(dep.layerArguments);
+				dep.layer.SetLayerArguments(dep.layerArguments);
 
 				// 2) also apply to any explicitly‐added dependencies
 				for (int lvl = 0; lvl < dependencies.Length; lvl++)
 				{
 					foreach (var link in dependencies[lvl])
 					{
-						link.layer.ApplyArguments(dep.layerArguments);
+						link.layer.SetLayerArguments(dep.layerArguments);
 					}
 				}
 			}
@@ -341,7 +348,7 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-				internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
+		internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
 		{
 			// GD.Print($"EnsureLoadedInBounds {GetType().Name} {bounds} level {level}");
 			if (LayerManager.instance.aborting)
@@ -391,10 +398,8 @@ namespace Runevision.LayerProcGen {
 				chunk = chunks[index];
 				if (chunk == null)
 				{
-					// GD.Print($"Creating new chunk at {index} for {GetType().Name} level {level}");
 					chunk = ObjectPool<C>.GlobalGet();
 					chunk.Initialize((L)this, index);
-					// GD.Print($"Initialized chunk at {index} for {GetType().Name} level {level}");
 					chunk.index = index;
 					chunks[index] = chunk;
 				}

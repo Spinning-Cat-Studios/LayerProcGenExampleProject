@@ -71,7 +71,8 @@ namespace Runevision.LayerProcGen {
 			UpdateLayerIndices();
 		}
 
-		void UpdateLayerIndices() {
+		void UpdateLayerIndices()
+		{
 			GridBounds oldIndices = chunkIndices;
 			GridBounds bounds = new GridBounds(focus - size / 2, size);
 			chunkIndices = bounds.GetDivided(layer.chunkSize);
