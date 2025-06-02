@@ -67,7 +67,7 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)))
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
-		GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with arguments: {layerArguments}");
+		GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with arguments: {layerArguments.ToString()}");
 		// var cultivationLayer = CultivationLayer.GetInstance(layerArguments);
 		if (lodLevel < 2)
 			AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
@@ -85,7 +85,7 @@ public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, 
 	
 	public LandscapeLayerA(LayerArgumentDictionary args = null)
     	: base(layerArguments: args) { 
-		GD.Print("LandscapeLayerA constructor called with arguments: " + args);
+		// GD.Print("LandscapeLayerA constructor called with arguments: " + args);
 	}
 
 	public LandscapeLayerA()
@@ -103,7 +103,7 @@ public class LandscapeLayerB : LandscapeLayer<LandscapeLayerB, LandscapeChunkB, 
 	
 	public LandscapeLayerB(LayerArgumentDictionary args = null)
     	: base(layerArguments: args) { 
-		GD.Print("LandscapeLayerB constructor called with arguments: " + args);
+		// GD.Print("LandscapeLayerB constructor called with arguments: " + args);
 	}
 
 	public LandscapeLayerB()
@@ -121,7 +121,7 @@ public class LandscapeLayerC : LandscapeLayer<LandscapeLayerC, LandscapeChunkC, 
 	
 	public LandscapeLayerC(LayerArgumentDictionary args = null)
     	: base(layerArguments: args) { 
-		GD.Print("LandscapeLayerC constructor called with arguments: " + args);
+		// GD.Print("LandscapeLayerC constructor called with arguments: " + args);
 	}
 
 	public LandscapeLayerC()
@@ -139,7 +139,7 @@ public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD, 
 	
 	public LandscapeLayerD(LayerArgumentDictionary args = null)
     	: base(layerArguments: args) { 
-		GD.Print("LandscapeLayerD constructor called with arguments: " + args);
+		// GD.Print("LandscapeLayerD constructor called with arguments: " + args);
 	}
 
 	public LandscapeLayerD()
