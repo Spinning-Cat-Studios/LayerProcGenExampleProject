@@ -36,25 +36,31 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 		AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 2));
 	}
 
-	public void VisualizationUpdate(LayerArgumentDictionary layerArguments) {
+	public void VisualizationUpdate(LayerArgumentDictionary layerArguments)
+	{
 		VisualizationManager.BeginDebugDraw(this, 0);
 		if (debugPaths.visible || debugPathsRaw.visible || debugPathBounds.visible)
 			HandleAllChunks(0, c => c.DebugDraw(debugPaths.animAlpha, debugPathsRaw.animAlpha, debugPathBounds.animAlpha));
 		VisualizationManager.EndDebugDraw();
 
 		GridBounds focusBounds = GridBounds.Empty();
-		if (debugHeights.enabled || debugDirections.enabled) {
-			foreach (var dep in LayerManager.instance.topDependencies) {
-				if (dep.layer == PlayLayer.GetInstance(layerArguments)) {
+		if (debugHeights.enabled || debugDirections.enabled)
+		{
+			foreach (var dep in LayerManager.instance.topDependencies)
+			{
+				if (dep.layer == PlayLayer.GetInstance(layerArguments))
+				{
 					focusBounds = new GridBounds(dep.focus - Point.one * 50, Point.one * 100);
 					break;
 				}
 			}
 		}
-		if (debugHeights.enabled) {
+		if (debugHeights.enabled)
+		{
 			HandleChunksInBounds(null, focusBounds, 0, c => c.DrawHeights(focusBounds));
 		}
-		if (debugDirections.enabled) {
+		if (debugDirections.enabled)
+		{
 			HandleChunksInBounds(null, focusBounds, 0, c => c.DrawDirections(focusBounds));
 		}
 	}

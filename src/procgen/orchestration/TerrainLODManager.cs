@@ -16,6 +16,14 @@ public partial class TerrainLODManager : Node
 
 	public Terrain3DBindings.Terrain3D terrain3DWrapper;
 
+	private LayerArgumentDictionary layerArguments = new LayerArgumentDictionary
+	{
+		parameters = new Godot.Collections.Dictionary<string, Godot.Collections.Dictionary<string, Variant>>
+		{
+			{ "landscape_layer_id", new Godot.Collections.Dictionary<string, Variant> { { "id", "A" } } }
+		}
+	};
+
 	static DebugToggle showCollision = DebugToggle.Create(">Terrain3D/Debug/Show Collision");
 	static DebugToggle showCheckered = DebugToggle.Create(">Terrain3D/Checkered");
 	static DebugToggle showGrey = DebugToggle.Create(">Terrain3D/Grey");
@@ -51,6 +59,12 @@ public partial class TerrainLODManager : Node
 
 	public override void _Ready()
 	{
+		SignalBus.Instance.GenerationSourceReady += layerArguments =>
+		{
+			layerArguments.Merge(this.layerArguments);
+			GD.Print($"TerrainLODManager ready with layer arguments: {layerArguments.ToString()}");
+			SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments));
+		};
 		instance = this;
 		showCollision.Callback += toggled => terrain3DWrapper.DebugShowCollision = toggled;
 		showCheckered.Callback += toggled => terrain3DWrapper.Material.ShowCheckered = toggled;
@@ -71,7 +85,6 @@ public partial class TerrainLODManager : Node
 		// AddChild(terrain3D.AsNode3D);
 		terrain3DWrapper = new Terrain3DBindings.Terrain3D(Terrain3D);
 		layers = new TerrainLODLayer[1];
-		SetupLODLayer(0, LandscapeLayerA.instance);
 	}
 
 	public void SetupLODLayer(int lodLevel, IChunkBasedDataLayer layer)

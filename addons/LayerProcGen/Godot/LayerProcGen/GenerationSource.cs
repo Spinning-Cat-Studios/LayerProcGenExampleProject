@@ -50,6 +50,15 @@ public partial class GenerationSource : Node3D
 			dep.isActive = false;
 	}
 
+	public override void _Ready()
+	{
+		SignalBus.Instance.CallDeferred(
+			"emit_signal",
+			SignalBus.SignalName.GenerationSourceReady,
+			layerArguments
+		);
+	}
+
 	void UpdateState()
 	{
 		if (layer == null)
