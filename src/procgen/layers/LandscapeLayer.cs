@@ -68,7 +68,6 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
 		GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with arguments: {layerArguments.ToString()}");
-		// var cultivationLayer = CultivationLayer.GetInstance(layerArguments);
 		if (lodLevel < 2)
 			AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
 		if (lodLevel < 3)

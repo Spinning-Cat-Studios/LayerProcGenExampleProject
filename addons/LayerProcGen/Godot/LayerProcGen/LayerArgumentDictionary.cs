@@ -42,6 +42,16 @@ namespace Runevision.LayerProcGen
             return merged;
         }
 
+        public LayerArgumentDictionary Remove(string key)
+        {
+            var modified = Clone();
+            if (modified.parameters.ContainsKey(key))
+            {
+                modified.parameters.Remove(key);
+            }
+            return modified;
+        }
+
         public override string ToString()
         {
             var result = new System.Text.StringBuilder();
