@@ -111,11 +111,20 @@ namespace Runevision.LayerProcGen {
 		protected readonly List<LayerDependency>[] dependencies;
 
 		public static L GetInstance(LayerArgumentDictionary args) {
-			if (!_instances.TryGetValue(args, out var instance)) {
+			// TODO: _instances can't just be a Dictionary<LayerArgumentDictionary, L> as
+			// we need to track the type of the layer as well, this causes gnarly bugs otherwise when we nest GetInstance
+			// calls in a stack of dependencies.  e.g. PlayLayer -> LandscapeLayer -> CultivationLayer|LocationLayer.
+			// One way to fix is to extend the instance dictionary to be a Dictionary<(Type, LayerArgumentDictionary), L>
+			// with example usage // _instances[(typeof(L), args)] = instance;
+
+			// GD.Print($"GetInstance called for {typeof(L).Name} with arguments: {args}");
+			if (!_instances.TryGetValue(args, out var instance))
+			{
 				// Try to find a constructor that takes LayerArgumentDictionary
 				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
 				if (ctor != null)
 				{
+					// GD.Print($"Creating instance of {typeof(L).Name} with LayerArgumentDictionary constructor.");
 					instance = (L)ctor.Invoke(new object[] { args });
 				}
 				else
