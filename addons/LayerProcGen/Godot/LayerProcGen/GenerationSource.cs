@@ -65,6 +65,7 @@ public partial class GenerationSource : Node3D
 			return;
 
 		// Get layer instance.
+		// GD.Print($"Creating layer instance for {layer.className} with arguments: {layerArguments}");
 		AbstractChunkBasedDataLayer instance = layer.GetLayerInstance(layerArguments);
 
 		// Create top layer dependency based on layer.

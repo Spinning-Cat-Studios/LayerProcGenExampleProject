@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "build",
-            "command": "<insert-godot-executable-path-here>",
+            "command": "/Applications/Godot_mono_v4.4.1.stable.app/Contents/MacOS/Godot",
             "type": "process",
             "args": [
                 "--build-solutions",

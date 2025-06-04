@@ -13,7 +13,7 @@
             "request": "launch",
             "mode": "executable",
             "preLaunchTask": "build",
-            "executable": "<insert-godot-executable-path-here>",
+            "executable": "/Applications/Godot_mono_v4.4.1.stable.app/Contents/MacOS/Godot",
             // See which arguments are available here:
             // https://docs.godotengine.org/en/stable/getting_started/editor/command_line_tutorial.html
             "executableArguments": [
@@ -27,7 +27,7 @@
             "request": "launch",
             "mode": "executable",
             "preLaunchTask": "build",
-            "executable": "<insert-godot-executable-path-here>",
+            "executable": "/Applications/Godot_mono_v4.4.1.stable.app/Contents/MacOS/Godot",
             // See which arguments are available here:
             // https://docs.godotengine.org/en/stable/getting_started/editor/command_line_tutorial.html
             "executableArguments": [
@@ -40,8 +40,8 @@
             "name": "Attach",
             "type": "godot-mono",
             "request": "attach",
-            "address": "localhost",
-            "port": 23685
+            "address": "127.0.0.1",
+            "port": 6007
         }
     ]
 }

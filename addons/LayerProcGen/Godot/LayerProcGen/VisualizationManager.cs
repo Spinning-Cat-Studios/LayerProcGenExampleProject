@@ -53,6 +53,8 @@ namespace Runevision.LayerProcGen
 		public DebugToggle debugDependencies = DebugToggle.Create("LayerVis/Separate Layers/Dependencies", true);
 		public DebugButton debugToggleAllLayers = DebugButton.Create(">Layers/Toggle All");
 
+		private LayerArgumentDictionary layerArguments = new LayerArgumentDictionary();
+
 		public class LayerLevelVis
 		{
 			public readonly IChunkBasedDataLayer layer;
@@ -107,6 +109,15 @@ namespace Runevision.LayerProcGen
 
 		public override void _Ready()
 		{
+			SignalBus.Instance.GenerationSourceReady += layerArguments =>
+			{
+				layerArguments.Merge(this.layerArguments);
+				GD.Print($"VisualizationManager ready with layer arguments: {layerArguments.ToString()}");
+				SetupVisualization();
+			};
+		}
+
+		private void SetupVisualization() {
 			layerLevels = new List<LayerLevelVis>();
 			foreach (LayerSpec spec in layers)
 			{
@@ -152,7 +163,8 @@ namespace Runevision.LayerProcGen
 			{
 				className = layerSpec.layerClassName
 			};
-			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerNamedReference.GetLayerInstance();
+			// GD.Print("Adding layer: " + layerSpec.layerClassName);
+			IChunkBasedDataLayer layer = (IChunkBasedDataLayer)layerNamedReference.GetLayerInstance(layerArguments);
 			if (layer == null)
 				return;
 			for (int i = layer.GetLevelCount() - 1; i >= 0; i--)
