@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Godot;
 using Godot.Util;
 
-public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, LayerService>, ILayerVisualization {
+public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, LayerService>, ILayerVisualization, ILayerWithArguments {
 	public override int chunkW { get { return 360; } }
 	public override int chunkH { get { return 360; } }
 
@@ -14,7 +14,14 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, L
 
 	}
 
-	public override int GetLevelCount() {
+	public LocationLayer(LayerArgumentDictionary layerArguments)
+	{
+		// Initialize the layer with the provided arguments.
+		GD.Print($"LocationLayer created with arguments: {layerArguments.ToString()}");
+	}
+
+	public override int GetLevelCount()
+	{
 		return 3;
 	}
 

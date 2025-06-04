@@ -76,7 +76,7 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 }
 
 //@formatter:off
-public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, LayerService>
+public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, LayerService>, ILayerWithArguments
 {
 	public override int lodLevel => 0;
 	public override int chunkW => (int)RegionSize.SIZE_1024 / 8;
