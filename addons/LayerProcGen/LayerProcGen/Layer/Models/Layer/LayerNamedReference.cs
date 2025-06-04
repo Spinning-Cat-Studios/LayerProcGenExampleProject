@@ -45,7 +45,7 @@ namespace Runevision.LayerProcGen {
 				var ctor = t.GetConstructor(new[] { typeof(LayerArgumentDictionary) });
 				if (ctor != null)
 				{
-					GD.Print($"Found constructor for {t.Name} with LayerArgumentDictionary.");
+					// GD.Print($"Found constructor for {t.Name} with LayerArgumentDictionary.");
 					return (AbstractChunkBasedDataLayer)ctor.Invoke(new object[] { args });
 				}
 			}
