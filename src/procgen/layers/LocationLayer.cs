@@ -14,9 +14,9 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, L
 
 	}
 
-	public LocationLayer(LayerArgumentDictionary layerArguments)
+	public LocationLayer(LayerArgumentDictionary layerArguments, string subtype = null)
+		: base(layerArguments: layerArguments, subtype: subtype)
 	{
-		// Initialize the layer with the provided arguments.
 		GD.Print($"LocationLayer created with arguments: {layerArguments.ToString()}");
 	}
 

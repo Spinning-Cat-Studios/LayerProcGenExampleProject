@@ -57,7 +57,7 @@ namespace Runevision.LayerProcGen {
 
 		public virtual void SetLayerArguments(LayerArgumentDictionary layerArguments) { }
 
-		internal AbstractChunkBasedDataLayer() { }
+		internal AbstractChunkBasedDataLayer(string subtype = null) { }
 
 		internal abstract void ProcessTopDependency(TopLayerDependency dep);
 
@@ -196,8 +196,9 @@ namespace Runevision.LayerProcGen {
 			Action createChunkDone = null,
 			Action removeChunkDone = null,
 			S service = null,
-			LayerArgumentDictionary layerArguments = null
-		)
+			LayerArgumentDictionary layerArguments = null,
+			string subtype = null
+		) : base(subtype)
 		{
 			if (rollingGridHeight == 0)
 				rollingGridHeight = rollingGridWidth;

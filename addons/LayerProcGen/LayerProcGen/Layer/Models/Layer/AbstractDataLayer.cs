@@ -15,23 +15,29 @@ namespace Runevision.LayerProcGen {
 	/// <summary>
 	/// Internal. Non-generic base class for all layers.
 	/// </summary>
-	public abstract class AbstractDataLayer {
+	public abstract class AbstractDataLayer
+	{
 
 		// Pertaining to all the different layers.
+		protected string Subtype { get; }
 
-		static Dictionary<Type, AbstractDataLayer> s_LayerDict = new Dictionary<Type, AbstractDataLayer>();
+		static Dictionary<(Type, string), AbstractDataLayer> s_LayerDict = new();
 
 		/// <summary>
 		/// Check if a layer of the specified type exists without creating it as a side effect.
 		/// </summary>
-		public static bool HasLayer<T>() where T : AbstractDataLayer { return s_LayerDict.ContainsKey(typeof(T)); }
+		public static bool HasLayer<T>(string subtype = "") where T : AbstractDataLayer
+		{
+			return s_LayerDict.ContainsKey((typeof(T), subtype));
+		}
 
 		/// <summary>
 		/// An enumeration of all current layers.
 		/// </summary>
 		public static IEnumerable<AbstractDataLayer> layers { get { return s_LayerDict.Values; } }
 
-		internal static void ResetInstances() {
+		internal static void ResetInstances()
+		{
 			foreach (var instance in s_LayerDict.Values)
 				instance.ResetInstance();
 			s_LayerDict.Clear();
@@ -41,12 +47,15 @@ namespace Runevision.LayerProcGen {
 
 		internal abstract void ResetInstance();
 
-		internal AbstractDataLayer() {
-			if (s_LayerDict.ContainsKey(GetType()))
-				Logg.LogError($"Layer {GetType().Name} already created!");
+		protected AbstractDataLayer(string subtype = null)
+		{
+			Subtype = subtype ?? "";
+			var key = (GetType(), Subtype);
 
-			s_LayerDict.Add(GetType(), this);
+			if (s_LayerDict.ContainsKey(key))
+				Logg.LogError($"Layer {GetType().Name} with subtype '{Subtype}' already created!");
+
+			s_LayerDict.Add(key, this);
 		}
 	}
-
 }
