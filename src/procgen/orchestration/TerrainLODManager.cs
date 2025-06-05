@@ -63,7 +63,7 @@ public partial class TerrainLODManager : Node
 		{
 			layerArguments.Merge(this.layerArguments);
 			GD.Print($"TerrainLODManager ready with layer arguments: {layerArguments.ToString()}");
-			SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments));
+			SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments, "A"));
 		};
 		instance = this;
 		showCollision.Callback += toggled => terrain3DWrapper.DebugShowCollision = toggled;
