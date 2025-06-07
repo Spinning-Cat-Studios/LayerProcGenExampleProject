@@ -181,7 +181,6 @@ public class RoadPainterService
         // Merge, avoiding duplicate intermediate point
         left.RemoveAt(left.Count - 1);
         left.AddRange(right);
-        left.Add(b);
         return left;
     }
 
