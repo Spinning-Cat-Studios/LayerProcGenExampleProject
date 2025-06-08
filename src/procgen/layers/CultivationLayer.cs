@@ -22,7 +22,14 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 	static DebugToggle debugHeights = DebugToggle.Create(">Layers/CultivationLayer/Heights");
 	static DebugToggle debugDirections = DebugToggle.Create(">Layers/CultivationLayer/Directions");
 
-	public CultivationLayer() {
+	public CultivationLayer(LayerArgumentDictionary layerArguments, string subtype = null)
+		: base(layerArguments: layerArguments, subtype: subtype)
+	{
+		GD.Print($"LocationLayer created with arguments: {layerArguments.ToString()}");
+	}
+
+	public CultivationLayer()
+	{
 		gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
 		// Make the grid for each chunk cover an area extending further our than the chunk.
 		// This ensures the pathfinding can succeed even when it extends partially beyond the chunk.

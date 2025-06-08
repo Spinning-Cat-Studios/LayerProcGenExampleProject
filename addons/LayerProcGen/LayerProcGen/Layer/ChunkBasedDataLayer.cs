@@ -57,7 +57,7 @@ namespace Runevision.LayerProcGen {
 
 		public virtual void SetLayerArguments(LayerArgumentDictionary layerArguments) { }
 
-		internal AbstractChunkBasedDataLayer(string subtype = null) { }
+		internal AbstractChunkBasedDataLayer(LayerKey key) : base(key) { }
 
 		internal abstract void ProcessTopDependency(TopLayerDependency dep);
 
@@ -99,7 +99,7 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		private static Dictionary<(Type, LayerArgumentDictionary, string), L> _instances = new();
+		private static Dictionary<LayerKey, L> _instances = new();
 
 		internal override void ResetInstance()
 		{
@@ -112,28 +112,30 @@ namespace Runevision.LayerProcGen {
 
 		public static L GetInstance(LayerArgumentDictionary args, string subtype = null)
 		{
-			// TODO: _instances can't just be a Dictionary<LayerArgumentDictionary, L> as
-			// we need to track the type of the layer as well, this causes gnarly bugs otherwise when we nest GetInstance
-			// calls in a stack of dependencies.  e.g. PlayLayer -> LandscapeLayer -> CultivationLayer|LocationLayer.
-			// One way to fix is to extend the instance dictionary to be a Dictionary<(Type, LayerArgumentDictionary), L>
-			// with example usage // _instances[(typeof(L), args)] = instance;
-
-			// GD.Print($"GetInstance called for {typeof(L).Name} with arguments: {args}");
-			if (!_instances.TryGetValue((typeof(L), args, subtype), out var instance))
+			var key = new LayerKey(typeof(L), args, subtype);
+			if (!_instances.TryGetValue(key, out var instance))
 			{
-				// Try to find a constructor that takes LayerArgumentDictionary
-				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				// Try to find a constructor that takes LayerArgumentDictionary and string
+				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
 				if (ctor != null)
 				{
-					GD.Print($"Creating instance of {typeof(L).Name} with LayerArgumentDictionary constructor and arguments: {args.ToString()}");
-					instance = (L)ctor.Invoke(new object[] { args });
+					instance = (L)ctor.Invoke(new object[] { args, subtype });
 				}
 				else
 				{
-					instance = new L();
-					instance.SetLayerArguments(args);
+					// Fallback to constructor with just LayerArgumentDictionary
+					var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+					if (argCtor != null)
+					{
+						instance = (L)argCtor.Invoke(new object[] { args });
+					}
+					else
+					{
+						instance = new L();
+						instance.SetLayerArguments(args);
+					}
 				}
-				_instances[(typeof(L), args, subtype)] = instance;
+				_instances[key] = instance;
 			}
 			return instance;
 		}
@@ -198,7 +200,7 @@ namespace Runevision.LayerProcGen {
 			S service = null,
 			LayerArgumentDictionary layerArguments = null,
 			string subtype = null
-		) : base(subtype)
+		) : base(new LayerKey(typeof(L), layerArguments, subtype))
 		{
 			if (rollingGridHeight == 0)
 				rollingGridHeight = rollingGridWidth;

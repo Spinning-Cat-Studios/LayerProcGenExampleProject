@@ -67,19 +67,14 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)))
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
-		// GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with arguments: {layerArguments.ToString()}");
 		// Get the landscape_layer_id from the layer arguments if available
 		var landscapeLayerIdDict = layerArguments.parameters.GetValueOrDefault("landscape_layer_id");
-		string landscapeLayerId = "no_landscape_layer_id_set";
-		if (landscapeLayerIdDict != null && landscapeLayerIdDict.ContainsKey("id"))
-			landscapeLayerId = (string)landscapeLayerIdDict["id"]; // or: landscapeLayerIdDict["id"].AsString();
-
-		var locationLayer = LocationLayer.GetInstance(layerArguments, landscapeLayerId);
-		GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with LocationLayer: {locationLayer}");
+		var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
+		GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with LocationLayer: {sharedLocationLayer}");
 		if (lodLevel < 2)
 			AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
 		if (lodLevel < 3)
-			AddLayerDependency(new LayerDependency(locationLayer, LocationLayer.requiredPadding, 1));
+			AddLayerDependency(new LayerDependency(sharedLocationLayer, LocationLayer.requiredPadding, 1));
 	}
 }
 

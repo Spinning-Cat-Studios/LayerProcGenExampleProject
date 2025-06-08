@@ -57,9 +57,9 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
         ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerD), 2048, 2048, "D");
-        // ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerC), 1024, 1024, "C");
-        // ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerB), 512, 512);
-        // ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerA), 256, 256);
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerC), 1024, 1024, "C");
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerB), 512, 512, "B");
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerA), 256, 256, "A");
 
         var villageLayer = LSystemVillageLayer.GetInstance(layerArguments);
 
