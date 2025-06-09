@@ -14,7 +14,7 @@ using Godot.Util;
 // instead (essentially caching them) so multiple CultivationLayer chunks can use
 // the same already calculated data.
 
-public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, LayerService>
+public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, LayerService>, ILayerWithArguments
 {
     public override int chunkW { get { return 360; } }
     public override int chunkH { get { return 360; } }
@@ -42,7 +42,7 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, Laye
         );
     }
 
-        public GeoGridChunk GetChunk(Point index)
+    public GeoGridChunk GetChunk(Point index)
     {
         lock(chunks)
         {

@@ -48,11 +48,16 @@ namespace Runevision.LayerProcGen {
 
 		internal abstract void ResetInstance();
 
+		private static readonly object s_GlobalLayerCreationLock = new object();
+
 		protected AbstractDataLayer(LayerKey key)
 		{
-			if (s_LayerDict.ContainsKey(key))
-				Logg.LogError($"Layer {key} already created!");
-			s_LayerDict.Add(key, this);
+			lock (s_GlobalLayerCreationLock)
+			{
+				if (s_LayerDict.ContainsKey(key))
+					Logg.LogError($"Layer {key} already created!");
+				s_LayerDict.Add(key, this);
+			}
 		}
 	}
 }

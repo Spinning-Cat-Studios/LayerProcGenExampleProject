@@ -110,34 +110,45 @@ namespace Runevision.LayerProcGen {
 
 		protected readonly List<LayerDependency>[] dependencies;
 
+		private static readonly object _instancesLock = new object();
+
 		public static L GetInstance(LayerArgumentDictionary args, string subtype = null)
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
-			if (!_instances.TryGetValue(key, out var instance))
+
+		    // First check without lock (fast path)
+			if (_instances.TryGetValue(key, out var instance))
+        		return instance;
+
+			lock (_instancesLock)
 			{
-				// Try to find a constructor that takes LayerArgumentDictionary and string
-				var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
-				if (ctor != null)
+				// Second check inside lock (slow path)
+				if (!_instances.TryGetValue(key, out instance))
 				{
-					instance = (L)ctor.Invoke(new object[] { args, subtype });
-				}
-				else
-				{
-					// Fallback to constructor with just LayerArgumentDictionary
-					var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
-					if (argCtor != null)
+					// Try to find a constructor that takes LayerArgumentDictionary and string
+					var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
+					if (ctor != null)
 					{
-						instance = (L)argCtor.Invoke(new object[] { args });
+						instance = (L)ctor.Invoke(new object[] { args, subtype });
 					}
 					else
 					{
-						instance = new L();
-						instance.SetLayerArguments(args);
+						// Fallback to constructor with just LayerArgumentDictionary
+						var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+						if (argCtor != null)
+						{
+							instance = (L)argCtor.Invoke(new object[] { args });
+						}
+						else
+						{
+							instance = new L();
+							instance.SetLayerArguments(args);
+						}
 					}
+					_instances[key] = instance;
 				}
-				_instances[key] = instance;
+				return instance;
 			}
-			return instance;
 		}
 
 		/// <summary>

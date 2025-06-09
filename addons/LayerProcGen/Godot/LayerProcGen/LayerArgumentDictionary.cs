@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using Godot.Collections;
+using System.Linq;
 
 namespace Runevision.LayerProcGen
 {
@@ -65,6 +66,51 @@ namespace Runevision.LayerProcGen
                 }
             }
             return result.ToString();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not LayerArgumentDictionary other)
+                return false;
+
+            // Compare parameters deeply
+            if (parameters.Count != other.parameters.Count)
+                return false;
+
+            foreach (var key in parameters.Keys)
+            {
+                if (!other.parameters.ContainsKey(key))
+                    return false;
+
+                var dictA = parameters[key];
+                var dictB = other.parameters[key];
+
+                if (dictA.Count != dictB.Count)
+                    return false;
+
+                foreach (var innerKey in dictA.Keys)
+                {
+                    if (!dictB.ContainsKey(innerKey) || !Equals(dictA[innerKey], dictB[innerKey]))
+                        return false;
+                }
+            }
+            return true;
+        }
+        
+        public override int GetHashCode()
+        {
+            int hash = 17;
+            foreach (var key in parameters.Keys.OrderBy(k => k))
+            {
+                hash = hash * 31 + key.GetHashCode();
+                var dict = parameters[key];
+                foreach (var innerKey in dict.Keys.OrderBy(k => k))
+                {
+                    hash = hash * 31 + innerKey.GetHashCode();
+                    hash = hash * 31 + dict[innerKey].GetHashCode();
+                }
+            }
+            return hash;
         }
     }
 }
