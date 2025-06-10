@@ -73,7 +73,7 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 		var landscapeLayerIdDict = layerArguments.parameters.GetValueOrDefault("landscape_layer_id");
 		var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
 		var sharedCultivationLayer = CultivationLayer.GetInstance(layerArguments, "shared");
-		GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with LocationLayer: {sharedLocationLayer}");
+		// GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with LocationLayer: {sharedLocationLayer}");
 		if (lodLevel < 2)
 			AddLayerDependency(new LayerDependency(sharedCultivationLayer, CultivationLayer.requiredPadding, 0));
 		if (lodLevel < 3)
@@ -93,8 +93,8 @@ public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, 
 		return ChunkBasedDataLayer<LandscapeLayerA, LandscapeChunkA, LayerService>.GetInstance(args, subtype);
 	}
 
-	public LandscapeLayerA(LayerArgumentDictionary args = null)
-		: base(layerArguments: args, subtype: "A")
+	public LandscapeLayerA(LayerArgumentDictionary args = null, string subtype = "A")
+		: base(layerArguments: args, subtype: subtype)
 	{
 		// GD.Print("LandscapeLayerA constructor called with arguments: " + args);
 	}
@@ -117,8 +117,8 @@ public class LandscapeLayerB : LandscapeLayer<LandscapeLayerB, LandscapeChunkB, 
 		return ChunkBasedDataLayer<LandscapeLayerB, LandscapeChunkB, LayerService>.GetInstance(args, subtype);
 	}
 
-	public LandscapeLayerB(LayerArgumentDictionary args = null)
-		: base(layerArguments: args, subtype: "B")
+	public LandscapeLayerB(LayerArgumentDictionary args = null, string subtype = "B")
+		: base(layerArguments: args, subtype: subtype)
 	{
 		// GD.Print("LandscapeLayerB constructor called with arguments: " + args);
 	}
@@ -141,8 +141,8 @@ public class LandscapeLayerC : LandscapeLayer<LandscapeLayerC, LandscapeChunkC, 
 		return ChunkBasedDataLayer<LandscapeLayerC, LandscapeChunkC, LayerService>.GetInstance(args, subtype);
 	}
 
-	public LandscapeLayerC(LayerArgumentDictionary args = null)
-		: base(layerArguments: args, subtype: "C")
+	public LandscapeLayerC(LayerArgumentDictionary args = null, string subtype = "C")
+		: base(layerArguments: args, subtype: subtype)
 	{
 		// GD.Print("LandscapeLayerC constructor called with arguments: " + args);
 	}
@@ -165,8 +165,8 @@ public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD, 
 		return ChunkBasedDataLayer<LandscapeLayerD, LandscapeChunkD, LayerService>.GetInstance(args, subtype);
 	}
 
-	public LandscapeLayerD(LayerArgumentDictionary args = null)
-		: base(layerArguments: args, subtype: "D")
+	public LandscapeLayerD(LayerArgumentDictionary args = null, string subtype = "D")
+		: base(layerArguments: args, subtype: subtype)
 	{
 		// GD.Print("LandscapeLayerD constructor called with arguments: " + args);
 	}

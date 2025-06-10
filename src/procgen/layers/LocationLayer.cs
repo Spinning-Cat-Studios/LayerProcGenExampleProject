@@ -17,7 +17,7 @@ public class LocationLayer : ChunkBasedDataLayer<LocationLayer, LocationChunk, L
 	public LocationLayer(LayerArgumentDictionary layerArguments, string subtype = null)
 		: base(layerArguments: layerArguments, subtype: subtype)
 	{
-		GD.Print($"LocationLayer created with arguments: {layerArguments.ToString()}");
+		// GD.Print($"LocationLayer created with arguments: {layerArguments.ToString()}");
 	}
 
 	public override int GetLevelCount()

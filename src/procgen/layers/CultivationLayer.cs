@@ -34,12 +34,12 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 
 		layerParent = new Node3D { Name = "CultivationLayer" };
 
-		// var sharedGeoGridLayer = GeoGridLayer.GetInstance(layerArguments, "shared");
+		var sharedGeoGridLayer = GeoGridLayer.GetInstance(layerArguments, "shared");
 		var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
 
-		AddLayerDependency(new LayerDependency(GeoGridLayer.instance, worldSpacePadding, 0));
+		AddLayerDependency(new LayerDependency(sharedGeoGridLayer, worldSpacePadding, 0));
 		AddLayerDependency(new LayerDependency(sharedLocationLayer, LocationLayer.requiredPadding, 2));
-		GD.Print($"CultivationLayer created with arguments: {layerArguments.ToString()}");
+		// GD.Print($"CultivationLayer created with arguments: {layerArguments.ToString()}");
 	}
 
 	public CultivationLayer()

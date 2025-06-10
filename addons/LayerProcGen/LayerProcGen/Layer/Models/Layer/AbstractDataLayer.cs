@@ -6,6 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+using Godot;
 using Runevision.Common;
 using System;
 using System.Collections.Generic;
@@ -55,7 +56,12 @@ namespace Runevision.LayerProcGen {
 			lock (s_GlobalLayerCreationLock)
 			{
 				if (s_LayerDict.ContainsKey(key))
+				{
+					GD.Print($"Layer {key.ToString()} already exists, not creating a new one.");
 					Logg.LogError($"Layer {key} already created!");
+					return;
+				}
+				// GD.Print($"Creating layer {key.ToString()}");
 				s_LayerDict.Add(key, this);
 			}
 		}

@@ -146,7 +146,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
     /// <summary>
     /// Default constructor required for generic constraints.
     /// </summary>
-    public LSystemVillageLayer(LayerArgumentDictionary layerArguments) : this(
+    public LSystemVillageLayer(LayerArgumentDictionary layerArguments, string subtype = null) : this(
             rollingGridWidth: 32,
             rollingGridHeight: 0,
             rollingGridMaxOverlap: 3,

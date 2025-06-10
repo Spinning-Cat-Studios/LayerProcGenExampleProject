@@ -23,9 +23,16 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, Laye
 
     public GeoGridLayer()
     {
-        gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+    }
 
-        AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+    public GeoGridLayer(LayerArgumentDictionary layerArguments, string subtype = null)
+        : base(layerArguments: layerArguments, subtype: subtype)
+    {
+        gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+        
+        var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
+        AddLayerDependency(new LayerDependency(sharedLocationLayer, LocationLayer.requiredPadding, 1));
+        // GD.Print($"GeoGridLayer created with arguments: {layerArguments.ToString()}");
     }
 
     public void GetDataInBounds(ILC q, GridBounds bounds, float[,] heights, Vector3[,] dists, uint[,] controls)

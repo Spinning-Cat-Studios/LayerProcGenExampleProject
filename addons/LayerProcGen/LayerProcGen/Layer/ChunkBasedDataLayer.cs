@@ -116,9 +116,10 @@ namespace Runevision.LayerProcGen {
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
 
-		    // First check without lock (fast path)
+			// GD.Print($"Creating layer {key.ToString()}");
+			// First check without lock (fast path)
 			if (_instances.TryGetValue(key, out var instance))
-        		return instance;
+				return instance;
 
 			lock (_instancesLock)
 			{
@@ -177,14 +178,16 @@ namespace Runevision.LayerProcGen {
 			int rollingGridHeight,
 			int rollingGridMaxOverlap,
 			Action createChunkDone,
-			Action removeChunkDone
+			Action removeChunkDone,
+			string subtype = null
 		) : this(
 			rollingGridWidth,
 			rollingGridHeight,
 			rollingGridMaxOverlap,
 			createChunkDone,
 			removeChunkDone,
-			service: null   // <–– we forward null here
+			service: null,
+			subtype: subtype
 		)
 		{ }
 
