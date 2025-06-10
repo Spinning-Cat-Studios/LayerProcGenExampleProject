@@ -3,14 +3,10 @@
     "tasks": [
         {
             "label": "build",
-            "command": "/Applications/Godot_mono_v4.4.1.stable.app/Contents/MacOS/Godot",
+            "command": "dotnet",
             "type": "process",
             "args": [
-                "--build-solutions",
-                "--path",
-                "${workspaceRoot}",
-                "--no-window",
-                "-q"
+                "build"
             ],
             "problemMatcher": "$msCompile"
         }
