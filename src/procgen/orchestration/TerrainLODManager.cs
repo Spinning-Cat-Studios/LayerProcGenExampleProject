@@ -61,9 +61,12 @@ public partial class TerrainLODManager : Node
 	{
 		SignalBus.Instance.GenerationSourceReady += layerArguments =>
 		{
-			layerArguments.Merge(this.layerArguments);
+			layerArguments.parameters["landscape_layer_id"] = new Godot.Collections.Dictionary<string, Variant>
+			{
+				{ "id", "LandscapeLayerA" }
+			};
 			GD.Print($"TerrainLODManager ready with layer arguments: {layerArguments.ToString()}");
-			SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments));
+			SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments, "A"));
 		};
 		instance = this;
 		showCollision.Callback += toggled => terrain3DWrapper.DebugShowCollision = toggled;

@@ -22,7 +22,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         LayerArgumentDictionary layerArguments,
         Type landscapeLayerType,
         int width,
-        int height)
+        int height,
+        string subtype)
     {
         var landscapeLayerArgs = layerArguments.Clone();
         // Add "landscape_layer_id": "A" through "landscape_layer_id": "D" to the layer arguments
@@ -30,7 +31,24 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         {
             { "id", landscapeLayerType.Name }
         };
-        var landscapeLayerInstance = (AbstractChunkBasedDataLayer)Activator.CreateInstance(landscapeLayerType, landscapeLayerArgs);
+
+        // Find the static GetInstance method with the correct signature
+        var getInstanceMethod = landscapeLayerType.GetMethod(
+            "GetInstance",
+            BindingFlags.Public | BindingFlags.Static,
+            null,
+            new Type[] { typeof(LayerArgumentDictionary), typeof(string) },
+            null
+        );
+        if (getInstanceMethod == null)
+            throw new InvalidOperationException($"GetInstance(LayerArgumentDictionary, string) not found on {landscapeLayerType.Name}");
+
+        // Call the static method
+        var landscapeLayerInstance = (AbstractChunkBasedDataLayer)getInstanceMethod.Invoke(
+            null,
+            new object[] { landscapeLayerArgs, subtype }
+        );
+
         AddLayerDependency(new LayerDependency(landscapeLayerInstance, width, height));
     }
 
@@ -38,10 +56,10 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerD), 2048, 2048);
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerC), 1024, 1024);
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerB), 512, 512);
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerA), 256, 256);
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerD), 2048, 2048, "D");
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerC), 1024, 1024, "C");
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerB), 512, 512, "B");
+        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerA), 256, 256, "A");
 
         var villageLayer = LSystemVillageLayer.GetInstance(layerArguments);
 

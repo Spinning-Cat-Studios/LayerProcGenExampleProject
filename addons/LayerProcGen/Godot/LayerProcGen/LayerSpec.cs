@@ -10,6 +10,8 @@ public partial class LayerSpec : Resource
     public StringName layerClassName;
     [Export] public Color color = Colors.White;
 
+    [Export] public LayerArgumentDictionary layerArguments = new LayerArgumentDictionary();
+
     public override Variant _Get(StringName property)
     {
         return (string)property switch
@@ -41,7 +43,8 @@ public partial class LayerSpec : Resource
                 { "type", (int)Variant.Type.StringName },
                 { "usage", (int)PropertyUsageFlags.Default },
                 { "hint", (int)PropertyHint.Enum },
-                { "hint_string", GenerationSource.FillLayerHintString() }
+                { "hint_string", GenerationSource.FillLayerHintString() },
+                { "layer_arguments", new LayerArgumentDictionary() }
             }
         };
 

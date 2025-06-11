@@ -3,7 +3,7 @@ using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Godot;
 
-public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk, LayerService>, ILayerVisualization ,IGodotInstance {
+public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, CultivationChunk, LayerService>, ILayerVisualization, IGodotInstance, ILayerWithArguments {
 	public override int chunkW { get { return 360; } }
 	public override int chunkH { get { return 360; } }
 
@@ -22,7 +22,9 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 	static DebugToggle debugHeights = DebugToggle.Create(">Layers/CultivationLayer/Heights");
 	static DebugToggle debugDirections = DebugToggle.Create(">Layers/CultivationLayer/Directions");
 
-	public CultivationLayer() {
+	public CultivationLayer(LayerArgumentDictionary layerArguments, string subtype = null)
+		: base(layerArguments: layerArguments, subtype: subtype)
+	{
 		gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
 		// Make the grid for each chunk cover an area extending further our than the chunk.
 		// This ensures the pathfinding can succeed even when it extends partially beyond the chunk.
@@ -32,8 +34,16 @@ public class CultivationLayer : ChunkBasedDataLayer<CultivationLayer, Cultivatio
 
 		layerParent = new Node3D { Name = "CultivationLayer" };
 
-		AddLayerDependency(new LayerDependency(GeoGridLayer.instance, worldSpacePadding, 0));
-		AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 2));
+		var sharedGeoGridLayer = GeoGridLayer.GetInstance(layerArguments, "shared");
+		var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
+
+		AddLayerDependency(new LayerDependency(sharedGeoGridLayer, worldSpacePadding, 0));
+		AddLayerDependency(new LayerDependency(sharedLocationLayer, LocationLayer.requiredPadding, 2));
+		// GD.Print($"CultivationLayer created with arguments: {layerArguments.ToString()}");
+	}
+
+	public CultivationLayer()
+	{
 	}
 
 	public void VisualizationUpdate(LayerArgumentDictionary layerArguments)

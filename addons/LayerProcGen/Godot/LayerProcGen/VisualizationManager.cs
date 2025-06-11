@@ -113,12 +113,25 @@ namespace Runevision.LayerProcGen
 			{
 				layerArguments.Merge(this.layerArguments);
 				GD.Print($"VisualizationManager ready with layer arguments: {layerArguments.ToString()}");
+				UpdateLayers();
 				SetupVisualization();
 			};
 		}
 
-		private void SetupVisualization() {
+		private void UpdateLayers()
+		{
+			foreach (LayerSpec spec in layers)
+			{
+				if (spec.layerArguments == null)
+					spec.layerArguments = new LayerArgumentDictionary();
+				spec.layerArguments.Merge(layerArguments);
+			}
+		}
+
+		private void SetupVisualization()
+		{
 			layerLevels = new List<LayerLevelVis>();
+
 			foreach (LayerSpec spec in layers)
 			{
 				AddLayer(spec);

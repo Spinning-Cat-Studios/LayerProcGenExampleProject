@@ -6,6 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+using Godot;
 using Runevision.Common;
 using System;
 using System.Collections.Generic;
@@ -15,23 +16,30 @@ namespace Runevision.LayerProcGen {
 	/// <summary>
 	/// Internal. Non-generic base class for all layers.
 	/// </summary>
-	public abstract class AbstractDataLayer {
+	public abstract class AbstractDataLayer
+	{
 
 		// Pertaining to all the different layers.
+		protected string Subtype { get; }
 
-		static Dictionary<Type, AbstractDataLayer> s_LayerDict = new Dictionary<Type, AbstractDataLayer>();
+		static Dictionary<LayerKey, AbstractDataLayer> s_LayerDict = new();
 
 		/// <summary>
-		/// Check if a layer of the specified type exists without creating it as a side effect.
+		/// Check if a layer with the exact key exists.
 		/// </summary>
-		public static bool HasLayer<T>() where T : AbstractDataLayer { return s_LayerDict.ContainsKey(typeof(T)); }
+		public static bool HasLayer<T>(LayerArgumentDictionary args = null, string subtype = null) where T : AbstractDataLayer
+		{
+			var key = new LayerKey(typeof(T), args, subtype);
+			return s_LayerDict.ContainsKey(key);
+		}
 
 		/// <summary>
 		/// An enumeration of all current layers.
 		/// </summary>
 		public static IEnumerable<AbstractDataLayer> layers { get { return s_LayerDict.Values; } }
 
-		internal static void ResetInstances() {
+		internal static void ResetInstances()
+		{
 			foreach (var instance in s_LayerDict.Values)
 				instance.ResetInstance();
 			s_LayerDict.Clear();
@@ -41,12 +49,21 @@ namespace Runevision.LayerProcGen {
 
 		internal abstract void ResetInstance();
 
-		internal AbstractDataLayer() {
-			if (s_LayerDict.ContainsKey(GetType()))
-				Logg.LogError($"Layer {GetType().Name} already created!");
+		private static readonly object s_GlobalLayerCreationLock = new object();
 
-			s_LayerDict.Add(GetType(), this);
+		protected AbstractDataLayer(LayerKey key)
+		{
+			lock (s_GlobalLayerCreationLock)
+			{
+				if (s_LayerDict.ContainsKey(key))
+				{
+					GD.Print($"Layer {key.ToString()} already exists, not creating a new one.");
+					Logg.LogError($"Layer {key} already created!");
+					return;
+				}
+				// GD.Print($"Creating layer {key.ToString()}");
+				s_LayerDict.Add(key, this);
+			}
 		}
 	}
-
 }

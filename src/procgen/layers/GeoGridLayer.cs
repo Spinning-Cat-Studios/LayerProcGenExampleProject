@@ -14,7 +14,7 @@ using Godot.Util;
 // instead (essentially caching them) so multiple CultivationLayer chunks can use
 // the same already calculated data.
 
-public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, LayerService>
+public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, LayerService>, ILayerWithArguments
 {
     public override int chunkW { get { return 360; } }
     public override int chunkH { get { return 360; } }
@@ -23,9 +23,16 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, Laye
 
     public GeoGridLayer()
     {
-        gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+    }
 
-        AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+    public GeoGridLayer(LayerArgumentDictionary layerArguments, string subtype = null)
+        : base(layerArguments: layerArguments, subtype: subtype)
+    {
+        gridChunkRes = chunkSize / TerrainPathFinder.halfCellSize;
+        
+        var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
+        AddLayerDependency(new LayerDependency(sharedLocationLayer, LocationLayer.requiredPadding, 1));
+        // GD.Print($"GeoGridLayer created with arguments: {layerArguments.ToString()}");
     }
 
     public void GetDataInBounds(ILC q, GridBounds bounds, float[,] heights, Vector3[,] dists, uint[,] controls)
@@ -42,7 +49,7 @@ public class GeoGridLayer : ChunkBasedDataLayer<GeoGridLayer, GeoGridChunk, Laye
         );
     }
 
-        public GeoGridChunk GetChunk(Point index)
+    public GeoGridChunk GetChunk(Point index)
     {
         lock(chunks)
         {

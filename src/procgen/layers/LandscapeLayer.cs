@@ -59,19 +59,25 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 		int rollingGridHeight = 0,
 		int rollingGridMaxOverlap = 3,
 		Action createChunkDone = null,
-		LayerArgumentDictionary layerArguments = null
+		LayerArgumentDictionary layerArguments = null,
+		string subtype = null
 	) : base(
 		rollingGridWidth,
 		rollingGridHeight,
 		rollingGridMaxOverlap,
-		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)))
+		createChunkDone: createChunkDone ?? (() => createChunkDoneDefault(typeof(L).Name)),
+		subtype: subtype)
 	{
 		TerrainNoise.SetFullTerrainHeight(new Vector2(terrainBaseHeight, terrainHeight));
-		// GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with arguments: {layerArguments.ToString()}");
+		// Get the landscape_layer_id from the layer arguments if available
+		var landscapeLayerIdDict = layerArguments.parameters.GetValueOrDefault("landscape_layer_id");
+		var sharedLocationLayer = LocationLayer.GetInstance(layerArguments, "shared");
+		var sharedCultivationLayer = CultivationLayer.GetInstance(layerArguments, "shared");
+		// GD.Print($"LandscapeLayer<{typeof(L).Name}> constructor called with LocationLayer: {sharedLocationLayer}");
 		if (lodLevel < 2)
-			AddLayerDependency(new LayerDependency(CultivationLayer.instance, CultivationLayer.requiredPadding, 0));
+			AddLayerDependency(new LayerDependency(sharedCultivationLayer, CultivationLayer.requiredPadding, 0));
 		if (lodLevel < 3)
-			AddLayerDependency(new LayerDependency(LocationLayer.instance, LocationLayer.requiredPadding, 1));
+			AddLayerDependency(new LayerDependency(sharedLocationLayer, LocationLayer.requiredPadding, 1));
 	}
 }
 
@@ -82,8 +88,14 @@ public class LandscapeLayerA : LandscapeLayer<LandscapeLayerA, LandscapeChunkA, 
 	public override int chunkW => (int)RegionSize.SIZE_1024 / 8;
 	public override int chunkH => (int)RegionSize.SIZE_1024 / 8;
 	
-	public LandscapeLayerA(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { 
+	public static LandscapeLayerA GetInstance(LayerArgumentDictionary args, string subtype = null)
+	{
+		return ChunkBasedDataLayer<LandscapeLayerA, LandscapeChunkA, LayerService>.GetInstance(args, subtype);
+	}
+
+	public LandscapeLayerA(LayerArgumentDictionary args = null, string subtype = "A")
+		: base(layerArguments: args, subtype: subtype)
+	{
 		// GD.Print("LandscapeLayerA constructor called with arguments: " + args);
 	}
 
@@ -100,8 +112,14 @@ public class LandscapeLayerB : LandscapeLayer<LandscapeLayerB, LandscapeChunkB, 
 	public override int chunkW => (int)RegionSize.SIZE_1024 / 4;
 	public override int chunkH => (int)RegionSize.SIZE_1024 / 4;
 	
-	public LandscapeLayerB(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { 
+	public static LandscapeLayerB GetInstance(LayerArgumentDictionary args, string subtype = null)
+	{
+		return ChunkBasedDataLayer<LandscapeLayerB, LandscapeChunkB, LayerService>.GetInstance(args, subtype);
+	}
+
+	public LandscapeLayerB(LayerArgumentDictionary args = null, string subtype = "B")
+		: base(layerArguments: args, subtype: subtype)
+	{
 		// GD.Print("LandscapeLayerB constructor called with arguments: " + args);
 	}
 
@@ -118,8 +136,14 @@ public class LandscapeLayerC : LandscapeLayer<LandscapeLayerC, LandscapeChunkC, 
 	public override int chunkW => (int)RegionSize.SIZE_1024 / 4;
 	public override int chunkH => (int)RegionSize.SIZE_1024 / 4;
 	
-	public LandscapeLayerC(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { 
+	public static LandscapeLayerC GetInstance(LayerArgumentDictionary args, string subtype = null)
+	{
+		return ChunkBasedDataLayer<LandscapeLayerC, LandscapeChunkC, LayerService>.GetInstance(args, subtype);
+	}
+
+	public LandscapeLayerC(LayerArgumentDictionary args = null, string subtype = "C")
+		: base(layerArguments: args, subtype: subtype)
+	{
 		// GD.Print("LandscapeLayerC constructor called with arguments: " + args);
 	}
 
@@ -136,8 +160,14 @@ public class LandscapeLayerD : LandscapeLayer<LandscapeLayerD, LandscapeChunkD, 
 	public override int chunkW => (int)RegionSize.SIZE_1024;
 	public override int chunkH => (int)RegionSize.SIZE_1024;
 	
-	public LandscapeLayerD(LayerArgumentDictionary args = null)
-    	: base(layerArguments: args) { 
+	public static LandscapeLayerD GetInstance(LayerArgumentDictionary args, string subtype = null)
+	{
+		return ChunkBasedDataLayer<LandscapeLayerD, LandscapeChunkD, LayerService>.GetInstance(args, subtype);
+	}
+
+	public LandscapeLayerD(LayerArgumentDictionary args = null, string subtype = "D")
+		: base(layerArguments: args, subtype: subtype)
+	{
 		// GD.Print("LandscapeLayerD constructor called with arguments: " + args);
 	}
 
