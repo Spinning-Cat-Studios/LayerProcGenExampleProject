@@ -63,7 +63,12 @@ namespace Runevision.LayerProcGen {
 
 		internal abstract void RemoveChunkLevel(Point index, int level);
 
-		internal abstract void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData);
+		internal abstract void EnsureLoadedInBounds(
+			GridBounds bounds,
+			int level,
+			ChunkLevelData levelData,
+			Vector3? cameraPosition = null,
+			Func<Point, int, Vector3, bool> shouldCreateChunk = null);
 	}
 	
 	/// <summary>
@@ -402,7 +407,12 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
+		internal sealed override void EnsureLoadedInBounds(
+			GridBounds bounds,
+			int level,
+			ChunkLevelData levelData,
+			Vector3? cameraPosition = null,
+			Func<Point, int, Vector3, bool> shouldCreateChunk = null)
 		{
 			// GD.Print($"EnsureLoadedInBounds {GetType().Name} {bounds} level {level}");
 			if (LayerManager.instance.aborting)
@@ -412,19 +422,29 @@ namespace Runevision.LayerProcGen {
 			GridBounds indices = bounds.GetDivided(new Point(chunkW, chunkH));
 			List<Point> createIndices = new List<Point>();
 			List<Point> dependIndices = new List<Point>();
+
 			for (int x = indices.min.x; x < indices.max.x; x++)
 			{
 				for (int y = indices.min.y; y < indices.max.y; y++)
 				{
 					// GD.Print($"Processing chunk at {x}, {y} for {GetType().Name} level {level}");
 					Point index = new Point(x, y);
-					PrepareChunkForLayer(
-						index,
-						level,
-						createIndices,
-						dependIndices
-					);
-					// GD.Print($"Prepared chunk at {index} for {GetType().Name} level {level}");
+
+					bool shouldCreate = true;
+					if (cameraPosition.HasValue && shouldCreateChunk != null)
+					{
+						shouldCreate = shouldCreateChunk(index, level, cameraPosition.Value);
+					}
+
+					if (shouldCreate)
+					{
+						PrepareChunkForLayer(index, level, createIndices, dependIndices);
+					}
+					else
+					{
+						// Optionally remove existing chunk if it's now too far
+						RemoveChunkIfTooFar(index, level, cameraPosition.Value);
+					}
 				}
 			}
 
@@ -438,13 +458,41 @@ namespace Runevision.LayerProcGen {
 				levelData
 			);
 		}
+		
+		private void RemoveChunkIfTooFar(Point index, int level, Vector3 cameraPosition)
+		{
+			C chunk = chunks[index];
+			if (chunk != null)
+			{
+				// Calculate chunk world position
+				var chunkWorldPos = new Vector3(index.x * chunkW, 0, index.y * chunkH);
+				var distanceToCamera = cameraPosition.DistanceTo(chunkWorldPos);
+				var maxDistance = 150f; // Unload distance (larger than load distance)
+				
+				if (distanceToCamera > maxDistance)
+				{
+					GD.Print($"Removing chunk {index} - too far from camera (distance: {distanceToCamera})");
+					RemoveChunkLevel(index, level);
+				}
+			}
+		}
 
 		private void PrepareChunkForLayer(
 			Point index,
 			int level,
 			List<Point> createIndices,
-			List<Point> dependIndices
-		) {
+			List<Point> dependIndices,
+			Vector3? cameraPosition = null, // optional camera position for distance checks
+			Func<Point, int, Vector3, bool> shouldCreateChunk = null // optional callback to determine if chunk should be created
+		)
+		{
+			// Check if we should even consider this chunk
+			if (shouldCreateChunk != null && cameraPosition != null && !shouldCreateChunk(index, level, cameraPosition.Value))
+			{
+				// Skip this chunk entirely - it's outside camera range
+				return;
+			}
+
 			dependIndices.Add(index);
 			C chunk;
 			lock (chunks)
