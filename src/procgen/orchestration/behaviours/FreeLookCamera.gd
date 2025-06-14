@@ -30,6 +30,11 @@ var _alt = false
 
 var speed_multi = 7
 
+var checkpoint_position: Vector3 = Vector3.ZERO
+
+func _ready():
+	checkpoint_position = global_transform.origin
+
 func _input(event):
 	# Receives mouse motion
 	if event is InputEventMouseMotion:
@@ -67,8 +72,41 @@ func _input(event):
 
 # Updates mouselook and movement every frame
 func _process(delta):
+	_update_lazy_evaluation_checkpoint()
 	_update_mouselook()
 	_update_movement(delta)
+
+func compute_dist_from_checkpoint_in_xz() -> float:
+	# Computes the distance from the checkpoint in the XZ plane
+	var checkpoint_xz = Vector2(checkpoint_position.x, checkpoint_position.z)
+	var current_xz = Vector2(global_transform.origin.x, global_transform.origin.z)
+	return checkpoint_xz.distance_to(current_xz)
+
+func _update_lazy_evaluation_checkpoint():
+	var dist_from_checkpoint = compute_dist_from_checkpoint_in_xz()
+	if dist_from_checkpoint > 10:
+		# Send a signal via SignalBus to indicate that nodes should be reconstructed
+		#
+		# There is some finesse required here, we don't want to reconstruct all nodes every time 
+		# this condition is met, just those that are on the boundary, i.e. remove nodes that are 
+		# too far away, and add nodes that have come into range.
+		#
+		# This can probably be done by querying sqlite for nodes that are within a certain distance
+		# and circumventing the constructors for those nodes, in lieu of focusing only on nodes
+		# that are not in the database.
+		#
+		# Regardless, now of this logic should be implemented here, this is just a signal, the
+		# consumer of this signal should handle the logic of reconstructing nodes as indicated above.
+		SignalBus.Instance.CallDeferred(
+			"emit_signal",
+			SignalBus.SignalName.ReconstructNodes,
+			checkpoint_position,
+			global_transform.origin,
+			dist_from_checkpoint
+		);
+		# Update the checkpoint position to the current position
+		checkpoint_position = global_transform.origin
+	pass
 
 # Updates camera movement
 func _update_movement(delta):
