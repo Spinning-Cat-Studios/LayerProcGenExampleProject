@@ -481,17 +481,8 @@ namespace Runevision.LayerProcGen {
 			Point index,
 			int level,
 			List<Point> createIndices,
-			List<Point> dependIndices,
-			Vector3? cameraPosition = null, // optional camera position for distance checks
-			Func<Point, int, Vector3, bool> shouldCreateChunk = null // optional callback to determine if chunk should be created
-		)
+			List<Point> dependIndices)
 		{
-			// Check if we should even consider this chunk
-			if (shouldCreateChunk != null && cameraPosition != null && !shouldCreateChunk(index, level, cameraPosition.Value))
-			{
-				// Skip this chunk entirely - it's outside camera range
-				return;
-			}
 
 			dependIndices.Add(index);
 			C chunk;
