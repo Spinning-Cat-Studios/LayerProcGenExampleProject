@@ -112,6 +112,35 @@ namespace Runevision.LayerProcGen {
 
 		private static readonly object _instancesLock = new object();
 
+		private static L ConstructInstance(LayerArgumentDictionary args, string subtype, LayerKey key)
+		{
+			L instance;
+
+			// Try to find a constructor that takes LayerArgumentDictionary and string
+			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
+			if (ctor != null)
+			{
+				instance = (L)ctor.Invoke(new object[] { args, subtype });
+			}
+			else
+			{
+				// Fallback to constructor with just LayerArgumentDictionary
+				var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				if (argCtor != null)
+				{
+					instance = (L)argCtor.Invoke(new object[] { args });
+				}
+				else
+				{
+					instance = new L();
+					instance.SetLayerArguments(args);
+				}
+			}
+
+			_instances[key] = instance;
+			return instance;
+		}
+
 		public static L GetInstance(LayerArgumentDictionary args, string subtype = null)
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
@@ -123,30 +152,9 @@ namespace Runevision.LayerProcGen {
 
 			lock (_instancesLock)
 			{
-				// Second check inside lock (slow path)
 				if (!_instances.TryGetValue(key, out instance))
 				{
-					// Try to find a constructor that takes LayerArgumentDictionary and string
-					var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
-					if (ctor != null)
-					{
-						instance = (L)ctor.Invoke(new object[] { args, subtype });
-					}
-					else
-					{
-						// Fallback to constructor with just LayerArgumentDictionary
-						var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
-						if (argCtor != null)
-						{
-							instance = (L)argCtor.Invoke(new object[] { args });
-						}
-						else
-						{
-							instance = new L();
-							instance.SetLayerArguments(args);
-						}
-					}
-					_instances[key] = instance;
+					instance = ConstructInstance(args, subtype, key);
 				}
 				return instance;
 			}
