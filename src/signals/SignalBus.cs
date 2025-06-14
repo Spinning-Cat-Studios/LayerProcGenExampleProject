@@ -34,6 +34,13 @@ public partial class SignalBus : Node
         LayerArgumentDictionary layerArguments
     );
 
+    [Signal]
+    public delegate void ReconstructNodesEventHandler(
+        Vector3 checkpointPosition,
+        Vector3 currentCameraPosition,
+        float distFromCheckpoint
+    );
+
     // Singleton instance reference (set this script as an autoload in Project Settings).
     public static SignalBus Instance { get; private set; }
 

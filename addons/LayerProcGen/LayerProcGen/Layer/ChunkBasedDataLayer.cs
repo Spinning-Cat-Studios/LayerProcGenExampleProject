@@ -63,7 +63,12 @@ namespace Runevision.LayerProcGen {
 
 		internal abstract void RemoveChunkLevel(Point index, int level);
 
-		internal abstract void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData);
+		internal abstract void EnsureLoadedInBounds(
+			GridBounds bounds,
+			int level,
+			ChunkLevelData levelData,
+			Vector3? cameraPosition = null,
+			Func<Point, int, Vector3, bool> shouldCreateChunk = null);
 	}
 	
 	/// <summary>
@@ -112,6 +117,35 @@ namespace Runevision.LayerProcGen {
 
 		private static readonly object _instancesLock = new object();
 
+		private static L ConstructInstance(LayerArgumentDictionary args, string subtype, LayerKey key)
+		{
+			L instance;
+
+			// Try to find a constructor that takes LayerArgumentDictionary and string
+			var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
+			if (ctor != null)
+			{
+				instance = (L)ctor.Invoke(new object[] { args, subtype });
+			}
+			else
+			{
+				// Fallback to constructor with just LayerArgumentDictionary
+				var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
+				if (argCtor != null)
+				{
+					instance = (L)argCtor.Invoke(new object[] { args });
+				}
+				else
+				{
+					instance = new L();
+					instance.SetLayerArguments(args);
+				}
+			}
+
+			_instances[key] = instance;
+			return instance;
+		}
+
 		public static L GetInstance(LayerArgumentDictionary args, string subtype = null)
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
@@ -123,30 +157,9 @@ namespace Runevision.LayerProcGen {
 
 			lock (_instancesLock)
 			{
-				// Second check inside lock (slow path)
 				if (!_instances.TryGetValue(key, out instance))
 				{
-					// Try to find a constructor that takes LayerArgumentDictionary and string
-					var ctor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary), typeof(string) });
-					if (ctor != null)
-					{
-						instance = (L)ctor.Invoke(new object[] { args, subtype });
-					}
-					else
-					{
-						// Fallback to constructor with just LayerArgumentDictionary
-						var argCtor = typeof(L).GetConstructor(new[] { typeof(LayerArgumentDictionary) });
-						if (argCtor != null)
-						{
-							instance = (L)argCtor.Invoke(new object[] { args });
-						}
-						else
-						{
-							instance = new L();
-							instance.SetLayerArguments(args);
-						}
-					}
-					_instances[key] = instance;
+					instance = ConstructInstance(args, subtype, key);
 				}
 				return instance;
 			}
@@ -394,7 +407,12 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
-		internal sealed override void EnsureLoadedInBounds(GridBounds bounds, int level, ChunkLevelData levelData)
+		internal sealed override void EnsureLoadedInBounds(
+			GridBounds bounds,
+			int level,
+			ChunkLevelData levelData,
+			Vector3? cameraPosition = null,
+			Func<Point, int, Vector3, bool> shouldCreateChunk = null)
 		{
 			// GD.Print($"EnsureLoadedInBounds {GetType().Name} {bounds} level {level}");
 			if (LayerManager.instance.aborting)
@@ -404,19 +422,29 @@ namespace Runevision.LayerProcGen {
 			GridBounds indices = bounds.GetDivided(new Point(chunkW, chunkH));
 			List<Point> createIndices = new List<Point>();
 			List<Point> dependIndices = new List<Point>();
+
 			for (int x = indices.min.x; x < indices.max.x; x++)
 			{
 				for (int y = indices.min.y; y < indices.max.y; y++)
 				{
 					// GD.Print($"Processing chunk at {x}, {y} for {GetType().Name} level {level}");
 					Point index = new Point(x, y);
-					PrepareChunkForLayer(
-						index,
-						level,
-						createIndices,
-						dependIndices
-					);
-					// GD.Print($"Prepared chunk at {index} for {GetType().Name} level {level}");
+
+					bool shouldCreate = true;
+					if (cameraPosition.HasValue && shouldCreateChunk != null)
+					{
+						shouldCreate = shouldCreateChunk(index, level, cameraPosition.Value);
+					}
+
+					if (shouldCreate)
+					{
+						PrepareChunkForLayer(index, level, createIndices, dependIndices);
+					}
+					else
+					{
+						// Optionally remove existing chunk if it's now too far
+						RemoveChunkIfTooFar(index, level, cameraPosition.Value);
+					}
 				}
 			}
 
@@ -430,13 +458,32 @@ namespace Runevision.LayerProcGen {
 				levelData
 			);
 		}
+		
+		private void RemoveChunkIfTooFar(Point index, int level, Vector3 cameraPosition)
+		{
+			C chunk = chunks[index];
+			if (chunk != null)
+			{
+				// Calculate chunk world position
+				var chunkWorldPos = new Vector3(index.x * chunkW, 0, index.y * chunkH);
+				var distanceToCamera = cameraPosition.DistanceTo(chunkWorldPos);
+				var maxDistance = 150f; // Unload distance (larger than load distance)
+				
+				if (distanceToCamera > maxDistance)
+				{
+					GD.Print($"Removing chunk {index} - too far from camera (distance: {distanceToCamera})");
+					RemoveChunkLevel(index, level);
+				}
+			}
+		}
 
 		private void PrepareChunkForLayer(
 			Point index,
 			int level,
 			List<Point> createIndices,
-			List<Point> dependIndices
-		) {
+			List<Point> dependIndices)
+		{
+
 			dependIndices.Add(index);
 			C chunk;
 			lock (chunks)
