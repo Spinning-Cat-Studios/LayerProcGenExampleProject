@@ -12,6 +12,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     
     public override int chunkW => 8;
     public override int chunkH => 8;
+    private bool _subscribed;
 
     public PlayLayer() { }
 
@@ -145,6 +146,66 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
         // Village layer with lazy loading as before
         SetupVillageLayer(layerArguments);
+
+        Callable.From(HookSignalsDeferred).CallDeferred();
+    }
+    
+    private void HookSignalsDeferred()
+    {
+        if (_subscribed) return;
+
+        SignalBus.Instance.ReconstructNodes += OnReconstructNodes;
+        _subscribed = true;
+        
+        GD.Print("[PlayLayer] Subscribed to ReconstructNodes signal");
+    }
+
+    public void OnReconstructNodes(Vector3 checkpointPos, Vector3 cameraPos, float distance)
+    {
+        GD.Print($"[PlayLayer] ReconstructNodes received: distance={distance:F1}");
+        
+        // Only process if camera moved significantly
+        if (distance < 10f) // Adjust threshold as needed
+        {
+            GD.Print("[PlayLayer] Distance too small, skipping reconstruction");
+            return;
+        }
+
+        // Get current player position (or use camera as fallback)
+        Vector3 referencePosition = (_cachedPlayerNode != null) 
+            ? GetCurrentPlayerPosition() 
+            : cameraPos;
+
+        GD.Print($"[PlayLayer] Reconstructing PlayLayer chunks around {referencePosition}");
+
+        // Trigger lazy evaluation on PlayLayer itself
+        var bounds = GetBoundsAroundPosition(referencePosition, 100f); // 100f load distance for PlayLayer
+        EnsureLoadedInBounds(bounds, 0, null, referencePosition, ShouldCreatePlayChunk);
+    }
+
+    private bool ShouldCreatePlayChunk(Point chunkIndex, int level, Vector3 playerPosition)
+    {
+        // Calculate chunk world position (8x8 chunks)
+        var chunkWorldPos = new Vector3(
+            chunkIndex.x * chunkW + chunkW / 2,  // chunkW = 8
+            0,
+            chunkIndex.y * chunkH + chunkH / 2   // chunkH = 8
+        );
+
+        var distance = playerPosition.DistanceTo(chunkWorldPos);
+        var loadDistance = 75f; // Load distance for PlayLayer chunks
+        bool withinRange = distance <= loadDistance;
+
+        // if (!withinRange)
+        // {
+        //     GD.Print($"[PlayLayer] Skipping PlayChunk {chunkIndex} - outside range (distance: {distance:F1})");
+        // }
+        // else
+        // {
+        //     GD.Print($"[PlayLayer] Creating PlayChunk {chunkIndex} - within range (distance: {distance:F1})");
+        // }
+
+        return withinRange;
     }
 
     private Node3D FindPlayerNode(LayerArgumentDictionary layerArguments)
@@ -153,15 +214,15 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         Dictionary<string, Variant> playLayerDict;
         if (!layerArguments.parameters.TryGetValue("PlayLayer", out playLayerDict) || playLayerDict == null || !playLayerDict.ContainsKey("PlayerPath"))
             return null;
-        
+
         string playerPath = playLayerDict["PlayerPath"].AsString();
-        
+
         if (Engine.IsEditorHint())
         {
             GD.Print($"[PlayLayer] Editor mode - cannot resolve player path: {playerPath}");
             return null;
         }
-        
+
         Node3D playerNode = null;
         try
         {
@@ -186,7 +247,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         {
             GD.Print($"[PlayLayer] Could not resolve player path '{playerPath}': {e.Message}");
         }
-        
+
         // Try groups as fallback
         if (playerNode == null)
         {
@@ -197,7 +258,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                 playerNode = playersInGroup[0] as Node3D;
             }
         }
-        
+
         return playerNode;
     }
 
