@@ -3,6 +3,36 @@ using Runevision.LayerProcGen;
 
 public partial class SignalBus : Node
 {
+    private static SignalBus _instance;
+    
+    // C# property
+    public static SignalBus Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new SignalBus();
+            }
+            return _instance;
+        }
+        private set
+        {
+            _instance = value;
+        }
+    }
+    
+    // GDScript accessible method
+    public static SignalBus GetInstance()
+    {
+        return Instance;
+    }
+    
+    public override void _Ready()
+    {
+        _instance = this;
+    }
+    
     [Signal]
     public delegate void RoadsGeneratedEventHandler(
         Vector3[] roadPositions,
@@ -40,12 +70,4 @@ public partial class SignalBus : Node
         Vector3 currentCameraPosition,
         float distFromCheckpoint
     );
-
-    // Singleton instance reference (set this script as an autoload in Project Settings).
-    public static SignalBus Instance { get; private set; }
-
-    public override void _Ready()
-    {
-        Instance = this;
-    }
 }

@@ -150,6 +150,7 @@ namespace Runevision.LayerProcGen {
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
 
+			GD.Print($"GetInstance called with args: {args.ToString()} and subtype: {subtype}");
 			// GD.Print($"Creating layer {key.ToString()}");
 			// First check without lock (fast path)
 			if (_instances.TryGetValue(key, out var instance))

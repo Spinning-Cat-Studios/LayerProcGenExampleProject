@@ -97,9 +97,7 @@ func _update_lazy_evaluation_checkpoint():
 		#
 		# Regardless, now of this logic should be implemented here, this is just a signal, the
 		# consumer of this signal should handle the logic of reconstructing nodes as indicated above.
-		SignalBus.Instance.CallDeferred(
-			"emit_signal",
-			SignalBus.SignalName.ReconstructNodes,
+		SignalBus.GetInstance().ReconstructNodes.emit(
 			checkpoint_position,
 			global_transform.origin,
 			dist_from_checkpoint
