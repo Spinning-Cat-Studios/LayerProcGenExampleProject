@@ -178,9 +178,18 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
         GD.Print($"[PlayLayer] Reconstructing PlayLayer chunks around {referencePosition}");
 
+        ChunkLevelData levelData = new ChunkLevelData();
+
         // Trigger lazy evaluation on PlayLayer itself
-        var bounds = GetBoundsAroundPosition(referencePosition, 100f); // 100f load distance for PlayLayer
-        EnsureLoadedInBounds(bounds, 0, null, referencePosition, ShouldCreatePlayChunk);
+        try
+        {
+            var bounds = GetBoundsAroundPosition(referencePosition, 100f);
+            EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreatePlayChunk);
+        }
+        finally
+        {
+            ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
+        }
     }
 
     private bool ShouldCreatePlayChunk(Point chunkIndex, int level, Vector3 playerPosition)
@@ -366,8 +375,18 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         // Create bounds around player for initial load
         var initialBounds = GetBoundsAroundPosition(playerPosition, loadDistance * 1.2f); // Slightly larger initial area
 
+        ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
+
         GD.Print($"[Initial Load] Loading {layer.GetType().Name} chunks around player at {playerPosition}");
-        layer.EnsureLoadedInBounds(initialBounds, 0, null, playerPosition, ShouldCreateChunk);
+        try
+        {
+            layer.EnsureLoadedInBounds(initialBounds, 0, levelData, playerPosition, ShouldCreateChunk);
+        }
+        finally
+        {
+            // Return to pool when done
+            ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
+        }
     }
 
     private Vector3 GetCurrentPlayerPosition()
