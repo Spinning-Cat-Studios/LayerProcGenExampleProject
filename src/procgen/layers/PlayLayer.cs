@@ -7,6 +7,9 @@ using Godot.Collections;
 
 public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>, ILayerWithArguments
 {
+    private Node3D _cachedPlayerNode; // Cache the player node reference
+    private Vector3 _lastKnownPlayerPosition; // Cache the position
+    
     public override int chunkW => 8;
     public override int chunkH => 8;
 
@@ -123,6 +126,9 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
+        // Find player once and cache it
+        _cachedPlayerNode = FindPlayerNode(layerArguments);
+
         // Extract player position for initial lazy loading
         Vector3? playerPosition = ExtractPlayerPosition(layerArguments);
 
@@ -139,6 +145,60 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
         // Village layer with lazy loading as before
         SetupVillageLayer(layerArguments);
+    }
+
+    private Node3D FindPlayerNode(LayerArgumentDictionary layerArguments)
+    {
+        // Your existing ExtractPlayerPosition logic, but return the Node3D instead
+        Dictionary<string, Variant> playLayerDict;
+        if (!layerArguments.parameters.TryGetValue("PlayLayer", out playLayerDict) || playLayerDict == null || !playLayerDict.ContainsKey("PlayerPath"))
+            return null;
+        
+        string playerPath = playLayerDict["PlayerPath"].AsString();
+        
+        if (Engine.IsEditorHint())
+        {
+            GD.Print($"[PlayLayer] Editor mode - cannot resolve player path: {playerPath}");
+            return null;
+        }
+        
+        Node3D playerNode = null;
+        try
+        {
+            var sceneTree = Engine.GetMainLoop() as SceneTree;
+            if (sceneTree?.CurrentScene != null)
+            {
+                if (playerPath == ".")
+                {
+                    playerNode = sceneTree.CurrentScene as Node3D;
+                    if (playerNode == null)
+                    {
+                        playerNode = sceneTree.CurrentScene.FindChild("Player*", true, false) as Node3D;
+                    }
+                }
+                else
+                {
+                    playerNode = sceneTree.CurrentScene.GetNode(playerPath) as Node3D;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            GD.Print($"[PlayLayer] Could not resolve player path '{playerPath}': {e.Message}");
+        }
+        
+        // Try groups as fallback
+        if (playerNode == null)
+        {
+            var sceneTree = Engine.GetMainLoop() as SceneTree;
+            var playersInGroup = sceneTree?.GetNodesInGroup("player");
+            if (playersInGroup?.Count > 0)
+            {
+                playerNode = playersInGroup[0] as Node3D;
+            }
+        }
+        
+        return playerNode;
     }
 
     private void SetupLandscapeLayersWithLazyLoading(LayerArgumentDictionary layerArguments, Vector3 playerPosition)
@@ -249,6 +309,32 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         layer.EnsureLoadedInBounds(initialBounds, 0, null, playerPosition, ShouldCreateChunk);
     }
 
+    private Vector3 GetCurrentPlayerPosition()
+    {
+        // Fast lookup - just get current position from cached node
+        if (_cachedPlayerNode != null)
+        {
+            try
+            {
+                _lastKnownPlayerPosition = _cachedPlayerNode.GlobalPosition;
+                return _lastKnownPlayerPosition;
+            }
+            catch (ObjectDisposedException)
+            {
+                // Node was freed/disposed
+                _cachedPlayerNode = null;
+            }
+            catch (Exception)
+            {
+                // Other issues accessing the node
+                _cachedPlayerNode = null;
+            }
+        }
+        
+        // Fallback to last known position if node became invalid
+        return _lastKnownPlayerPosition;
+    }
+    
     private void SetupCameraMovementHandling(LayerArgumentDictionary layerArguments)
     {
         void ReconstructNodesHandler(Vector3 checkpointPos, Vector3 cameraPos, float distance)
@@ -256,7 +342,10 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             // Only process if camera moved significantly
             if (distance < 5f) return;
 
-            Vector3 referencePosition = ExtractPlayerPosition(layerArguments) ?? cameraPos;
+            // Use fast cached player position lookup
+            Vector3 referencePosition = (_cachedPlayerNode != null) 
+                ? GetCurrentPlayerPosition() 
+                : cameraPos;
 
             // Process each landscape layer dependency
             HandleDependenciesForLevel(0, dependency =>
