@@ -150,7 +150,7 @@ namespace Runevision.LayerProcGen {
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
 
-			GD.Print($"GetInstance called with args: {args.ToString()} and subtype: {subtype}");
+			// GD.Print($"GetInstance called with args: {args.ToString()} and subtype: {subtype}");
 			// GD.Print($"Creating layer {key.ToString()}");
 			// First check without lock (fast path)
 			if (_instances.TryGetValue(key, out var instance))
@@ -170,7 +170,7 @@ namespace Runevision.LayerProcGen {
 		/// Call from constructor to add a dependency on another layer.
 		/// The dependency is added to the lowest level of the current layer.
 		/// </summary>
-		protected void AddLayerDependency(LayerDependency dependency)
+		public void AddLayerDependency(LayerDependency dependency)
 		{
 			dependencies[0].Add(dependency);
 		}
@@ -179,7 +179,7 @@ namespace Runevision.LayerProcGen {
 		/// Call from constructor to add a dependency on another layer.
 		/// The dependency is added to the specified <paramref name="ownLevel"/> of the current layer.
 		/// </summary>
-		protected void AddLayerDependency(int ownLevel, LayerDependency dependency)
+		public void AddLayerDependency(int ownLevel, LayerDependency dependency)
 		{
 			dependencies[ownLevel].Add(dependency);
 		}
