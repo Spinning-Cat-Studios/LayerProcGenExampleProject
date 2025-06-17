@@ -1,4 +1,4 @@
-class_name FreeLookCamera extends Camera3D
+class_name FreeLookCameraSamples extends Camera3D
 
 # Modifier keys' speed multiplier
 const SHIFT_MULTIPLIER = 10

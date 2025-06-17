@@ -44,12 +44,12 @@ public abstract class LandscapeLayer<L, C, S> : ChunkBasedDataLayer<L, C, S>
 			if (LandscapeChunkCounterBlackboard.GridDoneCounter >= TotalChunkDictionary.Values.Sum())
 			{
 				LandscapeChunkCounterBlackboard.LandscapeChunksAreReady = true;
+				LandscapeChunkCounterBlackboard.GridDoneCounter = 0;
 				GD.Print("✅ All chunks finished generating, emitting signal to TerrainManagerService");
 				SignalBus.Instance.CallDeferred(
 					"emit_signal",
 					SignalBus.SignalName.LandscapeChunksReady
 				);
-				LandscapeChunkCounterBlackboard.GridDoneCounter = 0;
 			}
 		}
 	}
