@@ -9,7 +9,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 {
     private Node3D _cachedPlayerNode; // Cache the player node reference
     private Vector3 _lastKnownPlayerPosition; // Cache the position
-    
+    private const float CHECKPOINT_DIST_DELTA_THRESHOLD = 50.0f;
+
     public override int chunkW => 8;
     public override int chunkH => 8;
     private bool _subscribed;
@@ -149,31 +150,31 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
         Callable.From(HookSignalsDeferred).CallDeferred();
     }
-    
+
     private void HookSignalsDeferred()
     {
         if (_subscribed) return;
 
         SignalBus.Instance.ReconstructNodes += OnReconstructNodes;
         _subscribed = true;
-        
+
         GD.Print("[PlayLayer] Subscribed to ReconstructNodes signal");
     }
 
     public void OnReconstructNodes(Vector3 checkpointPos, Vector3 cameraPos, float distance)
     {
         GD.Print($"[PlayLayer] ReconstructNodes received: distance={distance:F1}");
-        
+
         // Only process if camera moved significantly
-        if (distance < 10f) // Adjust threshold as needed
+        if (distance < CHECKPOINT_DIST_DELTA_THRESHOLD)
         {
             GD.Print("[PlayLayer] Distance too small, skipping reconstruction");
             return;
         }
 
         // Get current player position (or use camera as fallback)
-        Vector3 referencePosition = (_cachedPlayerNode != null) 
-            ? GetCurrentPlayerPosition() 
+        Vector3 referencePosition = (_cachedPlayerNode != null)
+            ? GetCurrentPlayerPosition()
             : cameraPos;
 
         GD.Print($"[PlayLayer] Reconstructing PlayLayer chunks around {referencePosition}");
@@ -361,7 +362,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                 chunkIndex.y * layer.chunkH + layer.chunkH / 2
             );
 
-            var distanceToPlayer = playerPos.DistanceTo(chunkWorldPos);
+            var playerXZPos = new Vector3(playerPos.X, 0, playerPos.Z);
+            var distanceToPlayer = playerXZPos.DistanceTo(chunkWorldPos);
             bool withinRange = distanceToPlayer <= loadDistance;
 
             if (!withinRange)
@@ -410,11 +412,11 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                 _cachedPlayerNode = null;
             }
         }
-        
+
         // Fallback to last known position if node became invalid
         return _lastKnownPlayerPosition;
     }
-    
+
     private void SetupCameraMovementHandling(LayerArgumentDictionary layerArguments)
     {
         void ReconstructNodesHandler(Vector3 checkpointPos, Vector3 cameraPos, float distance)
@@ -423,8 +425,8 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             if (distance < 5f) return;
 
             // Use fast cached player position lookup
-            Vector3 referencePosition = (_cachedPlayerNode != null) 
-                ? GetCurrentPlayerPosition() 
+            Vector3 referencePosition = (_cachedPlayerNode != null)
+                ? GetCurrentPlayerPosition()
                 : cameraPos;
 
             // Process each landscape layer dependency
@@ -464,7 +466,9 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                 chunkIndex.y * layer.chunkH + layer.chunkH / 2
             );
 
-            return playerPos.DistanceTo(chunkWorldPos) <= loadDistance;
+            var playerPosXZ = new Vector3(playerPos.X, 0, playerPos.Z);
+
+            return playerPosXZ.DistanceTo(chunkWorldPos) <= loadDistance;
         }
 
         var bounds = GetBoundsAroundPosition(referencePosition, loadDistance * 1.5f);

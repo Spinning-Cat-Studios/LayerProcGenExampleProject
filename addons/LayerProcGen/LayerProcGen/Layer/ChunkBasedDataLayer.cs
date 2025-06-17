@@ -467,7 +467,8 @@ namespace Runevision.LayerProcGen {
 			{
 				// Calculate chunk world position
 				var chunkWorldPos = new Vector3(index.x * chunkW, 0, index.y * chunkH);
-				var distanceToCamera = cameraPosition.DistanceTo(chunkWorldPos);
+				var cameraXZPosition = new Vector3(cameraPosition.X, 0, cameraPosition.Z);
+				var distanceToCamera = cameraXZPosition.DistanceTo(chunkWorldPos);
 				var maxDistance = 150f; // Unload distance (larger than load distance)
 				
 				if (distanceToCamera > maxDistance)
