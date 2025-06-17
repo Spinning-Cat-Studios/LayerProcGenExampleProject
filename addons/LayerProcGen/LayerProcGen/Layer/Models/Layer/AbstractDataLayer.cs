@@ -57,7 +57,7 @@ namespace Runevision.LayerProcGen {
 			{
 				if (s_LayerDict.ContainsKey(key))
 				{
-					GD.Print($"Layer {key.ToString()} already exists, not creating a new one.");
+					// GD.Print($"Layer {key.ToString()} already exists, not creating a new one.");
 					Logg.LogError($"Layer {key} already created!");
 					return;
 				}

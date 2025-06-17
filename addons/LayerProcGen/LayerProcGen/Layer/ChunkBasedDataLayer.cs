@@ -150,6 +150,7 @@ namespace Runevision.LayerProcGen {
 		{
 			var key = new LayerKey(typeof(L), args, subtype);
 
+			// GD.Print($"GetInstance called with args: {args.ToString()} and subtype: {subtype}");
 			// GD.Print($"Creating layer {key.ToString()}");
 			// First check without lock (fast path)
 			if (_instances.TryGetValue(key, out var instance))
@@ -169,7 +170,7 @@ namespace Runevision.LayerProcGen {
 		/// Call from constructor to add a dependency on another layer.
 		/// The dependency is added to the lowest level of the current layer.
 		/// </summary>
-		protected void AddLayerDependency(LayerDependency dependency)
+		public void AddLayerDependency(LayerDependency dependency)
 		{
 			dependencies[0].Add(dependency);
 		}
@@ -178,7 +179,7 @@ namespace Runevision.LayerProcGen {
 		/// Call from constructor to add a dependency on another layer.
 		/// The dependency is added to the specified <paramref name="ownLevel"/> of the current layer.
 		/// </summary>
-		protected void AddLayerDependency(int ownLevel, LayerDependency dependency)
+		public void AddLayerDependency(int ownLevel, LayerDependency dependency)
 		{
 			dependencies[ownLevel].Add(dependency);
 		}
@@ -466,7 +467,8 @@ namespace Runevision.LayerProcGen {
 			{
 				// Calculate chunk world position
 				var chunkWorldPos = new Vector3(index.x * chunkW, 0, index.y * chunkH);
-				var distanceToCamera = cameraPosition.DistanceTo(chunkWorldPos);
+				var cameraXZPosition = new Vector3(cameraPosition.X, 0, cameraPosition.Z);
+				var distanceToCamera = cameraXZPosition.DistanceTo(chunkWorldPos);
 				var maxDistance = 150f; // Unload distance (larger than load distance)
 				
 				if (distanceToCamera > maxDistance)

@@ -3,7 +3,7 @@ class_name FreeLookCamera extends Camera3D
 # Modifier keys' speed multiplier
 const SHIFT_MULTIPLIER = 10
 const ALT_MULTIPLIER = 1.0 / SHIFT_MULTIPLIER
-
+const CHECKPOINT_DIST_DELTA_THRESHOLD = 50.0
 
 @export_range(0.0, 1.0) var sensitivity: float = 0.25
 
@@ -84,7 +84,7 @@ func compute_dist_from_checkpoint_in_xz() -> float:
 
 func _update_lazy_evaluation_checkpoint():
 	var dist_from_checkpoint = compute_dist_from_checkpoint_in_xz()
-	if dist_from_checkpoint > 10:
+	if dist_from_checkpoint > CHECKPOINT_DIST_DELTA_THRESHOLD:
 		# Send a signal via SignalBus to indicate that nodes should be reconstructed
 		#
 		# There is some finesse required here, we don't want to reconstruct all nodes every time 
@@ -97,9 +97,7 @@ func _update_lazy_evaluation_checkpoint():
 		#
 		# Regardless, now of this logic should be implemented here, this is just a signal, the
 		# consumer of this signal should handle the logic of reconstructing nodes as indicated above.
-		SignalBus.Instance.CallDeferred(
-			"emit_signal",
-			SignalBus.SignalName.ReconstructNodes,
+		SignalBus.GetInstance().ReconstructNodes.emit(
 			checkpoint_position,
 			global_transform.origin,
 			dist_from_checkpoint

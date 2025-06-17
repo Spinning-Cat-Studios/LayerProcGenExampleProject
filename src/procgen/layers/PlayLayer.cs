@@ -4,63 +4,53 @@ using Runevision.LayerProcGen;
 using Runevision.Common;
 using System;
 using Godot.Collections;
+using LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents;
 
 public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>, ILayerWithArguments
 {
-    public override int chunkW => 8;
-    public override int chunkH => 8;
+    public override int chunkW => PlayLayerConfiguration.CHUNK_WIDTH;
+    public override int chunkH => PlayLayerConfiguration.CHUNK_HEIGHT;
 
-    public PlayLayer() { }
+    private readonly PlayerPositionManager _playerManager;
+    private readonly LandscapeLayerOrchestrator _landscapeOrchestrator;
+    private readonly LazyEvaluationHandler _lazyEvaluationHandler;
 
-    public PlayLayer(LayerArgumentDictionary layerArguments)
+    public PlayLayer()
+    {
+        _playerManager = new PlayerPositionManager();
+        _landscapeOrchestrator = new LandscapeLayerOrchestrator(this, _playerManager);
+        _lazyEvaluationHandler = new LazyEvaluationHandler(this, _playerManager, _landscapeOrchestrator);
+    }
+
+    public PlayLayer(LayerArgumentDictionary layerArguments) : this()
     {
         GD.Print($"PlayLayer created with arguments: {layerArguments}");
         InitializePlayLayer(layerArguments);
-    }
-
-    private void ConstructLandscapeLayerDependency(
-        LayerArgumentDictionary layerArguments,
-        Type landscapeLayerType,
-        int width,
-        int height,
-        string subtype)
-    {
-        var landscapeLayerArgs = layerArguments.Clone();
-        // Add "landscape_layer_id": "A" through "landscape_layer_id": "D" to the layer arguments
-        landscapeLayerArgs.parameters["landscape_layer_id"] = new Dictionary<string, Variant>
-        {
-            { "id", landscapeLayerType.Name }
-        };
-
-        // Find the static GetInstance method with the correct signature
-        var getInstanceMethod = landscapeLayerType.GetMethod(
-            "GetInstance",
-            BindingFlags.Public | BindingFlags.Static,
-            null,
-            new Type[] { typeof(LayerArgumentDictionary), typeof(string) },
-            null
-        );
-        if (getInstanceMethod == null)
-            throw new InvalidOperationException($"GetInstance(LayerArgumentDictionary, string) not found on {landscapeLayerType.Name}");
-
-        // Call the static method
-        var landscapeLayerInstance = (AbstractChunkBasedDataLayer)getInstanceMethod.Invoke(
-            null,
-            new object[] { landscapeLayerArgs, subtype }
-        );
-
-        AddLayerDependency(new LayerDependency(landscapeLayerInstance, width, height));
     }
 
     private void InitializePlayLayer(LayerArgumentDictionary layerArguments)
     {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerD), 2048, 2048, "D");
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerC), 1024, 1024, "C");
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerB), 512, 512, "B");
-        ConstructLandscapeLayerDependency(layerArguments, typeof(LandscapeLayerA), 256, 256, "A");
+        bool hasPlayerPosition = _playerManager.TryInitializeFromArguments(layerArguments);
 
+        if (hasPlayerPosition)
+        {
+            GD.Print($"[PlayLayer] Initial player position: {_playerManager.LastKnownPlayerPosition}");
+            _landscapeOrchestrator.SetupLandscapeLayersWithLazyLoading(layerArguments, _playerManager.LastKnownPlayerPosition);
+        }
+        else
+        {
+            GD.Print("[PlayLayer] No player position found, using default loading");
+            _landscapeOrchestrator.SetupLandscapeLayersDefault(layerArguments);
+        }
+
+        SetupVillageLayer(layerArguments);
+        Callable.From(_lazyEvaluationHandler.HookSignalsDeferred).CallDeferred();
+    }
+
+    private void SetupVillageLayer(LayerArgumentDictionary layerArguments)
+    {
         var villageLayer = LSystemVillageLayer.GetInstance(layerArguments);
 
         AddLayerDependency(new LayerDependency(
@@ -82,11 +72,9 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
                 SignalBus.Instance.LandscapeChunksReady += Handler;
 
-                // Check if already ready, and manually trigger if so
                 if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
                     Handler();
             }
         ));
-        // GD.Print("PlayLayer Create");
     }
 }
