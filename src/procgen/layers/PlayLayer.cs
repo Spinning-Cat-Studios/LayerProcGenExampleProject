@@ -14,6 +14,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     private readonly PlayerPositionManager _playerManager;
     private readonly LandscapeLayerOrchestrator _landscapeOrchestrator;
     private readonly LazyEvaluationHandler _lazyEvaluationHandler;
+    private bool _isVillageLayerChunksDone = false;
 
     public PlayLayer()
     {
@@ -60,6 +61,13 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             villageLayer.GetLevelCount() - 1,
             (bounds, level, levelData) =>
             {
+                // Note, we may want to revise this functionality for the village chunk callback (this logic block)
+                // if and when we implement proper lazy loading for the village layer.
+                if (_isVillageLayerChunksDone)
+                {
+                    return;
+                }
+
                 void Handler()
                 {
                     if (!LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
@@ -67,13 +75,16 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
                         return;
                     }
                     villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
+                    _isVillageLayerChunksDone = true;
                     GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
                 }
 
                 SignalBus.Instance.LandscapeChunksReady += Handler;
 
                 if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
+                {
                     Handler();
+                }
             }
         ));
     }

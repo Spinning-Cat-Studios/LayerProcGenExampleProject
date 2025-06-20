@@ -106,11 +106,13 @@ public partial class FreeLookCamera : Camera3D
         return checkpointXZ.DistanceTo(currentXZ);
     }
 
+    private bool _pendingSignalEmission = false;
+
     private void UpdateLazyEvaluationCheckpoint()
     {
         float distanceFromCheckpoint = ComputeDistanceFromCheckpointInXZ();
 
-        if (distanceFromCheckpoint > CHECKPOINT_DIST_DELTA_THRESHOLD)
+        if (distanceFromCheckpoint > CHECKPOINT_DIST_DELTA_THRESHOLD && !_pendingSignalEmission)
         {
             // Check cooldown
             float currentTime = (float)Time.GetTicksMsec() / 1000f;
@@ -118,16 +120,23 @@ public partial class FreeLookCamera : Camera3D
 
             if (timeSinceLastSignal >= SIGNAL_COOLDOWN_TIME)
             {
+                // Set flag to prevent multiple emissions
+                _pendingSignalEmission = true;
+
+                // Update checkpoint FIRST to prevent multiple frames from meeting the threshold
+                Vector3 oldCheckpoint = _checkpointPosition;
+                _checkpointPosition = GlobalTransform.Origin;
+                _lastSignalTime = currentTime;
+
                 // Emit signal through SignalBus
                 var signalBus = GetNode<SignalBus>("/root/SignalBus");
                 signalBus.EmitSignal(SignalBus.SignalName.ReconstructNodes,
-                    _checkpointPosition,
+                    oldCheckpoint,
                     GlobalTransform.Origin,
                     distanceFromCheckpoint);
 
-                // Update checkpoint and timestamp
-                _checkpointPosition = GlobalTransform.Origin;
-                _lastSignalTime = currentTime;
+                // Clear the flag after updating checkpoint
+                _pendingSignalEmission = false;
 
                 GD.Print($"Emitted ReconstructNodes signal (distance: {distanceFromCheckpoint:F1}, cooldown: {timeSinceLastSignal:F1}s)");
             }
