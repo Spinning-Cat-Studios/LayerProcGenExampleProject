@@ -50,6 +50,35 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         Callable.From(_lazyEvaluationHandler.HookSignalsDeferred).CallDeferred();
     }
 
+    private void VillageChunkDoneCallback(GridBounds bounds, int level, ChunkLevelData levelData, LSystemVillageLayer villageLayer)
+    {
+        // Note, we may want to revise this functionality for the village chunk callback (this logic block)
+        // if and when we implement proper lazy loading for the village layer.
+        if (_isVillageLayerChunksDone)
+        {
+            return;
+        }
+
+        void Handler()
+        {
+            if (!LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
+            {
+                return;
+            }
+            villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
+            _isVillageLayerChunksDone = true;
+            GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
+        }
+
+        SignalBus.Instance.LandscapeChunksReady += Handler;
+
+        if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
+        {
+            Handler();
+        }
+
+    }
+
     private void SetupVillageLayer(LayerArgumentDictionary layerArguments)
     {
         var villageLayer = LSystemVillageLayer.GetInstance(layerArguments);
@@ -59,33 +88,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             256,
             256,
             villageLayer.GetLevelCount() - 1,
-            (bounds, level, levelData) =>
-            {
-                // Note, we may want to revise this functionality for the village chunk callback (this logic block)
-                // if and when we implement proper lazy loading for the village layer.
-                if (_isVillageLayerChunksDone)
-                {
-                    return;
-                }
-
-                void Handler()
-                {
-                    if (!LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-                    {
-                        return;
-                    }
-                    villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
-                    _isVillageLayerChunksDone = true;
-                    GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
-                }
-
-                SignalBus.Instance.LandscapeChunksReady += Handler;
-
-                if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-                {
-                    Handler();
-                }
-            }
+            (bounds, level, levelData) => VillageChunkDoneCallback(bounds, level, levelData, villageLayer)
         ));
     }
 }
