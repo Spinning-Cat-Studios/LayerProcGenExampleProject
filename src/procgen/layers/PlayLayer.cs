@@ -13,19 +13,28 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
     private readonly PlayerPositionManager _playerManager;
     private readonly LandscapeLayerOrchestrator _landscapeOrchestrator;
+    private readonly VillageLayerOrchestrator _villageOrchestrator;
     private readonly LazyEvaluationHandler _lazyEvaluationHandler;
-    private bool _isVillageLayerChunksDone = false;
+    private LayerArgumentDictionary _pendingLayerArguments;
+    private bool _playerSpawnHandlerSubscribed = false;
 
     public PlayLayer()
     {
+        GD.Print($"[PlayLayer] Default constructor called - Instance ID: {GetHashCode()}");
         _playerManager = new PlayerPositionManager();
         _landscapeOrchestrator = new LandscapeLayerOrchestrator(this, _playerManager);
-        _lazyEvaluationHandler = new LazyEvaluationHandler(this, _playerManager, _landscapeOrchestrator);
+        _villageOrchestrator = new VillageLayerOrchestrator(this, _playerManager);
+        _lazyEvaluationHandler = new LazyEvaluationHandler(
+            this,
+            _playerManager,
+            _landscapeOrchestrator,
+            _villageOrchestrator);
     }
 
     public PlayLayer(LayerArgumentDictionary layerArguments) : this()
     {
-        GD.Print($"PlayLayer created with arguments: {layerArguments}");
+        GD.Print($"PlayLayer created with arguments: {layerArguments} - Instance ID: {GetHashCode()}");
+
         InitializePlayLayer(layerArguments);
     }
 
@@ -33,62 +42,76 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
-        bool hasPlayerPosition = _playerManager.TryInitializeFromArguments(layerArguments);
-
-        if (hasPlayerPosition)
+        // Subscribe to PlayerSpawn signal immediately
+        if (!_playerSpawnHandlerSubscribed)
         {
-            GD.Print($"[PlayLayer] Initial player position: {_playerManager.LastKnownPlayerPosition}");
-            _landscapeOrchestrator.SetupLandscapeLayersWithLazyLoading(layerArguments, _playerManager.LastKnownPlayerPosition);
-        }
-        else
-        {
-            GD.Print("[PlayLayer] No player position found, using default loading");
-            _landscapeOrchestrator.SetupLandscapeLayersDefault(layerArguments);
+            SignalBus.Instance.PlayerSpawn += OnPlayerSpawn;
+            _playerSpawnHandlerSubscribed = true;
+            GD.Print("[PlayLayer] Subscribed to PlayerSpawn signal");
         }
 
-        SetupVillageLayer(layerArguments);
+        _playerManager.InitializeFromArguments(layerArguments);
+
+        // Store the arguments for later use when PlayerSpawn signal is received
+        _pendingLayerArguments = layerArguments;
+
+        // Callable.From(() => CheckForExistingPlayer()).CallDeferred();
+        
         Callable.From(_lazyEvaluationHandler.HookSignalsDeferred).CallDeferred();
     }
+    
+    // private void CheckForExistingPlayer()
+    // {
+    //     if (_pendingLayerArguments != null) // Only if we haven't processed the spawn yet
+    //     {
+    //         try
+    //         {
+    //             var sceneTree = Engine.GetMainLoop() as SceneTree;
+    //             if (sceneTree?.CurrentScene != null)
+    //             {
+    //                 // Look for FreeLookCamera or any camera
+    //                 var cameraNode = sceneTree.CurrentScene.FindChild("*Camera*", true, false) as Node3D;
+    //                 if (cameraNode != null)
+    //                 {
+    //                     GD.Print($"[PlayLayer] Found existing camera/player at: {cameraNode.GlobalPosition}");
+    //                     OnPlayerSpawn(cameraNode.GlobalPosition);
+    //                     return;
+    //                 }
+    //             }
+    //         }
+    //         catch (System.Exception e)
+    //         {
+    //             GD.Print($"[PlayLayer] Error checking for existing player: {e.Message}");
+    //         }
+            
+    //         GD.Print("[PlayLayer] No existing camera found, waiting for signal");
+    //     }
+    // }
 
-    private void VillageChunkDoneCallback(GridBounds bounds, int level, ChunkLevelData levelData, LSystemVillageLayer villageLayer)
+    private void OnPlayerSpawn(Vector3 playerPosition)
     {
-        // Note, we may want to revise this functionality for the village chunk callback (this logic block)
-        // if and when we implement proper lazy loading for the village layer.
-        if (_isVillageLayerChunksDone)
+        if (_pendingLayerArguments == null)
         {
+            GD.Print("[PlayLayer] PlayerSpawn received but no pending layer arguments");
             return;
         }
 
-        void Handler()
-        {
-            if (!LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-            {
-                return;
-            }
-            villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
-            _isVillageLayerChunksDone = true;
-            GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
-        }
+        GD.Print($"[PlayLayer] PlayerSpawn received at position: {playerPosition}");
 
-        SignalBus.Instance.LandscapeChunksReady += Handler;
+        // Update player manager with the actual spawned position
+        _playerManager.UpdatePlayerPosition(playerPosition);
 
-        if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-        {
-            Handler();
-        }
+        GD.Print($"[PlayLayer] Initial player position: {_playerManager.LastKnownPlayerPosition}");
+        _landscapeOrchestrator.SetupLandscapeLayersWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
+        _villageOrchestrator.SetupLSystemVillageLayerWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
 
-    }
+        // Clear pending arguments as they've been processed
+        _pendingLayerArguments = null;
 
-    private void SetupVillageLayer(LayerArgumentDictionary layerArguments)
-    {
-        var villageLayer = LSystemVillageLayer.GetInstance(layerArguments);
+        // Unsubscribe from PlayerSpawn signal as we only need it once
+        SignalBus.Instance.PlayerSpawn -= OnPlayerSpawn;
+        _playerSpawnHandlerSubscribed = false;
 
-        AddLayerDependency(new LayerDependency(
-            villageLayer,
-            256,
-            256,
-            villageLayer.GetLevelCount() - 1,
-            (bounds, level, levelData) => VillageChunkDoneCallback(bounds, level, levelData, villageLayer)
-        ));
+        GD.Print("[PlayLayer] Layer setup completed based on PlayerSpawn signal");
     }
 }

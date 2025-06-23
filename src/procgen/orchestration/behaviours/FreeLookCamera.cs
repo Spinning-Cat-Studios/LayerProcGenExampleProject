@@ -37,6 +37,20 @@ public partial class FreeLookCamera : Camera3D
     public override void _Ready()
     {
         _checkpointPosition = GlobalTransform.Origin;
+        // Defer the PlayerSpawn signal emission to ensure all subscribers are ready
+        Callable.From(() => EmitPlayerSpawnSignal()).CallDeferred();
+
+        GD.Print($"[FreeLookCamera] Player spawned at position: {GlobalTransform.Origin}");
+    }
+
+    private void EmitPlayerSpawnSignal()
+    {
+        SignalBus.Instance.CallDeferred(
+            "emit_signal",
+            SignalBus.SignalName.PlayerSpawn,
+            GlobalTransform.Origin
+        );
+        GD.Print($"[FreeLookCamera] PlayerSpawn signal emitted at position: {GlobalTransform.Origin}");
     }
 
     public override void _Input(InputEvent @event)

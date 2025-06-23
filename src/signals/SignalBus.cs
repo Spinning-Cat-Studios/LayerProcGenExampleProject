@@ -4,7 +4,7 @@ using Runevision.LayerProcGen;
 public partial class SignalBus : Node
 {
     private static SignalBus _instance;
-    
+
     // C# property
     public static SignalBus Instance
     {
@@ -21,26 +21,26 @@ public partial class SignalBus : Node
             _instance = value;
         }
     }
-    
+
     // GDScript accessible method
     public static SignalBus GetInstance()
     {
         return Instance;
     }
-    
+
     public override void _Ready()
     {
         _instance = this;
     }
-    
+
     [Signal]
     public delegate void RoadsGeneratedEventHandler(
         Vector3[] roadPositions,
-        Vector3[] roadDirections, 
+        Vector3[] roadDirections,
         int[] roadStartIndices,
         int[] roadEndIndices,
         Vector3 chunkIndex);
-    
+
     [Signal]
     public delegate void InitialRoadEndPositionsComputedEventHandler(
         Vector3[] roadStartPositions,
@@ -69,5 +69,10 @@ public partial class SignalBus : Node
         Vector3 checkpointPosition,
         Vector3 currentCameraPosition,
         float distFromCheckpoint
+    );
+
+    [Signal]
+    public delegate void PlayerSpawnEventHandler(
+        Vector3 playerPosition
     );
 }

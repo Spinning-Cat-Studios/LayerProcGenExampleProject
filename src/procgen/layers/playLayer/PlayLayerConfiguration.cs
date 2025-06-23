@@ -8,6 +8,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         public const int CHUNK_WIDTH = 8;
         public const int CHUNK_HEIGHT = 8;
         public const float PLAY_LAYER_LOAD_DISTANCE = 75f;
+        public const float VILLAGE_LAYER_LOAD_DISTANCE = 150f;
 
         public static readonly LandscapeLayerConfig[] LandscapeLayerConfigs = new[]
         {
@@ -25,6 +26,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                 "LandscapeLayerC" => 150f,
                 "LandscapeLayerB" => 100f,
                 "LandscapeLayerA" => 75f,
+                "LSystemVillageLayer" => VILLAGE_LAYER_LOAD_DISTANCE,
                 _ => 100f
             };
         }
