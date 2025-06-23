@@ -156,7 +156,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var bounds = GetBoundsAroundPosition(referencePosition, loadDistance * 1.5f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            GD.Print($"[Camera Movement] Updating {layer.GetType().Name} chunks around camera at {referencePosition}");
+            // GD.Print($"[Camera Movement] Updating {layer.GetType().Name} chunks around camera at {referencePosition}");
             try
             {
                 layer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);

@@ -28,7 +28,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             SignalBus.Instance.ReconstructNodes += OnReconstructNodes;
             _subscribed = true;
 
-            GD.Print("[LazyEvaluationHandler] Subscribed to ReconstructNodes signal");
+            // GD.Print("[LazyEvaluationHandler] Subscribed to ReconstructNodes signal");
         }
 
         public void OnReconstructNodes(Vector3 checkpointPos, Vector3 cameraPos, float distance)
@@ -37,7 +37,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
             if (distance < PlayLayerConfiguration.CHECKPOINT_DIST_DELTA_THRESHOLD)
             {
-                GD.Print("[LazyEvaluationHandler] Distance too small, skipping reconstruction");
+                // GD.Print("[LazyEvaluationHandler] Distance too small, skipping reconstruction");
                 return;
             }
 
@@ -73,7 +73,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
         private void HandleLandscapeLayerReconstruction(Vector3 referencePosition)
         {
-            GD.Print($"[LazyEvaluationHandler] Reconstructing LandscapeLayer chunks around {referencePosition}");
+            // GD.Print($"[LazyEvaluationHandler] Reconstructing LandscapeLayer chunks around {referencePosition}");
             _playLayer.HandleDependenciesForLevel(0, dependency =>
             {
                 var layer = dependency.layer;
@@ -96,14 +96,14 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         //     return distance <= PlayLayerConfiguration.PLAY_LAYER_LOAD_DISTANCE;
         // }
 
-        private static GridBounds GetBoundsAroundPosition(Vector3 position, float range)
-        {
-            return new GridBounds(
-                (int)(position.X - range),
-                (int)(position.Z - range),
-                (int)(range * 2),
-                (int)(range * 2)
-            );
-        }
+        // private static GridBounds GetBoundsAroundPosition(Vector3 position, float range)
+        // {
+        //     return new GridBounds(
+        //         (int)(position.X - range),
+        //         (int)(position.Z - range),
+        //         (int)(range * 2),
+        //         (int)(range * 2)
+        //     );
+        // }
     }
 }

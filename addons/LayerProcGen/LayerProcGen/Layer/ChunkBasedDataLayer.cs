@@ -408,6 +408,32 @@ namespace Runevision.LayerProcGen {
 			}
 		}
 
+		private void RemoveChunksOutsideBounds(Vector3 cameraPosition, int level, Func<Point, int, Vector3, bool> shouldCreateChunk)
+		{
+			List<Point> chunksToRemove = new List<Point>();
+			lock (chunks)
+			{
+				foreach (C chunk in chunks)
+				{
+					if (chunk != null && chunk.level >= level)
+					{
+						// Check if this chunk should still exist
+						if (!shouldCreateChunk(chunk.index, level, cameraPosition))
+						{
+							chunksToRemove.Add(chunk.index);
+						}
+					}
+				}
+			}
+
+			// Remove chunks that are too far
+			foreach (Point indexToRemove in chunksToRemove)
+			{
+				// GD.Print($"Removing chunk {indexToRemove} - no longer needed");
+				RemoveChunkLevel(indexToRemove, level);
+			}
+		}
+
 		internal sealed override void EnsureLoadedInBounds(
 			GridBounds bounds,
 			int level,
@@ -419,28 +445,7 @@ namespace Runevision.LayerProcGen {
 			// check ALL existing chunks for potential removal
 			if (cameraPosition.HasValue && shouldCreateChunk != null)
 			{
-				List<Point> chunksToRemove = new List<Point>();
-				lock (chunks)
-				{
-					foreach (C chunk in chunks)
-					{
-						if (chunk != null && chunk.level >= level)
-						{
-							// Check if this chunk should still exist
-							if (!shouldCreateChunk(chunk.index, level, cameraPosition.Value))
-							{
-								chunksToRemove.Add(chunk.index);
-							}
-						}
-					}
-				}
-
-				// Remove chunks that are too far
-				foreach (Point indexToRemove in chunksToRemove)
-				{
-					GD.Print($"Removing chunk {indexToRemove} - no longer needed");
-					RemoveChunkLevel(indexToRemove, level);
-				}
+				RemoveChunksOutsideBounds(cameraPosition.Value, level, shouldCreateChunk);
 			}
 
 			// Load inside bounds.
