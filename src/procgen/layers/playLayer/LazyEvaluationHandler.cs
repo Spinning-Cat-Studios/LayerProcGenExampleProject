@@ -28,7 +28,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             SignalBus.Instance.ReconstructNodes += OnReconstructNodes;
             _subscribed = true;
 
-            GD.Print("[LazyEvaluationHandler] Subscribed to ReconstructNodes signal");
+            // GD.Print("[LazyEvaluationHandler] Subscribed to ReconstructNodes signal");
         }
 
         public void OnReconstructNodes(Vector3 checkpointPos, Vector3 cameraPos, float distance)
@@ -37,7 +37,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
             if (distance < PlayLayerConfiguration.CHECKPOINT_DIST_DELTA_THRESHOLD)
             {
-                GD.Print("[LazyEvaluationHandler] Distance too small, skipping reconstruction");
+                // GD.Print("[LazyEvaluationHandler] Distance too small, skipping reconstruction");
                 return;
             }
 
@@ -46,31 +46,34 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                 : cameraPos;
 
             // Handle PlayLayer chunks
-            HandlePlayLayerReconstruction(referencePosition);
+            // HandlePlayLayerReconstruction(referencePosition);  // This is an expensive operation, commenting out for now
 
             // Handle Landscape layer chunks
             HandleLandscapeLayerReconstruction(referencePosition);
         }
 
-        private void HandlePlayLayerReconstruction(Vector3 referencePosition)
-        {
-            // GD.Print($"[LazyEvaluationHandler] Reconstructing PlayLayer chunks around {referencePosition}");
+        // This is an expensive operation and should be used with caution.
+        // It is currently commented out to prevent performance issues during gameplay.
+        // private void HandlePlayLayerReconstruction(Vector3 referencePosition)
+        // {
+        //     // GD.Print($"[LazyEvaluationHandler] Reconstructing PlayLayer chunks around {referencePosition}");
 
-            ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
+        //     ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            try
-            {
-                var bounds = GetBoundsAroundPosition(referencePosition, 100f);
-                _playLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreatePlayChunk);
-            }
-            finally
-            {
-                ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
-            }
-        }
+        //     try
+        //     {
+        //         var bounds = GetBoundsAroundPosition(referencePosition, 100f);
+        //         _playLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreatePlayChunk);
+        //     }
+        //     finally
+        //     {
+        //         ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
+        //     }
+        // }
 
         private void HandleLandscapeLayerReconstruction(Vector3 referencePosition)
         {
+            // GD.Print($"[LazyEvaluationHandler] Reconstructing LandscapeLayer chunks around {referencePosition}");
             _playLayer.HandleDependenciesForLevel(0, dependency =>
             {
                 var layer = dependency.layer;
@@ -81,26 +84,26 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             });
         }
 
-        private bool ShouldCreatePlayChunk(Point chunkIndex, int level, Vector3 playerPosition)
-        {
-            var chunkWorldPos = new Vector3(
-                chunkIndex.x * PlayLayerConfiguration.CHUNK_WIDTH + PlayLayerConfiguration.CHUNK_WIDTH / 2,
-                0,
-                chunkIndex.y * PlayLayerConfiguration.CHUNK_HEIGHT + PlayLayerConfiguration.CHUNK_HEIGHT / 2
-            );
+        // private bool ShouldCreatePlayChunk(Point chunkIndex, int level, Vector3 playerPosition)
+        // {
+        //     var chunkWorldPos = new Vector3(
+        //         chunkIndex.x * PlayLayerConfiguration.CHUNK_WIDTH + PlayLayerConfiguration.CHUNK_WIDTH / 2,
+        //         0,
+        //         chunkIndex.y * PlayLayerConfiguration.CHUNK_HEIGHT + PlayLayerConfiguration.CHUNK_HEIGHT / 2
+        //     );
 
-            var distance = playerPosition.DistanceTo(chunkWorldPos);
-            return distance <= PlayLayerConfiguration.PLAY_LAYER_LOAD_DISTANCE;
-        }
+        //     var distance = playerPosition.DistanceTo(chunkWorldPos);
+        //     return distance <= PlayLayerConfiguration.PLAY_LAYER_LOAD_DISTANCE;
+        // }
 
-        private static GridBounds GetBoundsAroundPosition(Vector3 position, float range)
-        {
-            return new GridBounds(
-                (int)(position.X - range),
-                (int)(position.Z - range),
-                (int)(range * 2),
-                (int)(range * 2)
-            );
-        }
+        // private static GridBounds GetBoundsAroundPosition(Vector3 position, float range)
+        // {
+        //     return new GridBounds(
+        //         (int)(position.X - range),
+        //         (int)(position.Z - range),
+        //         (int)(range * 2),
+        //         (int)(range * 2)
+        //     );
+        // }
     }
 }

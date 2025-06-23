@@ -138,7 +138,7 @@ public partial class FreeLookCamera : Camera3D
                 // Clear the flag after updating checkpoint
                 _pendingSignalEmission = false;
 
-                GD.Print($"Emitted ReconstructNodes signal (distance: {distanceFromCheckpoint:F1}, cooldown: {timeSinceLastSignal:F1}s)");
+                // GD.Print($"Emitted ReconstructNodes signal (distance: {distanceFromCheckpoint:F1}, cooldown: {timeSinceLastSignal:F1}s)");
             }
         }
     }
