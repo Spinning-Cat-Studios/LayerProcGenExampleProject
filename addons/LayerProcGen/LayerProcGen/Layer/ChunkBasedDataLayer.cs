@@ -415,9 +415,33 @@ namespace Runevision.LayerProcGen {
 			Vector3? cameraPosition = null,
 			Func<Point, int, Vector3, bool> shouldCreateChunk = null)
 		{
-			// GD.Print($"EnsureLoadedInBounds {GetType().Name} {bounds} level {level}");
-			if (LayerManager.instance.aborting)
-				return;
+			// First, if we have camera position and shouldCreateChunk function,
+			// check ALL existing chunks for potential removal
+			if (cameraPosition.HasValue && shouldCreateChunk != null)
+			{
+				List<Point> chunksToRemove = new List<Point>();
+				lock (chunks)
+				{
+					foreach (C chunk in chunks)
+					{
+						if (chunk != null && chunk.level >= level)
+						{
+							// Check if this chunk should still exist
+							if (!shouldCreateChunk(chunk.index, level, cameraPosition.Value))
+							{
+								chunksToRemove.Add(chunk.index);
+							}
+						}
+					}
+				}
+
+				// Remove chunks that are too far
+				foreach (Point indexToRemove in chunksToRemove)
+				{
+					GD.Print($"Removing chunk {indexToRemove} - no longer needed");
+					RemoveChunkLevel(indexToRemove, level);
+				}
+			}
 
 			// Load inside bounds.
 			GridBounds indices = bounds.GetDivided(new Point(chunkW, chunkH));
@@ -441,11 +465,8 @@ namespace Runevision.LayerProcGen {
 					{
 						PrepareChunkForLayer(index, level, createIndices, dependIndices);
 					}
-					else
-					{
-						// Optionally remove existing chunk if it's now too far
-						RemoveChunkIfTooFar(index, level, cameraPosition.Value);
-					}
+					// Note: We no longer need the else clause with RemoveChunkIfTooFar here
+					// because we handle removal separately above
 				}
 			}
 
@@ -458,25 +479,6 @@ namespace Runevision.LayerProcGen {
 				chunkH,
 				levelData
 			);
-		}
-		
-		private void RemoveChunkIfTooFar(Point index, int level, Vector3 cameraPosition)
-		{
-			C chunk = chunks[index];
-			if (chunk != null)
-			{
-				// Calculate chunk world position
-				var chunkWorldPos = new Vector3(index.x * chunkW, 0, index.y * chunkH);
-				var cameraXZPosition = new Vector3(cameraPosition.X, 0, cameraPosition.Z);
-				var distanceToCamera = cameraXZPosition.DistanceTo(chunkWorldPos);
-				var maxDistance = 150f; // Unload distance (larger than load distance)
-				
-				if (distanceToCamera > maxDistance)
-				{
-					GD.Print($"Removing chunk {index} - too far from camera (distance: {distanceToCamera})");
-					RemoveChunkLevel(index, level);
-				}
-			}
 		}
 
 		private void PrepareChunkForLayer(

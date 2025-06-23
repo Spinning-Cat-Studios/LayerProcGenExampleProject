@@ -154,7 +154,17 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             }
 
             var bounds = GetBoundsAroundPosition(referencePosition, loadDistance * 1.5f);
-            ((AbstractChunkBasedDataLayer)layer).EnsureLoadedInBounds(bounds, 0, null, referencePosition, ShouldCreateChunk);
+            ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
+
+            GD.Print($"[Camera Movement] Updating {layer.GetType().Name} chunks around camera at {referencePosition}");
+            try
+            {
+                layer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);
+            }
+            finally
+            {
+                ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
+            }
         }
 
         private static GridBounds GetBoundsAroundPosition(Vector3 position, float range)
