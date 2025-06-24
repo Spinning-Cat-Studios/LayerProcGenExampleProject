@@ -9,16 +9,19 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         private readonly PlayLayer _playLayer;
         private readonly PlayerPositionManager _playerManager;
         private readonly LandscapeLayerOrchestrator _landscapeOrchestrator;
+        private readonly VillageLayerOrchestrator _villageOrchestrator;
         private bool _subscribed;
 
         public LazyEvaluationHandler(
             PlayLayer playLayer,
             PlayerPositionManager playerManager,
-            LandscapeLayerOrchestrator landscapeOrchestrator)
+            LandscapeLayerOrchestrator landscapeOrchestrator,
+            VillageLayerOrchestrator villageOrchestrator)
         {
             _playLayer = playLayer;
             _playerManager = playerManager;
             _landscapeOrchestrator = landscapeOrchestrator;
+            _villageOrchestrator = villageOrchestrator;
         }
 
         public void HookSignalsDeferred()
@@ -50,6 +53,9 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
             // Handle Landscape layer chunks
             HandleLandscapeLayerReconstruction(referencePosition);
+
+            // Handle Village layer chunks
+            HandleVillageLayerReconstruction(referencePosition);
         }
 
         // This is an expensive operation and should be used with caution.
@@ -70,19 +76,6 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         //         ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
         //     }
         // }
-
-        private void HandleLandscapeLayerReconstruction(Vector3 referencePosition)
-        {
-            // GD.Print($"[LazyEvaluationHandler] Reconstructing LandscapeLayer chunks around {referencePosition}");
-            _playLayer.HandleDependenciesForLevel(0, dependency =>
-            {
-                var layer = dependency.layer;
-                if (layer.GetType().Name.StartsWith("LandscapeLayer"))
-                {
-                    _landscapeOrchestrator.UpdateLayerBasedOnCameraMovement(layer, referencePosition, dependency);
-                }
-            });
-        }
 
         // private bool ShouldCreatePlayChunk(Point chunkIndex, int level, Vector3 playerPosition)
         // {
@@ -105,5 +98,31 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         //         (int)(range * 2)
         //     );
         // }
+
+        private void HandleLandscapeLayerReconstruction(Vector3 referencePosition)
+        {
+            // GD.Print($"[LazyEvaluationHandler] Reconstructing LandscapeLayer chunks around {referencePosition}");
+            _playLayer.HandleDependenciesForLevel(0, dependency =>
+            {
+                var layer = dependency.layer;
+                if (layer.GetType().Name.StartsWith("LandscapeLayer"))
+                {
+                    _landscapeOrchestrator.UpdateLayerBasedOnCameraMovement(layer, referencePosition, dependency);
+                }
+            });
+        }
+        
+        private void HandleVillageLayerReconstruction(Vector3 referencePosition)
+        {
+            // GD.Print($"[LazyEvaluationHandler] Reconstructing Village chunks around {referencePosition}");
+            _playLayer.HandleDependenciesForLevel(0, dependency =>
+            {
+                var layer = dependency.layer;
+                if (layer.GetType().Name == "LSystemVillageLayer")
+                {
+                    _villageOrchestrator.UpdateVillageLayerBasedOnCameraMovement((LSystemVillageLayer)layer, referencePosition);
+                }
+            });
+        }
     }
 }

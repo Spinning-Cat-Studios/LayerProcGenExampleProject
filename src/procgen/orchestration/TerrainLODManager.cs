@@ -65,7 +65,7 @@ public partial class TerrainLODManager : Node
 			{
 				{ "id", "LandscapeLayerA" }
 			};
-			GD.Print($"TerrainLODManager ready with layer arguments: {layerArguments.ToString()}");
+			// GD.Print($"TerrainLODManager ready with layer arguments: {layerArguments.ToString()}");
 			SetupLODLayer(0, LandscapeLayerA.GetInstance(layerArguments, "A"));
 		};
 		instance = this;

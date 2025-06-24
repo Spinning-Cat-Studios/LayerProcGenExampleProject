@@ -114,7 +114,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
                 if (!withinRange)
                 {
-                    GD.Print($"[Initial Load] Skipping {layer.GetType().Name} chunk {chunkIndex} - outside player range (distance: {distanceToPlayer:F1})");
+                    // GD.Print($"[Initial Load] Skipping {layer.GetType().Name} chunk {chunkIndex} - outside player range (distance: {distanceToPlayer:F1})");
                 }
 
                 return withinRange;
@@ -123,7 +123,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var initialBounds = GetBoundsAroundPosition(playerPosition, loadDistance * 1.2f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            GD.Print($"[Initial Load] Loading {layer.GetType().Name} chunks around player at {playerPosition}");
+            // GD.Print($"[Initial Load] Loading {layer.GetType().Name} chunks around player at {playerPosition}");
             try
             {
                 layer.EnsureLoadedInBounds(initialBounds, 0, levelData, playerPosition, ShouldCreateChunk);

@@ -112,7 +112,7 @@ namespace Runevision.LayerProcGen
 			SignalBus.Instance.GenerationSourceReady += layerArguments =>
 			{
 				layerArguments.Merge(this.layerArguments);
-				GD.Print($"VisualizationManager ready with layer arguments: {layerArguments.ToString()}");
+				// GD.Print($"VisualizationManager ready with layer arguments: {layerArguments.ToString()}");
 				UpdateLayers();
 				SetupVisualization();
 			};

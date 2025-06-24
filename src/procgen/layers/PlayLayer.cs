@@ -13,19 +13,28 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
     private readonly PlayerPositionManager _playerManager;
     private readonly LandscapeLayerOrchestrator _landscapeOrchestrator;
+    private readonly VillageLayerOrchestrator _villageOrchestrator;
     private readonly LazyEvaluationHandler _lazyEvaluationHandler;
-    private bool _isVillageLayerChunksDone = false;
+    private LayerArgumentDictionary _pendingLayerArguments;
+    private bool _playerSpawnHandlerSubscribed = false;
 
     public PlayLayer()
     {
+        // GD.Print($"[PlayLayer] Default constructor called - Instance ID: {GetHashCode()}");
         _playerManager = new PlayerPositionManager();
         _landscapeOrchestrator = new LandscapeLayerOrchestrator(this, _playerManager);
-        _lazyEvaluationHandler = new LazyEvaluationHandler(this, _playerManager, _landscapeOrchestrator);
+        _villageOrchestrator = new VillageLayerOrchestrator(this, _playerManager);
+        _lazyEvaluationHandler = new LazyEvaluationHandler(
+            this,
+            _playerManager,
+            _landscapeOrchestrator,
+            _villageOrchestrator);
     }
 
     public PlayLayer(LayerArgumentDictionary layerArguments) : this()
     {
-        GD.Print($"PlayLayer created with arguments: {layerArguments}");
+        // GD.Print($"PlayLayer created with arguments: {layerArguments} - Instance ID: {GetHashCode()}");
+
         InitializePlayLayer(layerArguments);
     }
 
@@ -33,62 +42,70 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     {
         TerrainBlackboard.Initialize(new NodePath("Controller/TerrainLODManager/Terrain3D"));
 
-        bool hasPlayerPosition = _playerManager.TryInitializeFromArguments(layerArguments);
+        // Defer subscription to ensure the SignalBus singleton is ready.
+        Callable.From(SubscribeToPlayerSpawn).CallDeferred();
 
-        if (hasPlayerPosition)
-        {
-            GD.Print($"[PlayLayer] Initial player position: {_playerManager.LastKnownPlayerPosition}");
-            _landscapeOrchestrator.SetupLandscapeLayersWithLazyLoading(layerArguments, _playerManager.LastKnownPlayerPosition);
-        }
-        else
-        {
-            GD.Print("[PlayLayer] No player position found, using default loading");
-            _landscapeOrchestrator.SetupLandscapeLayersDefault(layerArguments);
-        }
+        _playerManager.InitializeFromArguments(layerArguments);
 
-        SetupVillageLayer(layerArguments);
+        // Store the arguments for later use when PlayerSpawn signal is received
+        _pendingLayerArguments = layerArguments;
+
+        
         Callable.From(_lazyEvaluationHandler.HookSignalsDeferred).CallDeferred();
     }
-
-    private void VillageChunkDoneCallback(GridBounds bounds, int level, ChunkLevelData levelData, LSystemVillageLayer villageLayer)
+    
+    private void SubscribeToPlayerSpawn()
     {
-        // Note, we may want to revise this functionality for the village chunk callback (this logic block)
-        // if and when we implement proper lazy loading for the village layer.
-        if (_isVillageLayerChunksDone)
+        if (_playerSpawnHandlerSubscribed) return;
+
+        // This is the robust way to get a singleton from a non-Node class
+        var sceneTree = Engine.GetMainLoop() as SceneTree;
+        var signalBus = sceneTree?.Root.GetNode<SignalBus>("SignalBus");
+
+        if (signalBus == null)
         {
+            // GD.PrintErr("[PlayLayer] Could not find SignalBus singleton in the scene tree!");
+            return;
+        }
+        
+        signalBus.PlayerSpawn += OnPlayerSpawn;
+        _playerSpawnHandlerSubscribed = true;
+        // GD.Print($"[PlayLayer] Subscribed to PlayerSpawn signal on SignalBus instance {signalBus.GetInstanceId()}");
+    }
+
+    private void OnPlayerSpawn(Vector3 playerPosition)
+    {
+        // GD.Print($"[PlayLayer] OnPlayerSpawn called with position: {playerPosition}");
+
+        if (_pendingLayerArguments == null)
+        {
+            GD.Print("[PlayLayer] PlayerSpawn received but no pending layer arguments");
             return;
         }
 
-        void Handler()
+        // GD.Print($"[PlayLayer] PlayerSpawn received at position: {playerPosition}");
+
+        // Update player manager with the actual spawned position
+        _playerManager.UpdatePlayerPosition(playerPosition);
+
+        // GD.Print($"[PlayLayer] Initial player position: {_playerManager.LastKnownPlayerPosition}");
+        _landscapeOrchestrator.SetupLandscapeLayersWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
+        _villageOrchestrator.SetupLSystemVillageLayerWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
+
+        // Clear pending arguments as they've been processed
+        _pendingLayerArguments = null;
+
+        // Unsubscribe from PlayerSpawn signal as we only need it once
+        // Also get the singleton properly here to unsubscribe
+        var sceneTree = Engine.GetMainLoop() as SceneTree;
+        var signalBus = sceneTree?.Root.GetNode<SignalBus>("SignalBus");
+        if (signalBus != null)
         {
-            if (!LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-            {
-                return;
-            }
-            villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
-            _isVillageLayerChunksDone = true;
-            GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
+            signalBus.PlayerSpawn -= OnPlayerSpawn;
         }
+        
+        _playerSpawnHandlerSubscribed = false;
 
-        SignalBus.Instance.LandscapeChunksReady += Handler;
-
-        if (LandscapeChunkCounterBlackboard.LandscapeChunksAreReady)
-        {
-            Handler();
-        }
-
-    }
-
-    private void SetupVillageLayer(LayerArgumentDictionary layerArguments)
-    {
-        var villageLayer = LSystemVillageLayer.GetInstance(layerArguments);
-
-        AddLayerDependency(new LayerDependency(
-            villageLayer,
-            256,
-            256,
-            villageLayer.GetLevelCount() - 1,
-            (bounds, level, levelData) => VillageChunkDoneCallback(bounds, level, levelData, villageLayer)
-        ));
+        GD.Print("[PlayLayer] Layer setup completed based on PlayerSpawn signal");
     }
 }
