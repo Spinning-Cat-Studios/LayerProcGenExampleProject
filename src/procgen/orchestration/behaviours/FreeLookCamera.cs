@@ -1,4 +1,5 @@
 using Godot;
+using System;
 
 [GlobalClass]
 public partial class FreeLookCamera : Camera3D
@@ -40,17 +41,21 @@ public partial class FreeLookCamera : Camera3D
         // Defer the PlayerSpawn signal emission to ensure all subscribers are ready
         Callable.From(() => EmitPlayerSpawnSignal()).CallDeferred();
 
-        GD.Print($"[FreeLookCamera] Player spawned at position: {GlobalTransform.Origin}");
+        // GD.Print($"[FreeLookCamera] SignalBus instance ID: {SignalBus.Instance.GetInstanceId()}");
+
+        // GD.Print($"[FreeLookCamera] Player spawned at position: {GlobalTransform.Origin}");
     }
 
     private void EmitPlayerSpawnSignal()
     {
+        // GD.Print($"[FreeLookCamera] About to emit PlayerSpawn signal with position: {GlobalTransform.Origin}");
+        
         SignalBus.Instance.CallDeferred(
             "emit_signal",
             SignalBus.SignalName.PlayerSpawn,
             GlobalTransform.Origin
         );
-        GD.Print($"[FreeLookCamera] PlayerSpawn signal emitted at position: {GlobalTransform.Origin}");
+        // GD.Print($"[FreeLookCamera] PlayerSpawn signal emitted successfully.");
     }
 
     public override void _Input(InputEvent @event)

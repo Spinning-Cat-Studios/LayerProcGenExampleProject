@@ -21,7 +21,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
             // Set default position, will be updated when PlayerSpawn signal is received
             _lastKnownPlayerPosition = Vector3.Zero;
-            GD.Print("[PlayerPositionManager] Initialized with arguments, waiting for PlayerSpawn signal");
+            // GD.Print("[PlayerPositionManager] Initialized with arguments, waiting for PlayerSpawn signal");
         }
 
         public Vector3 GetCurrentPlayerPosition()
@@ -49,7 +49,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         public void UpdatePlayerPosition(Vector3 newPosition)
         {
             _lastKnownPlayerPosition = newPosition;
-            GD.Print($"[PlayerPositionManager] Player position updated to: {newPosition}");
+            // GD.Print($"[PlayerPositionManager] Player position updated to: {newPosition}");
 
             // Now that we have a confirmed player position, try to find and cache the player node
             if (_cachedPlayerNode == null && _storedLayerArguments != null)
@@ -61,14 +61,14 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         private void TryFindAndCachePlayerNode()
         {
             _cachedPlayerNode = FindPlayerNode(_storedLayerArguments);
-            if (_cachedPlayerNode != null)
-            {
-                GD.Print($"[PlayerPositionManager] Successfully cached player node: {_cachedPlayerNode.Name}");
-            }
-            else
-            {
-                GD.Print("[PlayerPositionManager] Could not find player node, will use signal-provided position");
-            }
+            // if (_cachedPlayerNode != null)
+            // {
+            //     GD.Print($"[PlayerPositionManager] Successfully cached player node: {_cachedPlayerNode.Name}");
+            // }
+            // else
+            // {
+            //     GD.Print("[PlayerPositionManager] Could not find player node, will use signal-provided position");
+            // }
         }
 
         private Node3D FindPlayerNode(LayerArgumentDictionary layerArguments)

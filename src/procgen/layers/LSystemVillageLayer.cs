@@ -157,7 +157,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
             layerArguments: layerArguments
         )
     { 
-        GD.Print("LSystemVillageLayer constructor with LayerArgumentDictionary called");
+        // GD.Print("LSystemVillageLayer constructor with LayerArgumentDictionary called");
     }
 
     /// <summary>
