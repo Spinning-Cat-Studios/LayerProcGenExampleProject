@@ -63,10 +63,10 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                 var distanceToPlayer = playerXZPos.DistanceTo(chunkWorldPos);
                 bool withinRange = distanceToPlayer <= villageLoadDistance;
 
-                if (!withinRange)
-                {
-                    GD.Print($"[Initial Load] Skipping Village chunk {chunkIndex} - outside player range (distance: {distanceToPlayer:F1})");
-                }
+                // if (!withinRange)
+                // {
+                //     GD.Print($"[Initial Load] Skipping Village chunk {chunkIndex} - outside player range (distance: {distanceToPlayer:F1})");
+                // }
 
                 return withinRange;
             }
@@ -74,7 +74,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var initialBounds = GetBoundsAroundPosition(playerPosition, villageLoadDistance * 1.2f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            GD.Print($"[Initial Load] Loading Village chunks around player at {playerPosition}");
+            // GD.Print($"[Initial Load] Loading Village chunks around player at {playerPosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(initialBounds, 0, levelData, playerPosition, ShouldCreateChunk);
@@ -106,7 +106,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var bounds = GetBoundsAroundPosition(referencePosition, loadDistance * 1.5f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            GD.Print($"[Camera Movement] Updating Village chunks around camera at {referencePosition}");
+            // GD.Print($"[Camera Movement] Updating Village chunks around camera at {referencePosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);

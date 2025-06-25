@@ -126,6 +126,12 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         new RoadPainterService()
     );
 
+    public LayerService GetService()
+    {
+        // GD.Print("LSystemVillageLayer.GetService called");
+        return _villageService;
+    }
+
     public Node3D layerParent;
 
 
