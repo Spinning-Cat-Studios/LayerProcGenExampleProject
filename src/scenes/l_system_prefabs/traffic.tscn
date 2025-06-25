@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://ypbd2rwd6kjy"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jqevb"]
+transparency = 1
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kd6a1"]
+
+[node name="Traffic" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+material_override = SubResource("StandardMaterial3D_jqevb")
+mesh = SubResource("BoxMesh_kd6a1")
