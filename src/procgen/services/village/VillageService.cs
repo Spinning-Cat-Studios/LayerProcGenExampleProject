@@ -155,5 +155,10 @@ namespace LayerProcGenExampleProject.Services
                 RoadEndPositions = roadEndPositionsString
             });
         }
+
+        public void ClearPersistedRoadChunk(Runevision.Common.Point chunkIndex)
+        {
+            _databaseService.DeleteRoadChunk(chunkIndex);
+        }
     }
 }

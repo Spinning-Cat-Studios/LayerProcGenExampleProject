@@ -91,6 +91,16 @@ namespace LayerProcGenExampleProject.Services.Database
             }
         }
 
+        public void DeleteRoadChunk(Runevision.Common.Point chunkIndex)
+        {
+            lock (_lock)
+            {
+                // Use Execute with parameters to safely delete the specific chunk's data.
+                // This targets the RoadChunkData table implicitly via its mapping.
+                _sharedConnection.Execute("DELETE FROM RoadChunkData WHERE ChunkX = ? AND ChunkY = ?", chunkIndex.x, chunkIndex.y);
+            }
+        }
+
         // Retrieves road end pairs from adjacent hamlets,
         // which were built in different LSystemVillageChunks.
         // This is useful for road generation, as it allows us to connect roads

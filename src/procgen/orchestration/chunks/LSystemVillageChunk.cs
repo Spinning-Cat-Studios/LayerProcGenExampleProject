@@ -20,12 +20,20 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         Action done,
         LayerService service)
     {
-        var villageService = service as VillageService
-            ?? throw new InvalidCastException("Expected a VillageService");
         if (destroy)
+        {
             housePositions.Clear();
+
+            // Get the service from the layer to clear the DB records for this chunk.
+            var villageService = this.layer.GetService() as VillageService;
+            villageService?.ClearPersistedRoadChunk(this.index);
+        }
         else
+        {
+            var villageService = service as VillageService
+                ?? throw new InvalidCastException("Expected a VillageService");
             Build(ready, done, villageService);
+        }
     }
 
     public void DebugDraw() {
