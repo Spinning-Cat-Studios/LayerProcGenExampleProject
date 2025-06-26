@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System;
 using System.Text.Json;
 using System.Linq;
+using LayerProcGenExampleProject.Models.Graph;
 
 public class RoadPainterService
 {
@@ -108,7 +109,9 @@ public class RoadPainterService
         _needsUpdate = true;
     }
 
-    public void GenerateRoadsBetweenHamlets(List<((int, int) a, (int, int) b, string aJson, string bJson)> adjacentHamletRoadEndpoints)
+    public void GenerateRoadsBetweenHamlets(
+        List<((int, int) a, (int, int) b, string aJson, string bJson)> adjacentHamletRoadEndpoints,
+        RoadGraph roadGraph)
     {
         foreach (var (a, b, aJson, bJson) in adjacentHamletRoadEndpoints)
         {
@@ -154,7 +157,12 @@ public class RoadPainterService
 
             // GD.Print($"Generated waypoints between {a} and {b}: {waypoints.Count} waypoints.");
 
-            // Step 3. Paint the road using the waypoints.
+            // Step 3. Add the new connecting road to our graph
+            var startNode = roadGraph.AddNode(closestA);
+            var endNode = roadGraph.AddNode(closestB);
+            roadGraph.AddEdge(startNode, endNode, waypoints);
+
+            // Step 4. Paint the road using the waypoints.
             PaintRoad([.. waypoints]);
         }
     }
