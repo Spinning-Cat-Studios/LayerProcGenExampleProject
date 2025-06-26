@@ -86,9 +86,12 @@ namespace LayerProcGenExampleProject.Services
             int[] roadEndIndices,
             Vector3 chunkIndex)
         {
-            // Handle the event when roads are generated.
-            // GD.Print("Received RoadsGenerated signal with chunk index: ", chunkIndex);
-            _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
+            // This handler is executed on a background thread.
+            // We must defer the actual painting (which interacts with the scene tree)
+            // to the main thread to prevent race conditions.
+            Callable.From(() =>
+                _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices)
+            ).CallDeferred();
         }
 
         private void OnRoadPainterServiceTimerTimeout()

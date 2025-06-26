@@ -11,7 +11,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 {
     List<Vector3> housePositions = new();
     private Node3D? _chunkParent; 
-    private readonly List<Node3D> _pendingHouses = new();
+    private readonly List<Vector3> _pendingHousePositions = new();
 
     public override void Create(
         int level,
@@ -111,39 +111,39 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
     void QueueHouseInstance(Vector3 position)
     {
+        // This runs on a background thread.
+        // Only perform thread-safe calculations here.
         position.Y = GetHeightAt(position);
-
-        var houseScene = GD.Load<PackedScene>(
-            "res://src/scenes/l_system_prefabs/house.tscn");
-        var inst = houseScene.Instantiate<Node3D>();
-        inst.Position = position;
-
-        _pendingHouses.Add(inst); 
+        // Do not call GD.Load or Instantiate(). Just store the data.
+        _pendingHousePositions.Add(position);
     }
 
     void FlushHousesToScene()
     {
-        // GD.Print("LSystemVillageChunk FlushHousesToScene");
-        if (_pendingHouses.Count == 0) return;
+        if (_pendingHousePositions.Count == 0) return;
 
-        // Copy to Godot Array so it survives the lambda capture
-        var batch = new Godot.Collections.Array<Node3D>(_pendingHouses.Cast<Node3D>());
+        // Copy the positions to a Godot Array so it survives the lambda capture.
+        var batch = new Godot.Collections.Array<Vector3>(_pendingHousePositions);
+        // Clear the list for the next build cycle.
+        _pendingHousePositions.Clear();
 
-        // Clear the list for the next build cycle
-        _pendingHouses.Clear();
-
-        // Schedule the whole batch to be added next frame
+        // Schedule the Godot-related work to run on the main thread.
         SceneTree tree = (SceneTree)Engine.GetMainLoop();
         tree.CreateTimer(0)                           // 0-sec One-Shot Timer
             .Connect("timeout",
                 Callable.From(() =>
                 {
-                    var parent = GetChunkParent();    // now definitely in tree
-                    // GD.Print("Adding " + batch.Count + " houses to scene for parent " + parent.Name);
-                    foreach (Node3D houseNode in batch)
+                    // This code now runs safely on the main thread.
+                    var parent = GetChunkParent();
+                    // Load the scene once, outside the loop.
+                    var houseScene = GD.Load<PackedScene>("res://src/scenes/l_system_prefabs/house.tscn");
+
+                    foreach (Vector3 position in batch)
                     {
-                        houseNode.Name = "House_" + houseNode.Position.ToString();
-                        parent.AddChild(houseNode);
+                        var inst = houseScene.Instantiate<Node3D>();
+                        inst.Position = position;
+                        inst.Name = "House_" + inst.Position.ToString();
+                        parent.AddChild(inst);
                     }
                 }));
     }
