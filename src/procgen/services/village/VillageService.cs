@@ -6,6 +6,7 @@ using Runevision.LayerProcGen;
 using System;
 using System.Linq;
 using System.Text.Json;
+using LayerProcGenExampleProject.Models.Graph;
 
 namespace LayerProcGenExampleProject.Services
 {
@@ -14,6 +15,10 @@ namespace LayerProcGenExampleProject.Services
         private readonly DatabaseService _databaseService;
         private readonly TurtleInterpreterService _turtleInterpreterService;
         private readonly RoadPainterService _roadPainterService;
+        private readonly RoadGraph _roadGraph = new RoadGraph();
+
+        private float spacingModifier = 3.75f;
+        private float jitterRange = 150f;
 
         private bool _subscribed;
 
@@ -66,8 +71,10 @@ namespace LayerProcGenExampleProject.Services
             GD.Print($"VillageService: Retrieved adjacent hamlet endpoints: {adjacentHamletRoadEndpoints.Count} pairs.");
             // GD.Print($"VillageService: Example pair: {adjacentHamletRoadEndpoints[0].a} and {adjacentHamletRoadEndpoints[0].b}");
             // GD.Print($"VillageService: Example JSON: {adjacentHamletRoadEndpoints[0].aJson} and {adjacentHamletRoadEndpoints[0].bJson}");
+            _roadPainterService.GenerateRoadsBetweenHamlets(adjacentHamletRoadEndpoints, _roadGraph);
+
             GD.Print("VillageService: Road generation started.");
-            _roadPainterService.GenerateRoadsBetweenHamlets(adjacentHamletRoadEndpoints);
+            GD.Print($"[VillageService] Final graph contains {this._roadGraph.Nodes.Count} nodes and {this._roadGraph.Edges.Count} edges.");
         }
 
         private void OnLSystemVillageChunkReady() { }
@@ -101,6 +108,18 @@ namespace LayerProcGenExampleProject.Services
             return _databaseService.Table<RoadChunkData>().ToList();
         }
 
+        private void AddVillageToGraph(List<(Vector3, Vector3)> roadPositionDirections)
+        {
+            // Add the village chunk's roads to the road graph
+            foreach (var (startPos, endPos) in roadPositionDirections)
+            {
+                var startNode = _roadGraph.AddNode(startPos);
+                var endNode = _roadGraph.AddNode(endPos);
+                // For local roads, the waypoints are just the start and end
+                _roadGraph.AddEdge(startNode, endNode, new List<Vector3> { startPos, endPos });
+            }
+        }
+
         // ─────────────────────────────────────────────────────────────
         //  STEP 1A - house/road generation
         // ─────────────────────────────────────────────────────────────
@@ -113,8 +132,6 @@ namespace LayerProcGenExampleProject.Services
             var lSystemService = new LSystemService(seed);
             var axiom = lSystemService.SelectRandomAxiom();
 
-            float spacingModifier = 3.75f;
-            float jitterRange = 150f;
             var (jitterX, jitterZ) = lSystemService.GenerateJitter(jitterRange);
             var worldOrigin = new Vector3(
                 chunkIndex.x * layer.chunkW * spacingModifier + jitterX,
@@ -134,6 +151,10 @@ namespace LayerProcGenExampleProject.Services
             var result = new LSystemResult();
 
             _turtleInterpreterService.Interpret(sequence, state, result);
+
+            // After generating data, add the local roads to the graph
+            AddVillageToGraph(result.RoadPositionDirections);
+
             return result;
         }
 
