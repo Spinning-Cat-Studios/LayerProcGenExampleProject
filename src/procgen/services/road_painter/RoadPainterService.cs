@@ -113,6 +113,11 @@ public class RoadPainterService
         List<((int, int) a, (int, int) b, string aJson, string bJson)> adjacentHamletRoadEndpoints,
         RoadGraph roadGraph)
     {
+        // This method is called from a background thread.
+        // We can do all the data processing and graph updates here,
+        // but the actual painting must be deferred to the main thread.
+        var allWaypointsToPaint = new List<Vector3[]>();
+
         foreach (var (a, b, aJson, bJson) in adjacentHamletRoadEndpoints)
         {
             // Use the endpoints (a, b) to generate roads between the hamlets.
@@ -162,8 +167,19 @@ public class RoadPainterService
             var endNode = roadGraph.AddNode(closestB);
             roadGraph.AddEdge(startNode, endNode, waypoints);
 
-            // Step 4. Paint the road using the waypoints.
-            PaintRoad([.. waypoints]);
+            // Step 4. Collect the waypoints to be painted later.
+            allWaypointsToPaint.Add(waypoints.ToArray());
+        }
+
+        // If there's anything to paint, schedule it on the main thread.
+        if (allWaypointsToPaint.Any())
+        {
+            Callable.From(() => {
+                foreach(var waypoints in allWaypointsToPaint)
+                {
+                    PaintRoad(waypoints);
+                }
+            }).CallDeferred();
         }
     }
 
