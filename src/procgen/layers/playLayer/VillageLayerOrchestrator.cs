@@ -24,6 +24,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         private readonly PlayLayer _playLayer;
         private readonly PlayerPositionManager _playerManager;
         private bool _isVillageLayerChunksDone = false;
+        private int _lastKnownChunkCount = 0;
 
         public VillageLayerOrchestrator(PlayLayer playLayer, PlayerPositionManager playerManager)
         {
@@ -127,6 +128,11 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             int centerChunkZ = (int)(referencePosition.Z / villageLayer.chunkH);
             int radiusInChunks = (int)Math.Ceiling(radius / Math.Min(villageLayer.chunkW, villageLayer.chunkH));
             
+            GD.Print($"[Dual-Radius DEBUG] Reference position: {referencePosition}");
+            GD.Print($"[Dual-Radius DEBUG] Center chunk: ({centerChunkX}, {centerChunkZ})");
+            GD.Print($"[Dual-Radius DEBUG] Chunk size: {villageLayer.chunkW}x{villageLayer.chunkH}");
+            GD.Print($"[Dual-Radius DEBUG] Radius: {radius}, radiusInChunks: {radiusInChunks}");
+            
             int dataChunksGenerated = 0;
             int dataChunksSkipped = 0;
             int totalTargetChunks = 0;
@@ -143,20 +149,29 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                     );
 
                     var playerPosXZ = new Vector3(referencePosition.X, 0, referencePosition.Z);
-                    if (playerPosXZ.DistanceTo(chunkWorldPos) <= radius)
+                    var distanceToChunk = playerPosXZ.DistanceTo(chunkWorldPos);
+                    
+                    if (distanceToChunk <= radius)
                     {
                         totalTargetChunks++;
+                        GD.Print($"[Dual-Radius DEBUG] Chunk ({x}, {z}) at world pos {chunkWorldPos}, distance {distanceToChunk:F1} <= {radius} - INCLUDED");
                         
                         // Generate data only if it doesn't exist
                         if (!villageService.ChunkDataExists(chunkIndex))
                         {
                             villageService.GenerateChunkDataOnly(chunkIndex, villageLayer);
                             dataChunksGenerated++;
+                            GD.Print($"[Dual-Radius DEBUG] Generated new data for chunk ({x}, {z})");
                         }
                         else
                         {
                             dataChunksSkipped++;
+                            GD.Print($"[Dual-Radius DEBUG] Skipped existing data for chunk ({x}, {z})");
                         }
+                    }
+                    else
+                    {
+                        GD.Print($"[Dual-Radius DEBUG] Chunk ({x}, {z}) at world pos {chunkWorldPos}, distance {distanceToChunk:F1} > {radius} - EXCLUDED");
                     }
                 }
             }
@@ -166,17 +181,30 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                 GD.Print($"[Dual-Radius] Data generation: {dataChunksGenerated} new, {dataChunksSkipped} existing chunks (radius: {radius:F0})");
                 GD.Print($"[Dual-Radius] Total target chunks in radius: {totalTargetChunks}");
                 
-                // If we've completed the initial data generation phase, trigger road generation
-                // This happens when all chunks in the data radius have been processed
-                if (dataChunksGenerated > 0 && (dataChunksGenerated + dataChunksSkipped) == totalTargetChunks)
+                // Check total chunks in database to see if we have enough for adjacencies
+                var totalChunksInDb = villageService.GetAllChunks().Count;
+                GD.Print($"[Dual-Radius] Total chunks in database: {totalChunksInDb}");
+                
+                // Only trigger road generation if we have multiple chunks and new chunks were added
+                // This prevents duplicate signals while ensuring we generate roads when new adjacencies are possible
+                if (totalChunksInDb >= 2 && dataChunksGenerated > 0 && totalChunksInDb > _lastKnownChunkCount)
                 {
-                    GD.Print("[Dual-Radius] Initial data generation complete, triggering road generation between hamlets");
+                    GD.Print($"[Dual-Radius] New chunks detected ({_lastKnownChunkCount} -> {totalChunksInDb}), triggering road generation between hamlets");
+                    _lastKnownChunkCount = totalChunksInDb;
                     Callable.From(() => {
                         SignalBus.Instance.CallDeferred(
                             "emit_signal",
                             SignalBus.SignalName.AllLSystemVillageChunksGenerated
                         );
                     }).CallDeferred();
+                }
+                else if (totalChunksInDb < 2)
+                {
+                    GD.Print($"[Dual-Radius] Only {totalChunksInDb} chunk(s) available, waiting for more chunks before triggering road generation");
+                }
+                else if ((dataChunksGenerated + dataChunksSkipped) < totalTargetChunks)
+                {
+                    GD.Print($"[Dual-Radius] Still processing chunks in radius ({dataChunksGenerated + dataChunksSkipped}/{totalTargetChunks}), waiting for completion");
                 }
             }
         }
