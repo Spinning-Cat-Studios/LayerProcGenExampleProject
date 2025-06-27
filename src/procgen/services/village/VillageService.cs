@@ -237,8 +237,13 @@ namespace LayerProcGenExampleProject.Services
             // Only generate data if it doesn't already exist
             if (!ChunkDataExists(chunkIndex))
             {
+                GD.Print($"[Data-Only Generation] Generating data for chunk ({chunkIndex.x}, {chunkIndex.y})");
                 var result = GenerateVillageDataOnly(chunkIndex, layer);
                 PersistRoadChunk(chunkIndex, result.RoadEndPositions);
+            }
+            else
+            {
+                // GD.Print($"[Data-Only Generation] Chunk ({chunkIndex.x}, {chunkIndex.y}) data already exists, skipping");
             }
         }
     }

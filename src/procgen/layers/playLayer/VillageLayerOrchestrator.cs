@@ -6,6 +6,19 @@ using LayerProcGenExampleProject.Services;
 
 namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 {
+    /// <summary>
+    /// VillageLayerOrchestrator manages village chunk generation using a dual-radius approach
+    /// to decouple data generation from rendering, solving the nearest neighbor topology problem.
+    /// 
+    /// Dual-Radius System:
+    /// - Data Generation Radius (300f): Larger radius where village data (including road endpoints)
+    ///   is generated and persisted to database without creating visual nodes
+    /// - Rendering Radius (150f): Smaller radius where visual nodes (houses, roads) are created
+    /// 
+    /// This ensures road topology stability because road endpoint data is always available
+    /// from a wider area for consistent nearest neighbor calculations, even when the player
+    /// moves and the rendering boundary shifts.
+    /// </summary>
     public class VillageLayerOrchestrator
     {
         private readonly PlayLayer _playLayer;
@@ -90,13 +103,16 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             Vector3 referencePosition)
         {
             // Use dual-radius approach: larger radius for data generation, smaller for rendering
+            // This prevents the "nearest neighbor" topology instability problem
             var villageService = villageLayer.GetService() as VillageService;
 
             // First pass: Generate data for larger radius (without visual nodes)
+            // This ensures road endpoint data is available for a wider area
             GenerateDataInRadius(villageLayer, villageService, referencePosition, 
                 PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE);
 
             // Second pass: Handle visual rendering for smaller radius
+            // This only creates visual nodes within the closer range for performance
             RenderChunksInRadius(villageLayer, referencePosition, 
                 PlayLayerConfiguration.VILLAGE_RENDERING_DISTANCE);
         }
@@ -110,6 +126,9 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             int centerChunkX = (int)(referencePosition.X / villageLayer.chunkW);
             int centerChunkZ = (int)(referencePosition.Z / villageLayer.chunkH);
             int radiusInChunks = (int)Math.Ceiling(radius / Math.Min(villageLayer.chunkW, villageLayer.chunkH));
+            
+            int dataChunksGenerated = 0;
+            int dataChunksSkipped = 0;
             
             for (int x = centerChunkX - radiusInChunks; x <= centerChunkX + radiusInChunks; x++)
             {
@@ -126,9 +145,22 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                     if (playerPosXZ.DistanceTo(chunkWorldPos) <= radius)
                     {
                         // Generate data only if it doesn't exist
-                        villageService.GenerateChunkDataOnly(chunkIndex, villageLayer);
+                        if (!villageService.ChunkDataExists(chunkIndex))
+                        {
+                            villageService.GenerateChunkDataOnly(chunkIndex, villageLayer);
+                            dataChunksGenerated++;
+                        }
+                        else
+                        {
+                            dataChunksSkipped++;
+                        }
                     }
                 }
+            }
+            
+            if (dataChunksGenerated > 0 || dataChunksSkipped > 0)
+            {
+                GD.Print($"[Dual-Radius] Data generation: {dataChunksGenerated} new, {dataChunksSkipped} existing chunks (radius: {radius:F0})");
             }
         }
 
@@ -149,7 +181,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var bounds = GetBoundsAroundPosition(referencePosition, radius * 1.5f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            // GD.Print($"[Camera Movement] Updating Village visual chunks around camera at {referencePosition}");
+            GD.Print($"[Dual-Radius] Visual rendering for chunks within {radius:F0} units of {referencePosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);
