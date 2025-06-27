@@ -11,7 +11,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         public const float VILLAGE_LAYER_LOAD_DISTANCE = 150f;
         
         // Dual-radius system for decoupling data generation from rendering
-        public const float VILLAGE_DATA_GENERATION_DISTANCE = 300f;  // Larger radius for data generation
+        public const float VILLAGE_DATA_GENERATION_DISTANCE = 400f;  // Increased radius to ensure multiple chunks
         public const float VILLAGE_RENDERING_DISTANCE = 150f;        // Smaller radius for visual rendering
 
         public static readonly LandscapeLayerConfig[] LandscapeLayerConfigs = new[]

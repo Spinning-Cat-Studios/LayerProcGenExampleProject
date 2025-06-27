@@ -128,10 +128,14 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             int centerChunkZ = (int)(referencePosition.Z / villageLayer.chunkH);
             int radiusInChunks = (int)Math.Ceiling(radius / Math.Min(villageLayer.chunkW, villageLayer.chunkH));
             
+            // Ensure minimum chunk coverage by expanding radius if necessary
+            int minRadiusInChunks = 2; // Minimum 5x5 grid for adjacencies
+            radiusInChunks = Math.Max(radiusInChunks, minRadiusInChunks);
+            
             GD.Print($"[Dual-Radius DEBUG] Reference position: {referencePosition}");
             GD.Print($"[Dual-Radius DEBUG] Center chunk: ({centerChunkX}, {centerChunkZ})");
             GD.Print($"[Dual-Radius DEBUG] Chunk size: {villageLayer.chunkW}x{villageLayer.chunkH}");
-            GD.Print($"[Dual-Radius DEBUG] Radius: {radius}, radiusInChunks: {radiusInChunks}");
+            GD.Print($"[Dual-Radius DEBUG] Radius: {radius}, radiusInChunks: {radiusInChunks} (min: {minRadiusInChunks})");
             
             int dataChunksGenerated = 0;
             int dataChunksSkipped = 0;

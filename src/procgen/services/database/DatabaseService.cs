@@ -143,31 +143,54 @@ namespace LayerProcGenExampleProject.Services.Database
             lock (_lock)
             {
                 var allChunks = _sharedConnection.Table<RoadChunkData>().ToList();
+                GD.Print($"[DB DEBUG] Total chunks retrieved: {allChunks.Count}");
+                
+                foreach (var chunk in allChunks)
+                {
+                    GD.Print($"[DB DEBUG] Chunk ({chunk.ChunkX}, {chunk.ChunkY}) has road data: {chunk.RoadEndPositions?.Length ?? 0} chars");
+                    if (!string.IsNullOrEmpty(chunk.RoadEndPositions))
+                    {
+                        GD.Print($"[DB DEBUG] Chunk ({chunk.ChunkX}, {chunk.ChunkY}) road data preview: {chunk.RoadEndPositions.Substring(0, Math.Min(100, chunk.RoadEndPositions.Length))}...");
+                    }
+                }
 
                 // Handle potential duplicate chunks by taking the first occurrence of each coordinate pair
                 // This prevents the "duplicate key" exception when multiple threads create the same chunk
                 var chunkDict = allChunks
                     .GroupBy(c => (c.ChunkX, c.ChunkY))
                     .ToDictionary(g => g.Key, g => g.First());
+                
+                GD.Print($"[DB DEBUG] Unique chunks after deduplication: {chunkDict.Count}");
 
                 var result = new List<((int, int), (int, int), string, string)>();
 
                 foreach (var chunk in allChunks)
                 {
                     var coord = (chunk.ChunkX, chunk.ChunkY);
+                    GD.Print($"[DB DEBUG] Checking chunk {coord} for adjacencies...");
 
                     // Check right neighbor (x+1, y)
                     var right = (chunk.ChunkX + 1, chunk.ChunkY);
                     if (chunkDict.TryGetValue(right, out var rightChunk))
                     {
+                        GD.Print($"[DB DEBUG] Found right neighbor: {coord} -> {right}");
                         result.Add((coord, right, chunk.RoadEndPositions, rightChunk.RoadEndPositions));
+                    }
+                    else
+                    {
+                        GD.Print($"[DB DEBUG] No right neighbor found for {coord} (looking for {right})");
                     }
 
                     // Check top neighbor (x, y+1)
                     var up = (chunk.ChunkX, chunk.ChunkY + 1);
                     if (chunkDict.TryGetValue(up, out var upChunk))
                     {
+                        GD.Print($"[DB DEBUG] Found top neighbor: {coord} -> {up}");
                         result.Add((coord, up, chunk.RoadEndPositions, upChunk.RoadEndPositions));
+                    }
+                    else
+                    {
+                        GD.Print($"[DB DEBUG] No top neighbor found for {coord} (looking for {up})");
                     }
                 }
 
