@@ -14,7 +14,10 @@ namespace LayerProcGenExampleProject.Services.Database.Entities
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
+        [Indexed("IX_ChunkCoords", 1, Unique = true)]
         public int ChunkX { get; set; }
+        
+        [Indexed("IX_ChunkCoords", 2, Unique = true)]
         public int ChunkY { get; set; }
 
         // SQLite does not directly store Vector3, so serialize as JSON

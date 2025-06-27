@@ -1,6 +1,7 @@
 using LayerProcGenExampleProject.Services.Database;
 using LayerProcGenExampleProject.Services.Database.Entities;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Godot;
 using Runevision.LayerProcGen;
 using System;
@@ -16,6 +17,7 @@ namespace LayerProcGenExampleProject.Services
         private readonly TurtleInterpreterService _turtleInterpreterService;
         private readonly RoadPainterService _roadPainterService;
         private readonly RoadGraph _roadGraph = new RoadGraph();
+        private readonly ConcurrentDictionary<(int x, int y), bool> _chunksBeingGenerated = new ConcurrentDictionary<(int x, int y), bool>();
 
         private float spacingModifier = 3.75f;
         private float jitterRange = 150f;
@@ -211,7 +213,7 @@ namespace LayerProcGenExampleProject.Services
             var serializableList = roadEnds.Select(v => new float[] { v.X, v.Y, v.Z }).ToList();
             var roadEndPositionsString = JsonSerializer.Serialize(serializableList);
 
-            _databaseService.Insert(new RoadChunkData
+            _databaseService.InsertOrReplace(new RoadChunkData
             {
                 ChunkX = chunkIndex.x,
                 ChunkY = chunkIndex.y,
@@ -234,16 +236,33 @@ namespace LayerProcGenExampleProject.Services
 
         public void GenerateChunkDataOnly(Runevision.Common.Point chunkIndex, LSystemVillageLayer layer)
         {
-            // Only generate data if it doesn't already exist
-            if (!ChunkDataExists(chunkIndex))
+            var chunkKey = (chunkIndex.x, chunkIndex.y);
+            
+            // Try to mark this chunk as being generated
+            if (!_chunksBeingGenerated.TryAdd(chunkKey, true))
             {
-                GD.Print($"[Data-Only Generation] Generating data for chunk ({chunkIndex.x}, {chunkIndex.y})");
-                var result = GenerateVillageDataOnly(chunkIndex, layer);
-                PersistRoadChunk(chunkIndex, result.RoadEndPositions);
+                // Another thread is already generating this chunk, skip
+                return;
             }
-            else
+
+            try
             {
-                // GD.Print($"[Data-Only Generation] Chunk ({chunkIndex.x}, {chunkIndex.y}) data already exists, skipping");
+                // Only generate data if it doesn't already exist in the database
+                if (!ChunkDataExists(chunkIndex))
+                {
+                    GD.Print($"[Data-Only Generation] Generating data for chunk ({chunkIndex.x}, {chunkIndex.y})");
+                    var result = GenerateVillageDataOnly(chunkIndex, layer);
+                    PersistRoadChunk(chunkIndex, result.RoadEndPositions);
+                }
+                else
+                {
+                    // GD.Print($"[Data-Only Generation] Chunk ({chunkIndex.x}, {chunkIndex.y}) data already exists, skipping");
+                }
+            }
+            finally
+            {
+                // Always remove the chunk from the generation tracking
+                _chunksBeingGenerated.TryRemove(chunkKey, out _);
             }
         }
     }

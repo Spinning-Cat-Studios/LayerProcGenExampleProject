@@ -70,6 +70,14 @@ namespace LayerProcGenExampleProject.Services.Database
             }
         }
 
+        public void InsertOrReplace<T>(T entity)
+        {
+            lock (_lock)
+            {
+                _sharedConnection.InsertOrReplace(entity);
+            }
+        }
+
         public void Dispose()
         {
             lock (_lock)
@@ -120,7 +128,11 @@ namespace LayerProcGenExampleProject.Services.Database
             {
                 var allChunks = _sharedConnection.Table<RoadChunkData>().ToList();
 
-                var chunkDict = allChunks.ToDictionary(c => (c.ChunkX, c.ChunkY));
+                // Handle potential duplicate chunks by taking the first occurrence of each coordinate pair
+                // This prevents the "duplicate key" exception when multiple threads create the same chunk
+                var chunkDict = allChunks
+                    .GroupBy(c => (c.ChunkX, c.ChunkY))
+                    .ToDictionary(g => g.Key, g => g.First());
 
                 var result = new List<((int, int), (int, int), string, string)>();
 
