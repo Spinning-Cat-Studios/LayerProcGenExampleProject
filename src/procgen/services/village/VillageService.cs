@@ -124,7 +124,46 @@ namespace LayerProcGenExampleProject.Services
         }
 
         // ─────────────────────────────────────────────────────────────
-        //  STEP 1A - house/road generation
+        //  STEP 1A - house/road generation (data only, no visual nodes)
+        // ─────────────────────────────────────────────────────────────
+        public LSystemResult GenerateVillageDataOnly(
+            Runevision.Common.Point chunkIndex,
+            LSystemVillageLayer layer)
+        {
+            // Same generation logic as GenerateVillageData but without visual node creation
+            // (1) l-system
+            int seed = Constants.GLOBAL_SEED + chunkIndex.x * Constants.CHUNK_X_RANDOM + chunkIndex.y * Constants.CHUNK_Y_RANDOM;
+            var lSystemService = new LSystemService(seed);
+            var axiom = lSystemService.SelectRandomAxiom();
+
+            var (jitterX, jitterZ) = lSystemService.GenerateJitter(jitterRange);
+            var worldOrigin = new Vector3(
+                chunkIndex.x * layer.chunkW * spacingModifier + jitterX,
+                0,
+                chunkIndex.y * layer.chunkH * spacingModifier + jitterZ);
+
+            var config = new LSystemConfig
+            {
+                ChunkSeed = seed,
+                Iterations = Constants.LSYSTEM_ITERATIONS,
+                WorldOrigin = worldOrigin,
+                Axiom = axiom
+            };
+
+            string sequence = lSystemService.GenerateSequence(config.Axiom, config.Iterations);
+            var state = new TurtleState(config.WorldOrigin, Vector3.Forward);
+            var result = new LSystemResult();
+
+            _turtleInterpreterService.Interpret(sequence, state, result);
+
+            // After generating data, add the local roads to the graph
+            AddVillageToGraph(result.RoadPositionDirections);
+
+            return result;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  STEP 1A - house/road generation (with visual nodes)
         // ─────────────────────────────────────────────────────────────
         public LSystemResult GenerateVillageData(
             Runevision.Common.Point chunkIndex,
@@ -183,6 +222,24 @@ namespace LayerProcGenExampleProject.Services
         public void ClearPersistedRoadChunk(Runevision.Common.Point chunkIndex)
         {
             _databaseService.DeleteRoadChunk(chunkIndex);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  Data generation utilities
+        // ─────────────────────────────────────────────────────────────
+        public bool ChunkDataExists(Runevision.Common.Point chunkIndex)
+        {
+            return _databaseService.ChunkDataExists(chunkIndex);
+        }
+
+        public void GenerateChunkDataOnly(Runevision.Common.Point chunkIndex, LSystemVillageLayer layer)
+        {
+            // Only generate data if it doesn't already exist
+            if (!ChunkDataExists(chunkIndex))
+            {
+                var result = GenerateVillageDataOnly(chunkIndex, layer);
+                PersistRoadChunk(chunkIndex, result.RoadEndPositions);
+            }
         }
     }
 }

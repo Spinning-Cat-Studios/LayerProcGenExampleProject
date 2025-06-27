@@ -101,6 +101,15 @@ namespace LayerProcGenExampleProject.Services.Database
             }
         }
 
+        public bool ChunkDataExists(Runevision.Common.Point chunkIndex)
+        {
+            lock (_lock)
+            {
+                var count = _sharedConnection.ExecuteScalar<int>("SELECT COUNT(*) FROM RoadChunkData WHERE ChunkX = ? AND ChunkY = ?", chunkIndex.x, chunkIndex.y);
+                return count > 0;
+            }
+        }
+
         // Retrieves road end pairs from adjacent hamlets,
         // which were built in different LSystemVillageChunks.
         // This is useful for road generation, as it allows us to connect roads
