@@ -33,7 +33,23 @@ namespace LayerProcGenExampleProject.Services.Database
                     var flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache | SQLiteOpenFlags.FullMutex;
 
                     _sharedConnection = new SQLiteConnection(dbPath, flags);
-                    _sharedConnection.CreateTable<RoadChunkData>();
+                    
+                    try
+                    {
+                        _sharedConnection.CreateTable<RoadChunkData>();
+                    }
+                    catch (SQLiteException ex) when (ex.Message.Contains("UNIQUE constraint failed"))
+                    {
+                        // Handle migration: existing database has duplicate data that conflicts with new unique constraint
+                        GD.PrintErr($"[DB] Database migration required: {ex.Message}");
+                        GD.Print("[DB] Clearing existing data to apply new unique constraint...");
+                        
+                        // Drop and recreate the table to handle the schema change
+                        _sharedConnection.DropTable<RoadChunkData>();
+                        _sharedConnection.CreateTable<RoadChunkData>();
+                        
+                        GD.Print("[DB] Database migration completed successfully.");
+                    }
                 }
 
                 _referenceCount++;
