@@ -71,8 +71,38 @@ namespace LayerProcGenExampleProject.Services
             GD.Print("VillageService: All L-System village chunks have been generated.");
             List<((int, int) a, (int, int) b, string aJson, string bJson)> adjacentHamletRoadEndpoints = _databaseService.RetrieveAdjacentRoadEndPairs();
             GD.Print($"VillageService: Retrieved adjacent hamlet endpoints: {adjacentHamletRoadEndpoints.Count} pairs.");
-            // GD.Print($"VillageService: Example pair: {adjacentHamletRoadEndpoints[0].a} and {adjacentHamletRoadEndpoints[0].b}");
-            // GD.Print($"VillageService: Example JSON: {adjacentHamletRoadEndpoints[0].aJson} and {adjacentHamletRoadEndpoints[0].bJson}");
+            
+            if (adjacentHamletRoadEndpoints.Count == 0)
+            {
+                GD.PrintErr("VillageService: No adjacent hamlet road endpoint pairs found! This means no roads will be generated between hamlets.");
+                GD.PrintErr("VillageService: This could be because:");
+                GD.PrintErr("  1. No data chunks have been generated yet");
+                GD.PrintErr("  2. Chunks are not adjacent to each other");
+                GD.PrintErr("  3. Database is empty or corrupted");
+                
+                // Let's check what's in the database
+                var allChunks = _databaseService.Table<RoadChunkData>().ToList();
+                GD.Print($"VillageService: Total chunks in database: {allChunks.Count}");
+                foreach (var chunk in allChunks.Take(5)) // Show first 5 chunks
+                {
+                    GD.Print($"  Chunk ({chunk.ChunkX}, {chunk.ChunkY}) with {chunk.RoadEndPositions?.Length ?? 0} chars of road data");
+                }
+                if (allChunks.Count > 5)
+                {
+                    GD.Print($"  ... and {allChunks.Count - 5} more chunks");
+                }
+            }
+            else
+            {
+                // Show first few pairs for debugging
+                foreach (var pair in adjacentHamletRoadEndpoints.Take(3))
+                {
+                    GD.Print($"VillageService: Example pair: {pair.a} and {pair.b}");
+                    GD.Print($"VillageService: A endpoints: {pair.aJson?.Substring(0, Math.Min(100, pair.aJson?.Length ?? 0))}...");
+                    GD.Print($"VillageService: B endpoints: {pair.bJson?.Substring(0, Math.Min(100, pair.bJson?.Length ?? 0))}...");
+                }
+            }
+            
             _roadPainterService.GenerateRoadsBetweenHamlets(adjacentHamletRoadEndpoints, _roadGraph);
 
             GD.Print("VillageService: Road generation started.");

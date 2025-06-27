@@ -129,6 +129,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             
             int dataChunksGenerated = 0;
             int dataChunksSkipped = 0;
+            int totalTargetChunks = 0;
             
             for (int x = centerChunkX - radiusInChunks; x <= centerChunkX + radiusInChunks; x++)
             {
@@ -144,6 +145,8 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                     var playerPosXZ = new Vector3(referencePosition.X, 0, referencePosition.Z);
                     if (playerPosXZ.DistanceTo(chunkWorldPos) <= radius)
                     {
+                        totalTargetChunks++;
+                        
                         // Generate data only if it doesn't exist
                         if (!villageService.ChunkDataExists(chunkIndex))
                         {
@@ -161,6 +164,20 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             if (dataChunksGenerated > 0 || dataChunksSkipped > 0)
             {
                 GD.Print($"[Dual-Radius] Data generation: {dataChunksGenerated} new, {dataChunksSkipped} existing chunks (radius: {radius:F0})");
+                GD.Print($"[Dual-Radius] Total target chunks in radius: {totalTargetChunks}");
+                
+                // If we've completed the initial data generation phase, trigger road generation
+                // This happens when all chunks in the data radius have been processed
+                if (dataChunksGenerated > 0 && (dataChunksGenerated + dataChunksSkipped) == totalTargetChunks)
+                {
+                    GD.Print("[Dual-Radius] Initial data generation complete, triggering road generation between hamlets");
+                    Callable.From(() => {
+                        SignalBus.Instance.CallDeferred(
+                            "emit_signal",
+                            SignalBus.SignalName.AllLSystemVillageChunksGenerated
+                        );
+                    }).CallDeferred();
+                }
             }
         }
 
