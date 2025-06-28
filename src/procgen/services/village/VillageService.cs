@@ -36,6 +36,7 @@ namespace LayerProcGenExampleProject.Services
                 += OnRoadsGenerated;
             SignalBus.Instance.RoadPainterServiceTimerTimeout
                 += OnRoadPainterServiceTimerTimeout;
+            SignalBus.Instance.LandscapeChunksReady += PaintAllHamletRoads;
             _subscribed = true;
         }
 
@@ -118,13 +119,20 @@ namespace LayerProcGenExampleProject.Services
             int[] roadEndIndices,
             Vector3 chunkIndex)
         {
-            GD.Print($"VillageService: Roads generated for chunk {chunkIndex}. Total positions: {roadPositions.Length}");
-            // This handler is executed on a background thread.
-            // We must defer the actual painting (which interacts with the scene tree)
-            // to the main thread to prevent race conditions.
-            Callable.From(() =>
-                _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices)
-            ).CallDeferred();
+            GD.Print($"VillageService: Roads generated for chunk {chunkIndex}. Persisting to database.");
+            
+            var hamletRoadData = new HamletRoadData
+            {
+                ChunkX = (int)chunkIndex.X,
+                ChunkY = (int)chunkIndex.Z,
+                RoadPositionsJson = JsonSerializer.Serialize(roadPositions),
+                RoadStartIndicesJson = JsonSerializer.Serialize(roadStartIndices),
+                RoadEndIndicesJson = JsonSerializer.Serialize(roadEndIndices)
+            };
+
+            // _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices)
+
+            _databaseService.InsertOrReplace(hamletRoadData);
         }
 
         private void OnRoadPainterServiceTimerTimeout()
@@ -133,6 +141,22 @@ namespace LayerProcGenExampleProject.Services
             // Handle the event when the road painter service timer times out.
             // GD.Print("RoadPainterService timer timeout.");
             // _roadPainterService.UpdateIfNeeded();
+        }
+
+        private void PaintAllHamletRoads()
+        {
+            GD.Print("VillageService: Landscape ready. Painting all persisted hamlet roads.");
+            var allHamletRoads = _databaseService.Table<HamletRoadData>().ToList();
+            GD.Print($"VillageService: Found {allHamletRoads.Count} hamlet road sets to paint.");
+
+            foreach (var roadData in allHamletRoads)
+            {
+                var roadPositions = JsonSerializer.Deserialize<Vector3[]>(roadData.RoadPositionsJson);
+                var roadStartIndices = JsonSerializer.Deserialize<int[]>(roadData.RoadStartIndicesJson);
+                var roadEndIndices = JsonSerializer.Deserialize<int[]>(roadData.RoadEndIndicesJson);
+
+                _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices);
+            }
         }
 
         public void SaveChunk(LSystemVillageChunk chunk)
