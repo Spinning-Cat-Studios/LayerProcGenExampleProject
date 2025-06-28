@@ -14,6 +14,7 @@ namespace LayerProcGenExampleProject.Services
     public class VillageService : LayerService
     {
         private readonly DatabaseService _databaseService;
+        private bool _onAllLSystemVillageChunksGeneratedCalled = false;
         private readonly TurtleInterpreterService _turtleInterpreterService;
         private readonly RoadPainterService _roadPainterService;
         private readonly RoadGraph _roadGraph = new RoadGraph();
@@ -36,7 +37,6 @@ namespace LayerProcGenExampleProject.Services
                 += OnRoadsGenerated;
             SignalBus.Instance.RoadPainterServiceTimerTimeout
                 += OnRoadPainterServiceTimerTimeout;
-            SignalBus.Instance.LandscapeChunksReady += PaintAllHamletRoads;
             _subscribed = true;
         }
 
@@ -69,6 +69,13 @@ namespace LayerProcGenExampleProject.Services
 
         private void OnAllLSystemVillageChunksGenerated()
         {
+            if (_onAllLSystemVillageChunksGeneratedCalled)
+            {
+                GD.Print("VillageService: OnAllLSystemVillageChunksGenerated already called, skipping.");
+                return;
+            }
+            _onAllLSystemVillageChunksGeneratedCalled = true;
+
             GD.Print("VillageService: All L-System village chunks have been generated.");
             List<((int, int) a, (int, int) b, string aJson, string bJson)> adjacentHamletRoadEndpoints = _databaseService.RetrieveAdjacentRoadEndPairs();
             GD.Print($"VillageService: Retrieved adjacent hamlet endpoints: {adjacentHamletRoadEndpoints.Count} pairs.");
@@ -95,19 +102,33 @@ namespace LayerProcGenExampleProject.Services
             }
             else
             {
-                // Show first few pairs for debugging
-                foreach (var pair in adjacentHamletRoadEndpoints.Take(3))
-                {
-                    GD.Print($"VillageService: Example pair: {pair.a} and {pair.b}");
-                    GD.Print($"VillageService: A endpoints: {pair.aJson?.Substring(0, Math.Min(100, pair.aJson?.Length ?? 0))}...");
-                    GD.Print($"VillageService: B endpoints: {pair.bJson?.Substring(0, Math.Min(100, pair.bJson?.Length ?? 0))}...");
-                }
+                // // Show first few pairs for debugging
+                // foreach (var pair in adjacentHamletRoadEndpoints.Take(3))
+                // {
+                //     GD.Print($"VillageService: Example pair: {pair.a} and {pair.b}");
+                //     GD.Print($"VillageService: A endpoints: {pair.aJson?.Substring(0, Math.Min(100, pair.aJson?.Length ?? 0))}...");
+                //     GD.Print($"VillageService: B endpoints: {pair.bJson?.Substring(0, Math.Min(100, pair.bJson?.Length ?? 0))}...");
+                // }
             }
             
             _roadPainterService.GenerateRoadsBetweenHamlets(adjacentHamletRoadEndpoints, _roadGraph);
 
+            PaintAllHamletRoads();
+
             GD.Print("VillageService: Road generation started.");
             GD.Print($"[VillageService] Final graph contains {this._roadGraph.Nodes.Count} nodes and {this._roadGraph.Edges.Count} edges.");
+        }
+
+        private string SerializeVector3List(IEnumerable<Vector3> vectors)
+        {
+            var serializableList = vectors.Select(v => new[] { v.X, v.Y, v.Z }).ToList();
+            return JsonSerializer.Serialize(serializableList);
+        }
+
+        private List<Vector3> DeserializeVector3List(string json)
+        {
+            var serializedList = JsonSerializer.Deserialize<List<float[]>>(json);
+            return serializedList.Select(p => new Vector3(p[0], p[1], p[2])).ToList();
         }
 
         private void OnLSystemVillageChunkReady() { }
@@ -119,28 +140,41 @@ namespace LayerProcGenExampleProject.Services
             int[] roadEndIndices,
             Vector3 chunkIndex)
         {
-            GD.Print($"VillageService: Roads generated for chunk {chunkIndex}. Persisting to database.");
+            // GD.Print($"VillageService: Roads generated for chunk {chunkIndex}. Persisting to database.");
             
             var hamletRoadData = new HamletRoadData
             {
                 ChunkX = (int)chunkIndex.X,
                 ChunkY = (int)chunkIndex.Z,
-                RoadPositionsJson = JsonSerializer.Serialize(roadPositions),
+                RoadPositionsJson = SerializeVector3List(roadPositions),
                 RoadStartIndicesJson = JsonSerializer.Serialize(roadStartIndices),
                 RoadEndIndicesJson = JsonSerializer.Serialize(roadEndIndices)
             };
 
-            // _roadPainterService.PaintRoad(roadPositions, roadStartIndices, roadEndIndices)
+            var point = new Runevision.Common.Point((int)chunkIndex.X, (int)chunkIndex.Z);
 
-            _databaseService.InsertOrReplace(hamletRoadData);
+            try
+            {
+                // Check if the chunk already exists
+                if (!_databaseService.HamletRoadDataExists(point))
+                {
+                    // If it does not exist, insert a new record
+                    _databaseService.Insert(hamletRoadData);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr($"Error checking chunk existence: {ex.Message}");
+            }
         }
 
         private void OnRoadPainterServiceTimerTimeout()
         {
-            return; // Temporarily disable this handler to avoid unnecessary updates
+            // return; // Temporarily disable this handler to avoid unnecessary updates
             // Handle the event when the road painter service timer times out.
             // GD.Print("RoadPainterService timer timeout.");
-            // _roadPainterService.UpdateIfNeeded();
+            _roadPainterService.UpdateIfNeeded();
         }
 
         private void PaintAllHamletRoads()
@@ -149,9 +183,19 @@ namespace LayerProcGenExampleProject.Services
             var allHamletRoads = _databaseService.Table<HamletRoadData>().ToList();
             GD.Print($"VillageService: Found {allHamletRoads.Count} hamlet road sets to paint.");
 
+            // Print first few for debugging
+            foreach (var roadData in allHamletRoads.Take(3))
+            {
+                GD.Print($"  Chunk ({roadData.ChunkX}, {roadData.ChunkY}) with {roadData.RoadPositionsJson?.Length ?? 0} chars of road positions");
+                if (!string.IsNullOrEmpty(roadData.RoadPositionsJson))
+                {
+                    GD.Print($"  Road positions preview: {roadData.RoadPositionsJson.Substring(0, Math.Min(100, roadData.RoadPositionsJson.Length))}...");
+                }
+            }
+
             foreach (var roadData in allHamletRoads)
             {
-                var roadPositions = JsonSerializer.Deserialize<Vector3[]>(roadData.RoadPositionsJson);
+                var roadPositions = DeserializeVector3List(roadData.RoadPositionsJson).ToArray();
                 var roadStartIndices = JsonSerializer.Deserialize<int[]>(roadData.RoadStartIndicesJson);
                 var roadEndIndices = JsonSerializer.Deserialize<int[]>(roadData.RoadEndIndicesJson);
 
@@ -271,7 +315,7 @@ namespace LayerProcGenExampleProject.Services
 
             try {
                 // Check if the chunk already exists
-                if (!_databaseService.ChunkDataExists(chunkIndex))
+                if (!_databaseService.RoadChunkDataExists(chunkIndex))
                 {
                     // If it does not exist, insert a new record
                     _databaseService.Insert(new RoadChunkData
@@ -299,9 +343,9 @@ namespace LayerProcGenExampleProject.Services
         // ─────────────────────────────────────────────────────────────
         //  Data generation utilities
         // ─────────────────────────────────────────────────────────────
-        public bool ChunkDataExists(Runevision.Common.Point chunkIndex)
+        public bool RoadChunkDataExists(Runevision.Common.Point chunkIndex)
         {
-            return _databaseService.ChunkDataExists(chunkIndex);
+            return _databaseService.RoadChunkDataExists(chunkIndex);
         }
 
         public void GenerateChunkDataOnly(Runevision.Common.Point chunkIndex, LSystemVillageLayer layer)
@@ -318,7 +362,7 @@ namespace LayerProcGenExampleProject.Services
             try
             {
                 // Only generate data if it doesn't already exist in the database
-                if (!ChunkDataExists(chunkIndex))
+                if (!RoadChunkDataExists(chunkIndex))
                 {
                     // GD.Print($"[Data-Only Generation] Generating data for chunk ({chunkIndex.x}, {chunkIndex.y})");
                     var result = GenerateVillageDataOnly(chunkIndex, layer);

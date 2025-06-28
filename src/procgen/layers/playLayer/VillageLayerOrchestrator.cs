@@ -155,7 +155,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                         totalTargetChunks++;
                         
                         // Generate data only if it doesn't exist
-                        if (!villageService.ChunkDataExists(chunkIndex))
+                        if (!villageService.RoadChunkDataExists(chunkIndex))
                         {
                             villageService.GenerateChunkDataOnly(chunkIndex, villageLayer);
                             dataChunksGenerated++;
@@ -186,7 +186,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var bounds = GetBoundsAroundPosition(referencePosition, radius * 1.5f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            GD.Print($"[Dual-Radius] Visual rendering for chunks within {radius:F0} units of {referencePosition}");
+            // GD.Print($"[Dual-Radius] Visual rendering for chunks within {radius:F0} units of {referencePosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);

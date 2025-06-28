@@ -42,6 +42,7 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
         //     }
         // }
     };
+
     static readonly Action removeChunkDoneDefault = static () => GD.Print("🗑️  A chunk level got removed");
 
     static float GetHeightAt(Vector3 position)

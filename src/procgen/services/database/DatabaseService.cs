@@ -128,11 +128,20 @@ namespace LayerProcGenExampleProject.Services.Database
             }
         }
 
-        public bool ChunkDataExists(Runevision.Common.Point chunkIndex)
+        public bool RoadChunkDataExists(Runevision.Common.Point chunkIndex)
         {
             lock (_lock)
             {
                 var count = _sharedConnection.ExecuteScalar<int>("SELECT COUNT(*) FROM RoadChunkData WHERE ChunkX = ? AND ChunkY = ?", chunkIndex.x, chunkIndex.y);
+                return count > 0;
+            }
+        }
+        
+        public bool HamletRoadDataExists(Runevision.Common.Point chunkIndex)
+        {
+            lock (_lock)
+            {
+                var count = _sharedConnection.ExecuteScalar<int>("SELECT COUNT(*) FROM HamletRoadData WHERE ChunkX = ? AND ChunkY = ?", chunkIndex.x, chunkIndex.y);
                 return count > 0;
             }
         }
@@ -147,7 +156,7 @@ namespace LayerProcGenExampleProject.Services.Database
             {
                 var allChunks = _sharedConnection.Table<RoadChunkData>().ToList();
                 // GD.Print($"[DB DEBUG] Total chunks retrieved: {allChunks.Count}");
-                
+
                 foreach (var chunk in allChunks)
                 {
                     // GD.Print($"[DB DEBUG] Chunk ({chunk.ChunkX}, {chunk.ChunkY}) has road data: {chunk.RoadEndPositions?.Length ?? 0} chars");
@@ -162,7 +171,7 @@ namespace LayerProcGenExampleProject.Services.Database
                 var chunkDict = allChunks
                     .GroupBy(c => (c.ChunkX, c.ChunkY))
                     .ToDictionary(g => g.Key, g => g.First());
-                
+
                 // GD.Print($"[DB DEBUG] Unique chunks after deduplication: {chunkDict.Count}");
 
                 var result = new List<((int, int), (int, int), string, string)>();
