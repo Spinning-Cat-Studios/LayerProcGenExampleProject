@@ -72,15 +72,23 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     void Build(Action ready, Action done, VillageService villageService)
     {
         ready?.Invoke();
-        // 1. Generate all data in one call
+        
+        // Step 1: Generate all data for the chunk.
+        // This is now the single source of truth for chunk generation.
         LSystemResult result = villageService.GenerateVillageData(index, layer);
 
-        // 2. Houses → scene
+        // Step 2: Persist the critical data (road endpoints) to the database.
+        // This happens every time, ensuring data is available for neighbor chunks.
+        villageService.PersistRoadChunk(index, result.RoadEndPositions);
+
+        // Step 3: Instantiate the visual elements (houses).
         foreach (var pos in result.HousePositions)
+        {
             QueueHouseInstance(pos);
+        }
         FlushHousesToScene();
 
-        // 3. Paint / signal roads
+        // Step 4: Signal for the local roads within this chunk to be painted.
         var roadPos  = result.RoadPositionDirections.Select(p => p.Item1).ToArray();
         var roadDirs = result.RoadPositionDirections.Select(p => p.Item2).ToArray();
 
@@ -93,12 +101,6 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             result.RoadEndIndices.ToArray(),
             index.ToVector3()
         );
-
-        // GD.Print($"Chunk {index.x}, {index.y} generated with {result.HousePositions.Count} houses and {result.RoadEndPositions.Count} road ends.");
-        // convert List<Vector3> to String
-        // GD.Print($"Road end positions: {roadEndPositionsString}");
-        // 4. Persist to DB
-        villageService.PersistRoadChunk(index, result.RoadEndPositions);
 
         done?.Invoke();
     }
@@ -135,6 +137,7 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
                 {
                     // This code now runs safely on the main thread.
                     var parent = GetChunkParent();
+                    // GD.Print($"LSystemVillageChunk: Instantiating {batch.Count} houses at once in chunk {index.x}, {index.y}");
                     // Load the scene once, outside the loop.
                     var houseScene = GD.Load<PackedScene>("res://src/scenes/l_system_prefabs/house.tscn");
 

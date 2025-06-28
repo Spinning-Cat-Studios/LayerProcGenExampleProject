@@ -132,11 +132,6 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             int minRadiusInChunks = 2; // Minimum 5x5 grid for adjacencies
             radiusInChunks = Math.Max(radiusInChunks, minRadiusInChunks);
             
-            GD.Print($"[Dual-Radius DEBUG] Reference position: {referencePosition}");
-            GD.Print($"[Dual-Radius DEBUG] Center chunk: ({centerChunkX}, {centerChunkZ})");
-            GD.Print($"[Dual-Radius DEBUG] Chunk size: {villageLayer.chunkW}x{villageLayer.chunkH}");
-            GD.Print($"[Dual-Radius DEBUG] Radius: {radius}, radiusInChunks: {radiusInChunks} (min: {minRadiusInChunks})");
-            
             int dataChunksGenerated = 0;
             int dataChunksSkipped = 0;
             int totalTargetChunks = 0;
@@ -158,57 +153,18 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                     if (distanceToChunk <= radius)
                     {
                         totalTargetChunks++;
-                        GD.Print($"[Dual-Radius DEBUG] Chunk ({x}, {z}) at world pos {chunkWorldPos}, distance {distanceToChunk:F1} <= {radius} - INCLUDED");
                         
                         // Generate data only if it doesn't exist
                         if (!villageService.ChunkDataExists(chunkIndex))
                         {
                             villageService.GenerateChunkDataOnly(chunkIndex, villageLayer);
                             dataChunksGenerated++;
-                            GD.Print($"[Dual-Radius DEBUG] Generated new data for chunk ({x}, {z})");
                         }
                         else
                         {
                             dataChunksSkipped++;
-                            GD.Print($"[Dual-Radius DEBUG] Skipped existing data for chunk ({x}, {z})");
                         }
                     }
-                    else
-                    {
-                        GD.Print($"[Dual-Radius DEBUG] Chunk ({x}, {z}) at world pos {chunkWorldPos}, distance {distanceToChunk:F1} > {radius} - EXCLUDED");
-                    }
-                }
-            }
-            
-            if (dataChunksGenerated > 0 || dataChunksSkipped > 0)
-            {
-                GD.Print($"[Dual-Radius] Data generation: {dataChunksGenerated} new, {dataChunksSkipped} existing chunks (radius: {radius:F0})");
-                GD.Print($"[Dual-Radius] Total target chunks in radius: {totalTargetChunks}");
-                
-                // Check total chunks in database to see if we have enough for adjacencies
-                var totalChunksInDb = villageService.GetAllChunks().Count;
-                GD.Print($"[Dual-Radius] Total chunks in database: {totalChunksInDb}");
-                
-                // Only trigger road generation if we have multiple chunks and new chunks were added
-                // This prevents duplicate signals while ensuring we generate roads when new adjacencies are possible
-                if (totalChunksInDb >= 2 && dataChunksGenerated > 0 && totalChunksInDb > _lastKnownChunkCount)
-                {
-                    GD.Print($"[Dual-Radius] New chunks detected ({_lastKnownChunkCount} -> {totalChunksInDb}), triggering road generation between hamlets");
-                    _lastKnownChunkCount = totalChunksInDb;
-                    Callable.From(() => {
-                        SignalBus.Instance.CallDeferred(
-                            "emit_signal",
-                            SignalBus.SignalName.AllLSystemVillageChunksGenerated
-                        );
-                    }).CallDeferred();
-                }
-                else if (totalChunksInDb < 2)
-                {
-                    GD.Print($"[Dual-Radius] Only {totalChunksInDb} chunk(s) available, waiting for more chunks before triggering road generation");
-                }
-                else if ((dataChunksGenerated + dataChunksSkipped) < totalTargetChunks)
-                {
-                    GD.Print($"[Dual-Radius] Still processing chunks in radius ({dataChunksGenerated + dataChunksSkipped}/{totalTargetChunks}), waiting for completion");
                 }
             }
         }
@@ -255,6 +211,18 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                     return;
                 }
                 villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
+
+                GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
+                GD.Print("Both terrain and village data are ready. Triggering final road connection.");
+
+                // Since the landscape is ready and the initial data has been generated,
+                // we can now safely fire the signal to connect the roads between villages.
+                SignalBus.Instance.CallDeferred(
+                    "emit_signal",
+                    SignalBus.SignalName.AllLSystemVillageChunksGenerated
+                );
+
+                // Set the flag to ensure this logic only runs once on startup.
                 _isVillageLayerChunksDone = true;
                 GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
             }

@@ -118,6 +118,7 @@ namespace LayerProcGenExampleProject.Services
             int[] roadEndIndices,
             Vector3 chunkIndex)
         {
+            GD.Print($"VillageService: Roads generated for chunk {chunkIndex}. Total positions: {roadPositions.Length}");
             // This handler is executed on a background thread.
             // We must defer the actual painting (which interacts with the scene tree)
             // to the main thread to prevent race conditions.
@@ -128,9 +129,10 @@ namespace LayerProcGenExampleProject.Services
 
         private void OnRoadPainterServiceTimerTimeout()
         {
+            return; // Temporarily disable this handler to avoid unnecessary updates
             // Handle the event when the road painter service timer times out.
             // GD.Print("RoadPainterService timer timeout.");
-            _roadPainterService.UpdateIfNeeded();
+            // _roadPainterService.UpdateIfNeeded();
         }
 
         public void SaveChunk(LSystemVillageChunk chunk)
@@ -243,12 +245,26 @@ namespace LayerProcGenExampleProject.Services
             var serializableList = roadEnds.Select(v => new float[] { v.X, v.Y, v.Z }).ToList();
             var roadEndPositionsString = JsonSerializer.Serialize(serializableList);
 
-            _databaseService.InsertOrReplace(new RoadChunkData
+            try {
+                // Check if the chunk already exists
+                if (!_databaseService.ChunkDataExists(chunkIndex))
+                {
+                    // If it does not exist, insert a new record
+                    _databaseService.Insert(new RoadChunkData
+                    {
+                        ChunkX = chunkIndex.x,
+                        ChunkY = chunkIndex.y,
+                        RoadEndPositions = roadEndPositionsString
+                    });
+                    return;
+                }
+                
+            }
+            catch (Exception ex)
             {
-                ChunkX = chunkIndex.x,
-                ChunkY = chunkIndex.y,
-                RoadEndPositions = roadEndPositionsString
-            });
+                GD.PrintErr($"Error checking chunk existence: {ex.Message}");
+            }
+
         }
 
         public void ClearPersistedRoadChunk(Runevision.Common.Point chunkIndex)
@@ -280,7 +296,7 @@ namespace LayerProcGenExampleProject.Services
                 // Only generate data if it doesn't already exist in the database
                 if (!ChunkDataExists(chunkIndex))
                 {
-                    GD.Print($"[Data-Only Generation] Generating data for chunk ({chunkIndex.x}, {chunkIndex.y})");
+                    // GD.Print($"[Data-Only Generation] Generating data for chunk ({chunkIndex.x}, {chunkIndex.y})");
                     var result = GenerateVillageDataOnly(chunkIndex, layer);
                     PersistRoadChunk(chunkIndex, result.RoadEndPositions);
                 }

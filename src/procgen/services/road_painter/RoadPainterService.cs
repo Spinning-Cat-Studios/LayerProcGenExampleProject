@@ -6,6 +6,7 @@ using System;
 using System.Text.Json;
 using System.Linq;
 using LayerProcGenExampleProject.Models.Graph;
+using static Godot.GodotObject;
 
 public class RoadPainterService
 {
@@ -45,8 +46,8 @@ public class RoadPainterService
 
     public void PaintRoad(Vector3[] road, int[] roadStartIndices, int[] roadEndIndices, int roadStartIndex = 2, int roadEndIndexOffset = 1)
     {
-        GD.Print($"RoadPainter: PaintRoad called with {road.Length} waypoints");
-        
+        // GD.Print($"RoadPainter: PaintRoad called with {road.Length} waypoints");
+
         // Check if the terrain is set before proceeding
         if (!IsTerrainSet)
         {
@@ -54,13 +55,13 @@ public class RoadPainterService
             return;
         }
 
-        if (road.Length < 2) 
+        if (road.Length < 2)
         {
             GD.PrintErr("RoadPainter: Road has less than 2 waypoints, cannot paint.");
             return;
         }
 
-        GD.Print($"RoadPainter: Terrain is set, proceeding with road painting");
+        // GD.Print($"RoadPainter: Terrain is set, proceeding with road painting");
 
         // one‑time initialisation
         if (_vSpacing == 0) _vSpacing = Terrain.MeshVertexSpacing;
@@ -81,27 +82,31 @@ public class RoadPainterService
 
             if (startIdx < 0 || endIdx > road.Length || startIdx >= endIdx)
             {
-                GD.PrintErr($"RoadPainter: Invalid road indices: start={startIdx}, end={endIdx}, roadLength={road.Length}");
+                // GD.PrintErr($"RoadPainter: Invalid road indices: start={startIdx}, end={endIdx}, roadLength={road.Length}");
                 continue;
             }
 
             List<Vector3> subroad = new List<Vector3>();
-            for (int j = startIdx; j < endIdx; ++j)
-                subroad.Add(road[j]);
+            // *** FIX 1: The loop should be inclusive of the end index to create a valid path. ***
+            for (int j = startIdx; j <= endIdx; ++j)
+            {
+                // Add a bounds check to be safe
+                if (j < road.Length)
+                {
+                    subroad.Add(road[j]);
+                }
+            }
 
             subroads.Add(subroad);
         }
-        
-        GD.Print($"RoadPainter: Created {subroads.Count} subroads to paint");
-        
+
+        // GD.Print($"RoadPainter: Created {subroads.Count} subroads to paint");
+
         // Paint each subroad
         foreach (var subroad in subroads)
         {
-            GD.Print($"RoadPainter: Painting subroad with {subroad.Count} waypoints");
             PaintSubroad(subroad.ToArray(), roadCtrl, roadStartIndex, roadEndIndexOffset);
         }
-        
-        GD.Print($"RoadPainter: Finished painting road");
     }
 
     private void PaintSubroad(Vector3[] road, uint roadCtrl, int startIndex, int endIndexOffset)
@@ -119,7 +124,10 @@ public class RoadPainterService
                 Vector3 c = a.Lerp(b, (float)s / n);
 
                 foreach (var o in _brushOffsets)
+                {
+                    // GD.Print($"RoadPainter: Setting control at {c + new Vector3(o.X, 0, o.Y)}");
                     Storage.SetControl(c + new Vector3(o.X, 0, o.Y), roadCtrl);
+                }
             }
         }
 
@@ -140,7 +148,7 @@ public class RoadPainterService
 
         foreach (var (a, b, aJson, bJson) in adjacentHamletRoadEndpoints)
         {
-            GD.Print($"RoadPainter: Processing road between hamlets at {a} and {b}");
+            // GD.Print($"RoadPainter: Processing road between hamlets at {a} and {b}");
             
             // Use the endpoints (a, b) to generate roads between the hamlets.
             // This is a three step process:
@@ -167,8 +175,8 @@ public class RoadPainterService
             var aRoadEndPositions = aRoadEndPositionsArrList.Select(arr => new Vector3(arr[0], arr[1], arr[2])).ToList();
             var bRoadEndPositions = bRoadEndPositionsArrLlist.Select(arr => new Vector3(arr[0], arr[1], arr[2])).ToList();
 
-            GD.Print($"RoadPainter: Hamlet A has {aRoadEndPositions.Count} road endpoints");
-            GD.Print($"RoadPainter: Hamlet B has {bRoadEndPositions.Count} road endpoints");
+            // GD.Print($"RoadPainter: Hamlet A has {aRoadEndPositions.Count} road endpoints");
+            // GD.Print($"RoadPainter: Hamlet B has {bRoadEndPositions.Count} road endpoints");
 
             if (aRoadEndPositions.Count == 0 || bRoadEndPositions.Count == 0)
             {
@@ -195,15 +203,15 @@ public class RoadPainterService
                 }
             }
 
-            GD.Print($"RoadPainter: Closest endpoints are {closestDistance:F2} units apart");
-            GD.Print($"RoadPainter: A={closestA}, B={closestB}");
+            // GD.Print($"RoadPainter: Closest endpoints are {closestDistance:F2} units apart");
+            // GD.Print($"RoadPainter: A={closestA}, B={closestB}");
 
             // Step 2. Compute waypoints between the two closest endpoints.
             float minSegmentLength = closestDistance * 0.1f;
             float noiseFactor = 0.1f;
             List<Vector3> waypoints = GenerateNoisyWaypoints(closestA, closestB, minSegmentLength, noiseFactor);
 
-            GD.Print($"RoadPainter: Generated {waypoints.Count} waypoints between {a} and {b}");
+            // GD.Print($"RoadPainter: Generated {waypoints.Count} waypoints between {a} and {b}");
 
             // Step 3. Add the new connecting road to our graph
             var startNode = roadGraph.AddNode(closestA);
@@ -215,19 +223,25 @@ public class RoadPainterService
             roadsPainted++;
         }
 
-        GD.Print($"RoadPainter: Processed {roadsPainted} roads for painting");
+        // GD.Print($"RoadPainter: Processed {roadsPainted} roads for painting");
 
         // If there's anything to paint, schedule it on the main thread.
         if (allWaypointsToPaint.Any())
         {
-            GD.Print($"RoadPainter: Scheduling {allWaypointsToPaint.Count} roads for painting on main thread");
-            Callable.From(() => {
+            // GD.Print($"RoadPainter: Scheduling {allWaypointsToPaint.Count} roads for painting on main thread");
+            Callable.From(() =>
+            {
                 GD.Print($"RoadPainter: [Main Thread] Actually painting {allWaypointsToPaint.Count} roads");
-                foreach(var waypoints in allWaypointsToPaint)
+                foreach (var waypoints in allWaypointsToPaint)
                 {
                     PaintRoad(waypoints);
                 }
                 GD.Print($"RoadPainter: [Main Thread] Finished painting all roads");
+                // *** FIX: Instead of calling UpdateIfNeeded directly, schedule it for the next frame. ***
+                // This gives the engine a full frame to process the SetControl changes before the map update is forced.
+                var tree = (SceneTree)Engine.GetMainLoop();
+                tree.CreateTimer(0).Connect("timeout", Callable.From(UpdateIfNeeded), (uint)ConnectFlags.OneShot);
+
             }).CallDeferred();
         }
         else
@@ -273,6 +287,7 @@ public class RoadPainterService
     public void UpdateIfNeeded()
     {
         if (!_needsUpdate) return;
+        GD.Print("RoadPainter: UpdateIfNeeded called, flushing changes to terrain");
         Storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
         _needsUpdate = false;
     }
