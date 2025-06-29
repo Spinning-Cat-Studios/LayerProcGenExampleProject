@@ -87,15 +87,8 @@ public class RoadPainterService
             }
 
             List<Vector3> subroad = new List<Vector3>();
-            // *** FIX 1: The loop should be inclusive of the end index to create a valid path. ***
-            for (int j = startIdx; j <= endIdx; ++j)
-            {
-                // Add a bounds check to be safe
-                if (j < road.Length)
-                {
-                    subroad.Add(road[j]);
-                }
-            }
+            for (int j = startIdx; j < endIdx; ++j)
+                subroad.Add(road[j]);
 
             subroads.Add(subroad);
         }
