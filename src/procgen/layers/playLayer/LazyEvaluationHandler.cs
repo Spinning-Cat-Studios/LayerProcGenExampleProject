@@ -11,6 +11,8 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         private readonly LandscapeLayerOrchestrator _landscapeOrchestrator;
         private readonly VillageLayerOrchestrator _villageOrchestrator;
         private bool _subscribed;
+        private bool _waitingForLandscapeCompletion = false;
+        private Vector3 _pendingVillageReconstructionPosition;
 
         public LazyEvaluationHandler(
             PlayLayer playLayer,
@@ -29,6 +31,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             if (_subscribed) return;
 
             SignalBus.Instance.ReconstructNodes += OnReconstructNodes;
+            SignalBus.Instance.LandscapeChunksReady += OnLandscapeReconstructionComplete;
             _subscribed = true;
 
             // GD.Print("[LazyEvaluationHandler] Subscribed to ReconstructNodes signal");
@@ -50,12 +53,23 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
             // Handle PlayLayer chunks
             // HandlePlayLayerReconstruction(referencePosition);  // This is an expensive operation, commenting out for now
+            _pendingVillageReconstructionPosition = referencePosition;
+            _waitingForLandscapeCompletion = true;
 
             // Handle Landscape layer chunks
             HandleLandscapeLayerReconstruction(referencePosition);
+        }
 
-            // Handle Village layer chunks
-            HandleVillageLayerReconstruction(referencePosition);
+        private void OnLandscapeReconstructionComplete()
+        {
+            if (_waitingForLandscapeCompletion)
+            {
+                GD.Print("[LazyEvaluationHandler] Landscape reconstruction complete, starting village reconstruction");
+                _waitingForLandscapeCompletion = false;
+                
+                // Now handle Village layer chunks
+                HandleVillageLayerReconstruction(_pendingVillageReconstructionPosition);
+            }
         }
 
         // This is an expensive operation and should be used with caution.

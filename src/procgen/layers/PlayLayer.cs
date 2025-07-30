@@ -69,8 +69,34 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         }
         
         signalBus.PlayerSpawn += OnPlayerSpawn;
+        signalBus.LandscapeChunksReady += OnLandscapeSetupComplete;
         _playerSpawnHandlerSubscribed = true;
         // GD.Print($"[PlayLayer] Subscribed to PlayerSpawn signal on SignalBus instance {signalBus.GetInstanceId()}");
+    }
+    
+    private void OnLandscapeSetupComplete()
+    {
+        GD.Print("[PlayLayer] Landscape setup complete, proceeding with village layer setup");
+        
+        if (_pendingLayerArguments == null)
+        {
+            GD.Print("[PlayLayer] Landscape setup complete but no pending layer arguments");
+            return;
+        }
+
+        // Use the last known player position for village layer setup
+        _villageOrchestrator.SetupLSystemVillageLayerWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
+
+        // Clear pending arguments as they've been processed
+        _pendingLayerArguments = null;
+
+        // Unsubscribe from LandscapeChunksReady signal as we only need it once
+        var sceneTree = Engine.GetMainLoop() as SceneTree;
+        var signalBus = sceneTree?.Root.GetNode<SignalBus>("SignalBus");
+        if (signalBus != null)
+        {
+            signalBus.LandscapeChunksReady -= OnLandscapeSetupComplete;
+        }
     }
 
     private void OnPlayerSpawn(Vector3 playerPosition)
@@ -90,10 +116,6 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
 
         // GD.Print($"[PlayLayer] Initial player position: {_playerManager.LastKnownPlayerPosition}");
         _landscapeOrchestrator.SetupLandscapeLayersWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
-        _villageOrchestrator.SetupLSystemVillageLayerWithLazyLoading(_pendingLayerArguments, _playerManager.LastKnownPlayerPosition);
-
-        // Clear pending arguments as they've been processed
-        _pendingLayerArguments = null;
 
         // Unsubscribe from PlayerSpawn signal as we only need it once
         // Also get the singleton properly here to unsubscribe
@@ -103,7 +125,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         {
             signalBus.PlayerSpawn -= OnPlayerSpawn;
         }
-        
+
         _playerSpawnHandlerSubscribed = false;
 
         GD.Print("[PlayLayer] Layer setup completed based on PlayerSpawn signal");
