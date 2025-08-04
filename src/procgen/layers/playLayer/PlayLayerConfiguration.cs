@@ -9,6 +9,7 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         public const int CHUNK_HEIGHT = 8;
         public const float PLAY_LAYER_LOAD_DISTANCE = 75f;
         public const float VILLAGE_LAYER_LOAD_DISTANCE = 150f;
+        public const float VILLAGE_DATA_GENERATION_DISTANCE = 300f;
 
         public static readonly LandscapeLayerConfig[] LandscapeLayerConfigs = new[]
         {

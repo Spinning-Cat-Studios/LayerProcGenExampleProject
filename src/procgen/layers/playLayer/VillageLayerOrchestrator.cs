@@ -2,6 +2,7 @@ using System;
 using Godot;
 using Runevision.LayerProcGen;
 using Runevision.Common;
+using LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents;
 
 namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 {
@@ -48,8 +49,8 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
         private void PerformInitialLazyLoadForVillageLayer(LSystemVillageLayer villageLayer, Vector3 playerPosition)
         {
-            // Define load distance for village layer (you can add this to PlayLayerConfiguration)
-            float villageLoadDistance = 150f; // Adjust as needed
+            // Use the larger data generation distance to ensure road adjacency stability
+            float loadDistance = PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE;
 
             bool ShouldCreateChunk(Point chunkIndex, int level, Vector3 playerPos)
             {
@@ -61,20 +62,12 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
                 var playerXZPos = new Vector3(playerPos.X, 0, playerPos.Z);
                 var distanceToPlayer = playerXZPos.DistanceTo(chunkWorldPos);
-                bool withinRange = distanceToPlayer <= villageLoadDistance;
-
-                // if (!withinRange)
-                // {
-                //     GD.Print($"[Initial Load] Skipping Village chunk {chunkIndex} - outside player range (distance: {distanceToPlayer:F1})");
-                // }
-
-                return withinRange;
+                return distanceToPlayer <= loadDistance;
             }
 
-            var initialBounds = GetBoundsAroundPosition(playerPosition, villageLoadDistance * 1.2f);
+            var initialBounds = GetBoundsAroundPosition(playerPosition, loadDistance * 1.2f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            // GD.Print($"[Initial Load] Loading Village chunks around player at {playerPosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(initialBounds, 0, levelData, playerPosition, ShouldCreateChunk);
@@ -89,7 +82,8 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             LSystemVillageLayer villageLayer,
             Vector3 referencePosition)
         {
-            float loadDistance = 150f; // You can add this to PlayLayerConfiguration
+            // Use the larger data generation distance to ensure road adjacency stability
+            float loadDistance = PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE;
 
             bool ShouldCreateChunk(Point chunkIndex, int level, Vector3 playerPos)
             {
@@ -106,7 +100,6 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             var bounds = GetBoundsAroundPosition(referencePosition, loadDistance * 1.5f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            // GD.Print($"[Camera Movement] Updating Village chunks around camera at {referencePosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);
