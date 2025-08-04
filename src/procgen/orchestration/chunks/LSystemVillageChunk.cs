@@ -72,9 +72,72 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
     void Build(Action ready, Action done, VillageService villageService)
     {
         ready?.Invoke();
-        // 1. Generate all data in one call
-        LSystemResult result = villageService.GenerateVillageData(index, layer);
+        
+        // Generate data
+        LSystemResult result = GenerateVillageData(villageService);
+        
+        // Determine if we should render based on distance from player
+        bool shouldRender = ShouldRenderChunk();
+        
+        if (shouldRender)
+        {
+            RenderVillageData(result, villageService);
+        }
+        else
+        {
+            // Data-only mode: just persist to database
+            villageService.PersistRoadChunk(index, result.RoadEndPositions);
+        }
+        
+        done?.Invoke();
+    }
 
+    private bool ShouldRenderChunk()
+    {
+        // Use the reference position from the orchestrator
+        var referencePosition = LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents.VillageReferencePosition.Current;
+        
+        var chunkWorldPos = new Vector3(
+            index.x * layer.chunkW + layer.chunkW / 2,
+            0,
+            index.y * layer.chunkH + layer.chunkH / 2
+        );
+
+        var referencePosXZ = new Vector3(referencePosition.X, 0, referencePosition.Z);
+        var distance = referencePosXZ.DistanceTo(chunkWorldPos);
+        
+        bool shouldRender = distance <= LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents.PlayLayerConfiguration.VILLAGE_LAYER_LOAD_DISTANCE;
+        
+        // Debug logging to help with testing and validation
+        string mode = shouldRender ? "RENDER + DATA" : "DATA ONLY";
+        GD.Print($"[DualRadius] Chunk {index} at distance {distance:F1}f: {mode}");
+        
+        return shouldRender;
+    }
+
+    private Vector3 GetCurrentPlayerPosition()
+    {
+        // This method is now unused but kept for potential future use
+        try
+        {
+            var tree = (SceneTree)Engine.GetMainLoop();
+            var player = tree.Root.GetNode<Node3D>("RootNode3D/Player");
+            return player?.Position ?? Vector3.Zero;
+        }
+        catch
+        {
+            return Vector3.Zero;
+        }
+    }
+
+    LSystemResult GenerateVillageData(VillageService villageService)
+    {
+        // 1. Generate all data in one call
+        return villageService.GenerateVillageData(index, layer);
+    }
+
+    void RenderVillageData(LSystemResult result, VillageService villageService)
+    {
         // 2. Houses → scene
         foreach (var pos in result.HousePositions)
             QueueHouseInstance(pos);
@@ -94,13 +157,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             index.ToVector3()
         );
 
-        // GD.Print($"Chunk {index.x}, {index.y} generated with {result.HousePositions.Count} houses and {result.RoadEndPositions.Count} road ends.");
-        // convert List<Vector3> to String
-        // GD.Print($"Road end positions: {roadEndPositionsString}");
         // 4. Persist to DB
         villageService.PersistRoadChunk(index, result.RoadEndPositions);
-
-        done?.Invoke();
     }
 
     float GetHeightAt(Vector3 position)
