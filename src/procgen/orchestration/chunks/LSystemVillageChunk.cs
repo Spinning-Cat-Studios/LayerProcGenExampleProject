@@ -94,8 +94,8 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
 
     private bool ShouldRenderChunk()
     {
-        // Get player position (simplified - we could pass this in as a parameter)
-        var playerPosition = GetCurrentPlayerPosition();
+        // Use the reference position from the orchestrator
+        var referencePosition = LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents.VillageReferencePosition.Current;
         
         var chunkWorldPos = new Vector3(
             index.x * layer.chunkW + layer.chunkW / 2,
@@ -103,15 +103,15 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
             index.y * layer.chunkH + layer.chunkH / 2
         );
 
-        var playerPosXZ = new Vector3(playerPosition.X, 0, playerPosition.Z);
-        var distance = playerPosXZ.DistanceTo(chunkWorldPos);
+        var referencePosXZ = new Vector3(referencePosition.X, 0, referencePosition.Z);
+        var distance = referencePosXZ.DistanceTo(chunkWorldPos);
         
         return distance <= LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents.PlayLayerConfiguration.VILLAGE_LAYER_LOAD_DISTANCE;
     }
 
     private Vector3 GetCurrentPlayerPosition()
     {
-        // Try to get player position from the scene
+        // This method is now unused but kept for potential future use
         try
         {
             var tree = (SceneTree)Engine.GetMainLoop();
@@ -120,7 +120,6 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         }
         catch
         {
-            // Fallback to zero if player not found
             return Vector3.Zero;
         }
     }

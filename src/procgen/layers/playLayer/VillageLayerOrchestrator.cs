@@ -52,6 +52,9 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             // Use the larger data generation distance to ensure road adjacency stability
             float loadDistance = PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE;
 
+            // Update the reference position for chunks to use
+            VillageReferencePosition.Update(playerPosition);
+
             bool ShouldCreateChunk(Point chunkIndex, int level, Vector3 playerPos)
             {
                 var chunkWorldPos = new Vector3(
@@ -84,6 +87,9 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         {
             // Use the larger data generation distance to ensure road adjacency stability
             float loadDistance = PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE;
+
+            // Update the reference position for chunks to use
+            VillageReferencePosition.Update(referencePosition);
 
             bool ShouldCreateChunk(Point chunkIndex, int level, Vector3 playerPos)
             {
