@@ -106,7 +106,13 @@ public class LSystemVillageChunk : LayerChunk<LSystemVillageLayer, LSystemVillag
         var referencePosXZ = new Vector3(referencePosition.X, 0, referencePosition.Z);
         var distance = referencePosXZ.DistanceTo(chunkWorldPos);
         
-        return distance <= LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents.PlayLayerConfiguration.VILLAGE_LAYER_LOAD_DISTANCE;
+        bool shouldRender = distance <= LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents.PlayLayerConfiguration.VILLAGE_LAYER_LOAD_DISTANCE;
+        
+        // Debug logging to help with testing and validation
+        string mode = shouldRender ? "RENDER + DATA" : "DATA ONLY";
+        GD.Print($"[DualRadius] Chunk {index} at distance {distance:F1}f: {mode}");
+        
+        return shouldRender;
     }
 
     private Vector3 GetCurrentPlayerPosition()
