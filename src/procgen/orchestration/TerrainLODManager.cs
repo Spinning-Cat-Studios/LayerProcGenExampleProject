@@ -4,6 +4,7 @@ using Runevision.LayerProcGen;
 using System.Collections.Generic;
 using Terrain3D.Scripts.Utilities; // Added for TerrainManualRegionUtil
 using Terrain3DBindings;
+using Terrain3DWrapper = Terrain3DBindings.Terrain3D;
 
 namespace Terrain3D.Scripts.Generation.Layers;
 
@@ -11,10 +12,10 @@ public partial class TerrainLODManager : Node
 {
 	public static TerrainLODManager instance;
 
-	[Export(PropertyHint.NodeType, nameof(Terrain3DBindings.Terrain3D))]
+	[Export(PropertyHint.NodeType, "Terrain3D")]
 	public Node3D Terrain3D { get; set; }
 
-	public Terrain3DBindings.Terrain3D terrain3DWrapper;
+	public Terrain3DWrapper terrain3DWrapper;
 
 	private LayerArgumentDictionary layerArguments = new LayerArgumentDictionary
 	{
@@ -105,18 +106,19 @@ public partial class TerrainLODManager : Node
 		};
 	}
 
-	public void RegisterChunk(int lodLevel, Point p, Terrain3DStorage terrain)
+	public void RegisterChunk(int lodLevel, Point p /*, drop old Terrain3DStorage param */)
 	{
-		var idx = terrain.RegionOffsets.IndexOf(new Vector2I(-p.x, -p.y));
-		if (idx > 0)
-			layers[lodLevel].chunks[p] = new TerrainInfo
-			{
-				heightMap = terrain.HeightMaps[idx],
-				colorMap = terrain.ColorMaps[idx],
-				controlMap = terrain.ControlMaps[idx]
+		var loc = new Vector2I(-p.x, -p.y); // keep your sign convention
+		int idx = terrain3DWrapper.Storage.GetRegionArrayIndex(loc);
+		if (idx >= 0) {
+			layers[lodLevel].chunks[p] = new TerrainInfo {
+				heightMap  = terrain3DWrapper.Storage.HeightMaps[idx],
+				colorMap   = terrain3DWrapper.Storage.ColorMaps[idx],
+				controlMap = terrain3DWrapper.Storage.ControlMaps[idx],
 			};
-		else
-			GD.Print($"Point: {p} doesn't actually correspond to a region in Terrain3D ({string.Join(',', terrain.RegionOffsets)}");
+		} else {
+			GD.Print($"Point {p} not found among region locations");
+		}
 		anyRegistrationChanges = true;
 	}
 
@@ -340,7 +342,7 @@ public partial class TerrainLODManager : Node
 	public Vector3 AlignToRegionOrigin(Vector3 worldPos)
 	{
 		if (terrain3DWrapper?.Storage == null) return worldPos;
-		int rs = (int)terrain3DWrapper.Storage.RegionSize;
+		int rs = terrain3DWrapper.RegionSizePixels;
 		int ax = Mathf.FloorToInt(worldPos.X / rs) * rs;
 		int az = Mathf.FloorToInt(worldPos.Z / rs) * rs;
 		return new Vector3(ax, 0, az);
@@ -406,26 +408,36 @@ public partial class TerrainLODManager : Node
 		return false;
 	}
 
-	public void CreateNewChunkAt(Vector3 position)
+	public Error CreateNewChunkAt(Vector3 position)
 	{
-		// Use aligned origin to avoid later lookup mismatches when painting.
-		var aligned = AlignToRegionOrigin(position);
-		var addRegionError = terrain3DWrapper.Storage.AddRegion(aligned, null, false);
-		switch (addRegionError)
-		{
-			case Error.Ok:
-				break;
-			case Error.AlreadyExists:
-				break;
-			default:
-				GD.PushError($"AddRegion error {addRegionError} at {aligned} (requested {position})");
-				break;
-		}
+		var aligned = AlignToRegionOrigin(position); // fine to keep
+		var data = (GodotObject)terrain3DWrapper.Data; // this must be Terrain3D.Get("data")
+
+		// Mirror your AlreadyExists branch explicitly
+		if ((bool)data.Call("has_regionp", aligned))
+			return Error.AlreadyExists;
+
+		// 0.9.3: create a blank region at the cell that contains this world position
+		var regionObj = (GodotObject)data.Call("add_region_blankp", aligned, false);
+		if (regionObj == null) return Error.Failed;
+
+		// Bulk-adding? call once at the end; otherwise you can pass update=true above
+		// data.Call("force_update_maps", 3); // TYPE_MAX = 3
+
+		return Error.Ok;
 	}
 
-	public Terrain3DRegion GetChunkAt(Vector3 position)
+	public Terrain3D.Scripts.Utilities.Terrain3DRegion? GetChunkAt(Vector3 position)
 	{
-		return Terrain3DRegion.Create(terrain3DWrapper.Storage.GetRegionIndex(position));
+		int idx = terrain3DWrapper.Storage.GetRegionIndex(position); // uses get_region_idp on 0.9.3
+		return idx >= 0 ? new Terrain3D.Scripts.Utilities.Terrain3DRegion(idx) : null;
+	}
+
+	public int? GetRegionId(Vector3 position)
+	{
+		var data = (GodotObject)terrain3DWrapper.Data;
+		var id = (int)data.Call("get_region_idp", position);
+		return (bool)data.Call("has_regionp", position) ? id : (int?)null;
 	}
 
 	/// <summary>

@@ -72,6 +72,38 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 	private Terrain3DStorage storage;
 	private Terrain3DTextureList textureList;
 
+	// Prefer the 0.9.3 "data" resource; fall back to "storage" if present.
+	private static readonly StringName data_name = "data";
+
+	// Expose the node (you already have AsNode3D)
+	public GodotObject Data => Instance.Get(data_name).AsGodotObject();
+
+	// RegionSize is on the node in 0.9.3; expose it for callers like AlignToRegionOrigin
+	public int RegionSizePixels => Instance.Get("region_size").AsInt32();
+
+	// Storage: prefer data when storage is missing
+	public Terrain3DStorage Storage
+	{
+		get
+		{
+			if (storage == null)
+			{
+				Variant v = Instance.Get(storage_name);
+				if (v.VariantType != Variant.Type.Nil)
+				{
+					storage = new Terrain3DStorage(v.AsGodotObject());
+				}
+				else
+				{
+					// 0.9.3+: wrap data in the same Terrain3DStorage class (shim behavior)
+					storage = new Terrain3DStorage(Instance.Get(data_name).AsGodotObject());
+				}
+			}
+			return storage;
+		}
+		set => Instance.Set(storage_name, value.Instance); // still allow setting if older builds expose it
+	}
+
 	public Terrain3D(GodotObject instance) : base(instance)
 	{
 	}
@@ -207,16 +239,6 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 	{
 		get => Instance.Get(render_mouse_layer_name).AsUInt32();
 		set => Instance.Set(render_mouse_layer_name, value);
-	}
-
-	public Terrain3DStorage Storage
-	{
-		get
-		{
-			storage ??= new Terrain3DStorage(Instance.Get(storage_name).AsGodotObject());
-			return storage;
-		}
-		set => Instance.Set(storage_name, value.Instance); //TODO: maybe cleanup the old one
 	}
 
 	public Terrain3DTextureList TextureList
@@ -525,6 +547,26 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 	private static readonly StringName set_pixel_name = "set_pixel";
 	private static readonly StringName set_roughness_name = "set_roughness";
 	private static readonly StringName update_height_range_name = "update_height_range";
+	// New names in 0.9.3
+	private static readonly StringName regionlocations_name = "region_locations";
+	private static readonly StringName has_regionp_name = "has_regionp";
+	private static readonly StringName get_region_idp_name = "get_region_idp";
+	private static readonly StringName get_region_location_name = "get_region_location";
+	private static readonly StringName get_region_map_index_name = "get_region_map_index";
+	private static readonly StringName add_region_blankp_name = "add_region_blankp";
+
+	private static bool HasProperty(GodotObject obj, StringName prop)
+	{
+		var list = obj.GetPropertyList(); // Array<Dictionary>
+		for (int i = 0; i < list.Count; i++)
+		{
+			var entry = (Godot.Collections.Dictionary)list[i];
+			if (entry.TryGetValue("name", out var nameVar)
+				&& nameVar.AsStringName() == prop)
+				return true;
+		}
+		return false;
+	}
 
 	public Terrain3DStorage(GodotObject instance) : base(instance)
 	{
@@ -558,8 +600,21 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public Array<Vector2I> RegionOffsets
 	{
-		get => AsResource.Get(regionoffsets_name).AsGodotArray<Vector2I>();
-		set => AsResource.Set(regionoffsets_name, value);
+		get
+		{
+			// 0.9.3 renamed region_offsets -> region_locations
+			Variant v = AsResource.Get(regionlocations_name);
+			if (v.VariantType != Variant.Type.Nil) return v.AsGodotArray<Vector2I>();
+			return AsResource.Get(regionoffsets_name).AsGodotArray<Vector2I>();
+		}
+		set
+		{
+			// Usually not set from C#, but support both names
+			if (HasProperty(AsResource, regionlocations_name))
+				AsResource.Set(regionlocations_name, value);
+			else
+				AsResource.Set(regionoffsets_name, value);
+		}
 	}
 
 	public RegionSize RegionSize
@@ -580,25 +635,67 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 		set => AsResource.Set(version_name, value);
 	}
 
+	// IMPORTANT: re-map AddRegion to 0.9.3 flow
 	public Error AddRegion(Vector3 globalPosition, Image[] images = null, bool update = true)
 	{
-		images = images ?? System.Array.Empty<Image>();
-		var imageArray = new Array();
-		imageArray.AddRange(images);
-		// 0.9.3a: some builds removed add_region from storage; check before calling.
-		if (Instance.HasMethod("add_region"))
+		images ??= System.Array.Empty<Image>();
+
+		// Best path in 0.9.3: create blank at world pos
+		if (Instance.HasMethod(add_region_blankp_name))
 		{
-			Variant v = Instance.Call(add_region_name, Variant.From(globalPosition), imageArray, update);
-			// Some builds may return Error enum, others region index (int). Treat non-negative int as success.
-			if (v.VariantType == Variant.Type.Int)
+			var regionObj = (GodotObject)AsResource.Call(add_region_blankp_name, globalPosition, images.Length == 0 ? update : false);
+			if (regionObj == null) return Error.Failed;
+
+			if (images.Length > 0)
 			{
-				int regionIndex = v.AsInt32();
-				return regionIndex >= 0 ? Error.Ok : Error.Failed;
+				var arr = new Array<Image>();
+				foreach (var im in images) arr.Add(im);
+				AsResource.Call(import_images_name, arr, globalPosition, 0.0f, 1.0f);
+				if (update) AsResource.Call(force_update_maps_name, (int)MapType.TYPE_MAX);
 			}
+			return Error.Ok;
+		}
+
+		// Older builds with add_region on storage (0.9.2 style)
+		if (Instance.HasMethod(add_region_name))
+		{
+			var imageArray = new Array();
+			imageArray.AddRange(images);
+			Variant v = Instance.Call(add_region_name, Variant.From(globalPosition), imageArray, update);
+			if (v.VariantType == Variant.Type.Int) return v.AsInt32() >= 0 ? Error.Ok : Error.Failed;
 			return v.As<Error>();
 		}
-		// Silent failure (caller decides whether to warn/throttle)
+
 		return Error.Unavailable;
+	}
+
+	// Map a region *location* (Vector2i) to the index used by the *_maps arrays.
+	// 0.9.3: prefer get_region_map_index; otherwise fall back safely.
+	public int GetRegionArrayIndex(Vector2I regionLoc)
+	{
+		// Fast path in 0.9.3
+		if (Instance.HasMethod(get_region_map_index_name))
+			return AsResource.Call(get_region_map_index_name, regionLoc).AsInt32();
+
+		// Fallback 1: derive an id by sampling the region center via get_region_idp(world_pos)
+		// (useful if array order != region_locations order in your build)
+		Variant rsVar = AsResource.Get(regionsize_name);
+		int rs = rsVar.VariantType != Variant.Type.Nil ? rsVar.AsInt32() : 1024;
+		// Build a world position at the center of the region location
+		var center = new Vector3(regionLoc.X + rs * 0.5f, 0f, regionLoc.Y + rs * 0.5f);
+		if (Instance.HasMethod(get_region_idp_name))
+		{
+			int id = AsResource.Call(get_region_idp_name, center).AsInt32();
+			if (id >= 0) return id;
+		}
+
+		// Fallback 2: linear search in region_locations / region_offsets
+		var offs = RegionOffsets; // already handles 0.9.3 rename
+		for (int i = 0; i < offs.Count; i++)
+			if (offs[i] == regionLoc)
+				return i;
+
+		return -1;
 	}
 
 	public Error ExportImage(String fileName, MapType mapType)
@@ -667,11 +764,23 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public int GetRegionIndex(Vector3 globalPosition)
 	{
-		if (Instance.HasMethod("get_region_index"))
+		try
+		{
+			if (Instance.HasMethod(get_region_idp_name))
+				return AsResource.Call(get_region_idp_name, globalPosition).AsInt32();
+		}
+		catch { /* fall through */ }
+
+		if (Instance.HasMethod(get_region_index_name))
 			return AsResource.Call(get_region_index_name, globalPosition).AsInt32();
-		// Fallback: linear search region offsets (origin-aligned squares). Slower but safe.
+
+		// Fallback: linear search using RegionOffsets (origin-aligned)
 		var offs = RegionOffsets;
-		int rs = (int)RegionSize;
+		int rs = 0;
+		// Try to read region_size from the resource; if absent caller should use wrapper.RegionSizePixels
+		Variant rsVar = AsResource.Get("region_size");
+		rs = rsVar.VariantType != Variant.Type.Nil ? rsVar.AsInt32() : 1024;
+
 		int gx = Mathf.FloorToInt(globalPosition.X / rs) * rs;
 		int gz = Mathf.FloorToInt(globalPosition.Z / rs) * rs;
 		for (int i = 0; i < offs.Count; i++)
@@ -684,6 +793,8 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public Vector2I GetRegionOffset(Vector3 globalPosition)
 	{
+		if (Instance.HasMethod(get_region_location_name))
+			return AsResource.Call(get_region_location_name, globalPosition).AsVector2I();
 		return AsResource.Call(get_region_offset_name, globalPosition).AsVector2I();
 	}
 
@@ -699,26 +810,23 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public bool HasRegion(Vector3 globalPosition)
 	{
-		// 0.9.3a compatibility: some builds may not expose 'has_region'; emulate via get_region_index.
+		try
+		{
+			if (Instance.HasMethod(has_regionp_name))
+				return AsResource.Call(has_regionp_name, globalPosition).AsBool();
+		}
+		catch { /* fall back */ }
+
 		try
 		{
 			if (Instance.HasMethod("has_region"))
-				return AsResource.Call(has_region_name, globalPosition).AsBool();
+				return AsResource.Call("has_region", globalPosition).AsBool();
 		}
-		catch
-		{
-			// fall through to index fallback
-		}
-		try
-		{
-			if (Instance.HasMethod("get_region_index"))
-			{
-				int idx = AsResource.Call(get_region_index_name, globalPosition).AsInt32();
-				return idx >= 0; // -1 or negative when not found
-			}
-		}
-		catch { }
-		return false;
+		catch { /* fall back */ }
+
+		// Fallback via index
+		int idx = GetRegionIndex(globalPosition);
+		return idx >= 0;
 	}
 
 	public void ImportImages(Array<Image> images, Vector3? globalPosition = default, float offset = 0.0f, float scale = 1.0f)
