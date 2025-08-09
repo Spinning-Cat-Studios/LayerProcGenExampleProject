@@ -21,28 +21,76 @@ public class Terrain3DRegion
         set => LoDs.TryAdd(RegionOffset, value);
     }
 
-    public Image? HeightMap
+    public Image HeightMap
     {
         get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_HEIGHT, regionIndex);
-        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_HEIGHT, regionIndex, value);
+        set
+        {
+            var storage = TerrainLODManager.instance.terrain3DWrapper.Storage;
+            if (value == null) return;
+            if (storage.Instance.HasMethod("set_map_region"))
+            {
+                storage.SetMapRegion(MapType.TYPE_HEIGHT, regionIndex, value);
+            }
+            else
+            {
+                var arr = storage.HeightMaps; if (regionIndex >= 0 && regionIndex < arr.Count) { arr[regionIndex] = value; storage.HeightMaps = arr; }
+            }
+        }
     }
 
-    public Image? ControlMap
+    public Image ControlMap
     {
         get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_CONTROL, regionIndex);
-        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_CONTROL, regionIndex, value);
+        set
+        {
+            var storage = TerrainLODManager.instance.terrain3DWrapper.Storage;
+            if (value == null) return;
+            if (storage.Instance.HasMethod("set_map_region"))
+            {
+                storage.SetMapRegion(MapType.TYPE_CONTROL, regionIndex, value);
+            }
+            else
+            {
+                var arr = storage.ControlMaps; if (regionIndex >= 0 && regionIndex < arr.Count) { arr[regionIndex] = value; storage.ControlMaps = arr; }
+            }
+        }
     }
 
-    public Image? ColorMap
+    public Image ColorMap
     {
         get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_COLOR, regionIndex);
-        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_COLOR, regionIndex, value);
+        set
+        {
+            var storage = TerrainLODManager.instance.terrain3DWrapper.Storage;
+            if (value == null) return;
+            if (storage.Instance.HasMethod("set_map_region"))
+            {
+                storage.SetMapRegion(MapType.TYPE_COLOR, regionIndex, value);
+            }
+            else
+            {
+                var arr = storage.ColorMaps; if (regionIndex >= 0 && regionIndex < arr.Count) { arr[regionIndex] = value; storage.ColorMaps = arr; }
+            }
+        }
     }
 
-    public Image? MaxMap
+    public Image MaxMap
     {
         get => TerrainLODManager.instance.terrain3DWrapper.Storage.GetMapRegion(MapType.TYPE_MAX, regionIndex);
-        set => TerrainLODManager.instance.terrain3DWrapper.Storage.SetMapRegion(MapType.TYPE_MAX, regionIndex, value);
+        set
+        {
+            var storage = TerrainLODManager.instance.terrain3DWrapper.Storage;
+            if (value == null) return;
+            if (storage.Instance.HasMethod("set_map_region"))
+            {
+                storage.SetMapRegion(MapType.TYPE_MAX, regionIndex, value);
+            }
+            else
+            {
+                GD.PushWarning("MaxMap setter fallback: TYPE_MAX not directly supported without set_map_region");
+            }
+        }
     }
 
     public Vector2I RegionOffset

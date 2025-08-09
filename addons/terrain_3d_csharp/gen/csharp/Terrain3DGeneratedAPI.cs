@@ -1,7 +1,10 @@
 /// <summary>
-/// for Version: 0.9.1
-/// this API is actually not generated at all. Until this is a thing this file is a placeholder with specific functions implemented as needed.
-/// https://github.com/j20001970/GDMP-demo/discussions/6#discussioncomment-7008945
+/// Placeholder C# API surface for Terrain3D (updated for 0.9.3a compatibility).
+/// NOTE: Originally written against 0.9.1/0.9.2. Updated identifiers reflecting 0.9.3a:
+///  - Property "vertex_spacing" introduced (supersedes prior "mesh_vertex_spacing").
+///  - Keep MeshVertexSpacing as [Obsolete] wrapper for backward compatibility.
+/// This file will eventually be replaced by a generated binding.
+/// Source reference discussion: https://github.com/j20001970/GDMP-demo/discussions/6#discussioncomment-7008945
 /// </summary>
 
 using System;
@@ -49,7 +52,8 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 	private static readonly StringName debug_level_name = "debug_level";
 	private static readonly StringName debug_show_collision_name = "debug_show_collision";
 	private static readonly StringName mesh_size_name = "mesh_size";
-	private static readonly StringName mesh_vertex_spacing_name = "mesh_vertex_spacing";
+	private static readonly StringName mesh_vertex_spacing_name = "mesh_vertex_spacing"; // pre‑0.9.3
+	private static readonly StringName vertex_spacing_name = "vertex_spacing";           // 0.9.3+
 	private static readonly StringName render_cast_shadows_name = "render_cast_shadows";
 	private static readonly StringName render_cull_margin_name = "render_cull_margin";
 	private static readonly StringName render_layers_name = "render_layers";
@@ -64,9 +68,9 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 	private static readonly StringName set_plugin_name = "set_plugin";
 	private static readonly StringName update_aabbs_name = "update_aabbs";
 
-	private Terrain3DMaterial? material;
-	private Terrain3DStorage? storage;
-	private Terrain3DTextureList? textureList;
+	private Terrain3DMaterial material;
+	private Terrain3DStorage storage;
+	private Terrain3DTextureList textureList;
 
 	public Terrain3D(GodotObject instance) : base(instance)
 	{
@@ -148,10 +152,37 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 		set => Instance.Set(mesh_size_name, value);
 	}
 
+	/// <summary>
+	/// New in 0.9.3+: exported as "vertex_spacing". We attempt graceful fallback to legacy name.
+	/// </summary>
+	public float VertexSpacing
+	{
+		get
+		{
+			// Prefer new name when present
+			Variant vNew = Instance.Get(vertex_spacing_name);
+			if (vNew.VariantType != Variant.Type.Nil) return vNew.AsSingle();
+			// Fallback to legacy
+			return Instance.Get(mesh_vertex_spacing_name).AsSingle();
+		}
+		set
+		{
+			Variant vNew = Instance.Get(vertex_spacing_name);
+			if (vNew.VariantType != Variant.Type.Nil)
+				Instance.Set(vertex_spacing_name, value);
+			else
+				Instance.Set(mesh_vertex_spacing_name, value);
+		}
+	}
+
+	/// <summary>
+	/// Legacy property kept so existing code compiles. Use VertexSpacing instead.
+	/// </summary>
+	[Obsolete("Use VertexSpacing (0.9.3+). This forwards to the new property if available.")]
 	public float MeshVertexSpacing
 	{
-		get => Instance.Get(mesh_vertex_spacing_name).AsSingle();
-		set => Instance.Set(mesh_vertex_spacing_name, value);
+		get => VertexSpacing;
+		set => VertexSpacing = value;
 	}
 
 	public GeometryInstance3D.ShadowCastingSetting RenderCastShadows
@@ -549,12 +580,25 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 		set => AsResource.Set(version_name, value);
 	}
 
-	public Error AddRegion(Vector3 globalPosition, Image[]? images = default, bool update = true)
+	public Error AddRegion(Vector3 globalPosition, Image[] images = null, bool update = true)
 	{
-		images ??= System.Array.Empty<Image>();
+		images = images ?? System.Array.Empty<Image>();
 		var imageArray = new Array();
 		imageArray.AddRange(images);
-		return Instance.Call(add_region_name, Variant.From(globalPosition), imageArray, update).As<Error>();
+		// 0.9.3a: some builds removed add_region from storage; check before calling.
+		if (Instance.HasMethod("add_region"))
+		{
+			Variant v = Instance.Call(add_region_name, Variant.From(globalPosition), imageArray, update);
+			// Some builds may return Error enum, others region index (int). Treat non-negative int as success.
+			if (v.VariantType == Variant.Type.Int)
+			{
+				int regionIndex = v.AsInt32();
+				return regionIndex >= 0 ? Error.Ok : Error.Failed;
+			}
+			return v.As<Error>();
+		}
+		// Silent failure (caller decides whether to warn/throttle)
+		return Error.Unavailable;
 	}
 
 	public Error ExportImage(String fileName, MapType mapType)
@@ -564,7 +608,11 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public void ForceUpdateMaps(MapType mapType = MapType.TYPE_MAX)
 	{
-		AsResource.Call(force_update_maps_name, (int)mapType);
+		// Some early 0.9.3a builds removed force_update_maps; guard the call.
+		if (Instance.HasMethod("force_update_maps"))
+			AsResource.Call(force_update_maps_name, (int)mapType);
+		else
+			GD.PushWarning("ForceUpdateMaps: method not available on storage - skipping (changes propagate on next rebuild)");
 	}
 
 	public Color GetColor(Vector3 globalPosition)
@@ -619,7 +667,19 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public int GetRegionIndex(Vector3 globalPosition)
 	{
-		return AsResource.Call(get_region_index_name, globalPosition).AsInt32();
+		if (Instance.HasMethod("get_region_index"))
+			return AsResource.Call(get_region_index_name, globalPosition).AsInt32();
+		// Fallback: linear search region offsets (origin-aligned squares). Slower but safe.
+		var offs = RegionOffsets;
+		int rs = (int)RegionSize;
+		int gx = Mathf.FloorToInt(globalPosition.X / rs) * rs;
+		int gz = Mathf.FloorToInt(globalPosition.Z / rs) * rs;
+		for (int i = 0; i < offs.Count; i++)
+		{
+			var o = offs[i];
+			if (o.X == gx && o.Y == gz) return i;
+		}
+		return -1;
 	}
 
 	public Vector2I GetRegionOffset(Vector3 globalPosition)
@@ -639,7 +699,26 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public bool HasRegion(Vector3 globalPosition)
 	{
-		return AsResource.Call(has_region_name, globalPosition).AsBool();
+		// 0.9.3a compatibility: some builds may not expose 'has_region'; emulate via get_region_index.
+		try
+		{
+			if (Instance.HasMethod("has_region"))
+				return AsResource.Call(has_region_name, globalPosition).AsBool();
+		}
+		catch
+		{
+			// fall through to index fallback
+		}
+		try
+		{
+			if (Instance.HasMethod("get_region_index"))
+			{
+				int idx = AsResource.Call(get_region_index_name, globalPosition).AsInt32();
+				return idx >= 0; // -1 or negative when not found
+			}
+		}
+		catch { }
+		return false;
 	}
 
 	public void ImportImages(Array<Image> images, Vector3? globalPosition = default, float offset = 0.0f, float scale = 1.0f)
@@ -688,7 +767,27 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 
 	public void SetMapRegion(MapType mapType, int regionIndex, Image image)
 	{
-		AsResource.Call(set_map_region_name, (int)mapType, regionIndex, image);
+		if (Instance.HasMethod("set_map_region"))
+		{
+			AsResource.Call(set_map_region_name, (int)mapType, regionIndex, image);
+			return;
+		}
+		// Fallback: assign directly into arrays (expects sizes to match).
+		switch (mapType)
+		{
+			case MapType.TYPE_HEIGHT:
+				var h = HeightMaps; if (regionIndex >= 0 && regionIndex < h.Count) { h[regionIndex] = image; HeightMaps = h; }
+				break;
+			case MapType.TYPE_CONTROL:
+				var c = ControlMaps; if (regionIndex >= 0 && regionIndex < c.Count) { c[regionIndex] = image; ControlMaps = c; }
+				break;
+			case MapType.TYPE_COLOR:
+				var cm = ColorMaps; if (regionIndex >= 0 && regionIndex < cm.Count) { cm[regionIndex] = image; ColorMaps = cm; }
+				break;
+			default:
+				GD.PushWarning($"SetMapRegion fallback: mapType {mapType} not directly supported");
+				break;
+		}
 	}
 
 	public void SetMaps(MapType mapType, Image[] maps)
@@ -789,7 +888,7 @@ public class Terrain3DTextureList : _Terrain3DInstanceWrapper_
 	private static readonly StringName save_name = "save";
 	private static readonly StringName set_texture_name = "set_texture";
 
-	private Terrain3DTexture[]? textures;
+	private Terrain3DTexture[] textures;
 
 	public Terrain3DTextureList(GodotObject _instance) : base(_instance)
 	{

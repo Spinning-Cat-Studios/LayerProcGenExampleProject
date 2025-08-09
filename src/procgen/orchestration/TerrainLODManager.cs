@@ -2,7 +2,7 @@ using Godot;
 using Runevision.Common;
 using Runevision.LayerProcGen;
 using System.Collections.Generic;
-using Terrain3D.Scripts.Utilities;
+using Terrain3D.Scripts.Utilities; // Added for TerrainManualRegionUtil
 using Terrain3DBindings;
 
 namespace Terrain3D.Scripts.Generation.Layers;
@@ -54,6 +54,12 @@ public partial class TerrainLODManager : Node
 	TerrainLODLayer[] layers;
 	bool anyRegistrationChanges = false;
 	GridBounds lastLowerLevelBounds;
+
+	// Cache for regions where dynamic creation failed (to avoid spamming warnings every physics tick)
+	private readonly HashSet<Vector3I> _failedRegionAdds = new();
+	// Lazily discovered availability of a node-level add_region (some 0.9.3 builds moved it off storage)
+	private enum AddRegionAvail { Unknown, Present, Absent }
+	private AddRegionAvail _nodeAddRegionAvailable = AddRegionAvail.Unknown;
 
 	DebugToggle debugLODBounds = DebugToggle.Create(">Visualizations/Terrain LOD Bounds");
 
@@ -188,7 +194,7 @@ public partial class TerrainLODManager : Node
 						Vector2 pos = kvp.Key * layers[i].layer.chunkSize;
 						if (layers[i].layer is IGodotInstance godotLayer)
 						{
-							Node? terrainNode = godotLayer.LayerRoot();
+							Node terrainNode = godotLayer.LayerRoot();
 							if (terrainNode == null) continue;
 							Vector2 size = new Vector2(layers[i].layer.chunkW * .5f, layers[i].layer.chunkH * .5f); //terrain.terrainData.size.xz() * 0.5f;
 							// Draw rect.
@@ -227,7 +233,7 @@ public partial class TerrainLODManager : Node
 	bool HandleAreaIfCovered(int lodLevel, Point index, bool alreadyChecked = false, TerrainInfo selfInfo = null)
 	{
 		// if (lodLevel < 0)
-		return false;
+		return false; // Stub implementation currently always returns false
 		//
 		// if (!alreadyChecked)
 		// 	layers[lodLevel].chunks.TryGetValue(index, out selfInfo);
@@ -282,7 +288,7 @@ public partial class TerrainLODManager : Node
 		// 	DisableRecursive(subLevel, subPointC, true, subInfoC);
 		// 	DisableRecursive(subLevel, subPointD, true, subInfoD);
 		// }
-		return true;
+		// Placeholder end
 	}
 
 	void DisableRecursive(int lodLevel, Point index, bool alreadyChecked = false, TerrainInfo info = null)
@@ -327,15 +333,92 @@ public partial class TerrainLODManager : Node
 		return terrain3DWrapper.Storage.HasRegion(position);
 	}
 
+	/// <summary>
+	/// Align a world position to the region origin (assumes origin is min corner of a region).
+	/// If Terrain3D ever switches to center-based regions this can be adjusted (+ regionSize/2).
+	/// </summary>
+	public Vector3 AlignToRegionOrigin(Vector3 worldPos)
+	{
+		if (terrain3DWrapper?.Storage == null) return worldPos;
+		int rs = (int)terrain3DWrapper.Storage.RegionSize;
+		int ax = Mathf.FloorToInt(worldPos.X / rs) * rs;
+		int az = Mathf.FloorToInt(worldPos.Z / rs) * rs;
+		return new Vector3(ax, 0, az);
+	}
+
+	/// <summary>
+	/// Ensures a region covering worldPos exists. Returns true if region exists/created.
+	/// </summary>
+	public bool EnsureRegionAt(Vector3 worldPos, bool updateMaps = false)
+	{
+		if (terrain3DWrapper?.Storage == null) return false;
+		var aligned = AlignToRegionOrigin(worldPos);
+		// Always re-check existence first (could have been created by another system / frame)
+		if (terrain3DWrapper.Storage.HasRegion(aligned)) return true;
+
+		var key = new Vector3I((int)aligned.X, 0, (int)aligned.Z);
+		// If we've already conclusively failed for this region this session, bail early
+		if (_failedRegionAdds.Contains(key)) return false;
+
+		var err = terrain3DWrapper.Storage.AddRegion(aligned, null, updateMaps);
+		if (err == Error.Ok || err == Error.AlreadyExists)
+		{
+			return terrain3DWrapper.Storage.HasRegion(aligned);
+		}
+
+		// Storage path unavailable: attempt fallback to node-level method if present (some builds relocate API)
+		if (err == Error.Unavailable)
+		{
+			if (_nodeAddRegionAvailable == AddRegionAvail.Unknown)
+				_nodeAddRegionAvailable = terrain3DWrapper.AsNode3D.HasMethod("add_region") ? AddRegionAvail.Present : AddRegionAvail.Absent;
+
+			if (_nodeAddRegionAvailable == AddRegionAvail.Present)
+			{
+				try
+				{
+					var v = terrain3DWrapper.AsNode3D.Call("add_region", aligned, new Godot.Collections.Array(), updateMaps);
+					var nodeErr = v.As<Error>();
+					if (nodeErr == Error.Ok || nodeErr == Error.AlreadyExists)
+						return terrain3DWrapper.Storage.HasRegion(aligned);
+					GD.PushWarning($"EnsureRegionAt: node-level add_region failed at {aligned} with {nodeErr}");
+				}
+				catch (System.Exception ex)
+				{
+					GD.PushWarning($"EnsureRegionAt: exception invoking node-level add_region at {aligned}: {ex.Message}");
+				}
+			}
+			else if (_nodeAddRegionAvailable == AddRegionAvail.Absent)
+			{
+				// One-time general warning (only when first failure occurs and no node-level method available)
+				if (_failedRegionAdds.Count == 0)
+					GD.PushWarning("TerrainLODManager: dynamic region creation unavailable (no add_region on storage or terrain node). Regions outside pre-generated set will not load.");
+			}
+		}
+
+		_failedRegionAdds.Add(key); // Mark as failed to suppress further spam
+		if (err == Error.Unavailable)
+		{
+			// Attempt manual fallback creation
+			if (TerrainManualRegionUtil.ManualEnsureRegion(terrain3DWrapper.Storage, aligned))
+				return true;
+		}
+		GD.PushWarning($"EnsureRegionAt: AddRegion failed at {aligned} with {err} (manual fallback {(err==Error.Unavailable?"attempted":"skipped")})");
+		return false;
+	}
+
 	public void CreateNewChunkAt(Vector3 position)
 	{
-		var addRegionError = terrain3DWrapper.Storage.AddRegion(position, null, false);
+		// Use aligned origin to avoid later lookup mismatches when painting.
+		var aligned = AlignToRegionOrigin(position);
+		var addRegionError = terrain3DWrapper.Storage.AddRegion(aligned, null, false);
 		switch (addRegionError)
 		{
 			case Error.Ok:
 				break;
+			case Error.AlreadyExists:
+				break;
 			default:
-				GD.PushError(addRegionError);
+				GD.PushError($"AddRegion error {addRegionError} at {aligned} (requested {position})");
 				break;
 		}
 	}
@@ -343,5 +426,26 @@ public partial class TerrainLODManager : Node
 	public Terrain3DRegion GetChunkAt(Vector3 position)
 	{
 		return Terrain3DRegion.Create(terrain3DWrapper.Storage.GetRegionIndex(position));
+	}
+
+	/// <summary>
+	/// Bulk ensure regions within an axis-aligned rectangle in XZ plane (inclusive bounds, world space).
+	/// Useful to prewarm terrain around spawn when dynamic creation is partially unavailable.
+	/// </summary>
+	public void PrewarmRegions(Vector3 minWorld, Vector3 maxWorld, bool updateMaps = false)
+	{
+		if (terrain3DWrapper?.Storage == null) return;
+		var rs = (int)terrain3DWrapper.Storage.RegionSize;
+		int minX = Mathf.FloorToInt(minWorld.X / rs) * rs;
+		int maxX = Mathf.FloorToInt(maxWorld.X / rs) * rs;
+		int minZ = Mathf.FloorToInt(minWorld.Z / rs) * rs;
+		int maxZ = Mathf.FloorToInt(maxWorld.Z / rs) * rs;
+		for (int x = minX; x <= maxX; x += rs)
+		{
+			for (int z = minZ; z <= maxZ; z += rs)
+			{
+				EnsureRegionAt(new Vector3(x, 0, z), updateMaps);
+			}
+		}
 	}
 }

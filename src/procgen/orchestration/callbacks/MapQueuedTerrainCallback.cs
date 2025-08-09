@@ -13,7 +13,7 @@ using Runevision.Common;
 using Runevision.LayerProcGen;
 using Terrain3DBindings;
 using Terrain3D.Scripts.Generation.Layers;
-using Terrain3D.Scripts.Utilities;
+using Terrain3D.Scripts.Utilities; // ControlExtension bitfield helpers
 
 public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 	where L : LandscapeLayer<L, C, S>, new()
@@ -46,7 +46,7 @@ public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 		regionSize = (int)RegionSize.SIZE_1024;
 	}
 
-	static Terrain3DRegion? GetOrCreateTerrain(Vector3 position, L layer)
+	static Terrain3DRegion GetOrCreateTerrain(Vector3 position, L layer)
 	{
 		if (!TerrainLODManager.instance.HasChunkAt(position))
 			TerrainLODManager.instance.CreateNewChunkAt(position);
@@ -63,7 +63,7 @@ public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 	public IEnumerator ProcessRoutine()
 	{
 		var startPos = index * layer.chunkW;
-		Terrain3DRegion? terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
+		Terrain3DRegion terrain = GetOrCreateTerrain(new Vector3(startPos.x, 0, startPos.y), layer);
 		if (terrain == null)
 			yield break;
 
@@ -77,12 +77,85 @@ public struct MapQueuedTerrainCallback<L, C, S> : IQueuedAction
 			for (var z = 0; z < layer.chunkSize.y; z++)
 			{
 				Vector3 globalPosition = new Vector3(startPos.x + x, 0, startPos.y + z);
-				TerrainLODManager.instance.terrain3DWrapper.Storage.SetHeight(globalPosition, heightmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
-				TerrainLODManager.instance.terrain3DWrapper.Storage.SetControl(globalPosition, controlmap[(int)(z / cellSize.y), (int)(x / cellSize.x)]);
+				float h = heightmap[(int)(z / cellSize.y), (int)(x / cellSize.x)];
+				uint packed = controlmap[(int)(z / cellSize.y), (int)(x / cellSize.x)];
+
+				// Ensure region exists before painting.
+				if (!TerrainLODManager.instance.EnsureRegionAt(globalPosition))
+					continue;
+
+				var dataObj = TerrainBlackboard.TerrainData; // new API object (Terrain3DData)
+				if (dataObj != null)
+				{
+					try
+					{
+						// Height
+						dataObj.Call("set_height", globalPosition, h);
+
+						// Control bitfield unpack (see ControlExtension for layout)
+						byte baseId = packed.GetBaseTextureId();
+						byte overlayId = packed.GetOverlayTextureId();
+						byte blendByte = packed.GetTextureBlend();
+						byte angleSteps = packed.GetUvAngle(); // 0..15 -> *22.5°
+						byte scaleVal = packed.GetUvScale();
+						bool autoshader = packed.IsAutoshaded();
+						bool nav = packed.IsNavigation();
+						bool hole = packed.IsHole();
+
+						// Autoshader (disable explicitly if false)
+						if (!autoshader || dataObj.HasMethod("set_control_auto"))
+							dataObj.Call("set_control_auto", globalPosition, autoshader);
+
+						// Base texture id
+						if (dataObj.HasMethod("set_control_base_id"))
+							dataObj.Call("set_control_base_id", globalPosition, (int)baseId);
+
+						// Overlay texture id (best guess for method name; guard with HasMethod)
+						if (overlayId != 0 && dataObj.HasMethod("set_control_overlay_id"))
+							dataObj.Call("set_control_overlay_id", globalPosition, (int)overlayId);
+
+						// Blend (0..255 -> 0..1)
+						if (blendByte != 0 && dataObj.HasMethod("set_control_blend"))
+							dataObj.Call("set_control_blend", globalPosition, blendByte / 255.0f);
+
+						// Angle (skip if zero)
+						if (angleSteps != 0 && dataObj.HasMethod("set_control_angle"))
+							dataObj.Call("set_control_angle", globalPosition, angleSteps * 22.5f);
+
+						// Scale (raw value; plugin maps internally)
+						if (scaleVal != 0 && dataObj.HasMethod("set_control_scale"))
+							dataObj.Call("set_control_scale", globalPosition, scaleVal);
+
+						// Navigation / hole flags (method names speculative; guarded)
+						if (nav && dataObj.HasMethod("set_control_navigation"))
+							dataObj.Call("set_control_navigation", globalPosition, true);
+						if (hole && dataObj.HasMethod("set_control_hole"))
+							dataObj.Call("set_control_hole", globalPosition, true);
+
+						continue; // next pixel done via data API
+					}
+					catch (Exception e)
+					{
+						GD.PushWarning($"MapQueuedTerrainCallback: data API failure at {globalPosition}: {e.Message}; falling back to legacy storage.");
+						// fall back below
+					}
+				}
+
+				// Legacy storage path (pre‑0.9.3 or failure)
+				TerrainLODManager.instance.terrain3DWrapper.Storage.SetHeight(globalPosition, h);
+				TerrainLODManager.instance.terrain3DWrapper.Storage.SetControl(globalPosition, packed);
 			}
 		}
-
-		TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps();
+		// Force map updates: prefer new data API if present
+		try
+		{
+			TerrainBlackboard.TerrainData?.Call("force_update_maps", 0); // 0 = height
+			TerrainBlackboard.TerrainData?.Call("force_update_maps", 1); // 1 = control
+		}
+		catch
+		{
+			TerrainLODManager.instance.terrain3DWrapper.Storage.ForceUpdateMaps();
+		}
 		yield return null;
 	}
 }

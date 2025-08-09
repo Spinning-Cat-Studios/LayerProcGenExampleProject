@@ -6,6 +6,7 @@ using System;
 using System.Text.Json;
 using System.Linq;
 using LayerProcGenExampleProject.Models.Graph;
+using Terrain3D.Scripts.Generation.Layers; // TerrainLODManager
 
 public class RoadPainterService
 {
@@ -21,6 +22,7 @@ public class RoadPainterService
     private readonly Random _rnd;
     private T3.Terrain3D Terrain => TerrainBlackboard.Terrain;
     private T3.Terrain3DStorage Storage => TerrainBlackboard.Storage;
+    private GodotObject _data; // 0.9.3a: Terrain node holds a "data" object with granular control setters
 
     private bool IsTerrainSet => Terrain != null && Storage != null;
 
@@ -31,7 +33,12 @@ public class RoadPainterService
 
     private void BuildBrush()
     {
-        _vSpacing = Terrain?.MeshVertexSpacing ?? 1.0f;
+        _vSpacing = Terrain?.VertexSpacing ??
+            // Fallback for older binding – suppress obsolete warning intentionally
+            #pragma warning disable CS0618
+            Terrain?.MeshVertexSpacing ??
+            #pragma warning restore CS0618
+            1.0f;
         var list = new List<Vector2>();
         for (float dx = -_halfWidth; dx <= _halfWidth; dx += _vSpacing)
             for (float dz = -_halfWidth; dz <= _halfWidth; dz += _vSpacing)
@@ -55,8 +62,13 @@ public class RoadPainterService
         if (road.Length < 2) return;
 
         // one‑time initialisation
-        if (_vSpacing == 0) _vSpacing = Terrain.MeshVertexSpacing;
+        if (_vSpacing == 0) _vSpacing = Terrain.VertexSpacing; // prefer new name
         if (_brushOffsets == null) BuildBrush();
+        if (_data == null)
+        {
+            // Attempt to grab the new data object (0.9.3+). Safe if absent.
+            try { _data = Terrain.AsNode3D.Get("data").AsGodotObject(); } catch { /* ignore */ }
+        }
 
         uint roadCtrl = 0;
         roadCtrl.SetBaseTextureId((byte)_roadTexId);
@@ -100,13 +112,50 @@ public class RoadPainterService
             for (int s = 0; s <= n; ++s)
             {
                 Vector3 c = a.Lerp(b, (float)s / n);
-
                 foreach (var o in _brushOffsets)
-                    Storage.SetControl(c + new Vector3(o.X, 0, o.Y), roadCtrl);
+                {
+                    Vector3 p = c + new Vector3(o.X, 0, o.Y);
+                    PaintPoint(p, roadCtrl);
+                }
             }
         }
 
         _needsUpdate = true;
+    }
+
+    private void PaintPoint(Vector3 worldPos, uint roadCtrl)
+    {
+        // Ensure region exists before attempting to paint to avoid Terrain3DData 'No active region' errors.
+        if (!TerrainLODManager.instance.EnsureRegionAt(worldPos))
+            return;
+        // If we have the new data object, set granular controls (base id, disable autoshader, blend)
+        if (_data != null)
+        {
+            try
+            {
+                // Extract pieces from packed control value (in case future additions come in)
+                byte baseId = roadCtrl.GetBaseTextureId();
+                byte blend = roadCtrl.GetTextureBlend();
+                bool autoshader = roadCtrl.IsAutoshaded();
+                _data.Call("set_control_auto", worldPos, autoshader); // false for roads
+                _data.Call("set_control_base_id", worldPos, (int)baseId);
+                _data.Call("set_control_blend", worldPos, blend / 255.0f);
+                // Angle / scale optional – only set if non-zero to reduce calls
+                byte angle = roadCtrl.GetUvAngle();
+                if (angle != 0) _data.Call("set_control_angle", worldPos, angle * 22.5f);
+                byte scale = roadCtrl.GetUvScale();
+                if (scale != 0) _data.Call("set_control_scale", worldPos, scale); // internal mapping
+                return;
+            }
+            catch (Exception e)
+            {
+                GD.PushWarning($"RoadPainterService: data API failed, falling back to storage SetControl: {e.Message}");
+                _data = null; // disable further attempts this session
+            }
+        }
+
+        // Fallback: legacy storage method (pre-0.9.3)
+        try { Storage.SetControl(worldPos, roadCtrl); } catch { /* swallow – avoid spam */ }
     }
 
     public void GenerateRoadsBetweenHamlets(
@@ -220,7 +269,16 @@ public class RoadPainterService
     public void UpdateIfNeeded()
     {
         if (!_needsUpdate) return;
-        Storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        // Prefer new data object map update; map type 1 == control maps
+        if (_data != null)
+        {
+            try { _data.Call("force_update_maps", 1); }
+            catch { Storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL); }
+        }
+        else
+        {
+            Storage.ForceUpdateMaps(T3.MapType.TYPE_CONTROL);
+        }
         _needsUpdate = false;
     }
 }
