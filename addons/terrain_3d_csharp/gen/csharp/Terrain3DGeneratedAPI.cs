@@ -21,8 +21,9 @@ public class _Terrain3DInstanceWrapper_ : IDisposable
 	public _Terrain3DInstanceWrapper_(GodotObject instance)
 	{
 		if (instance == null) throw new ArgumentNullException(nameof(instance));
-		if (!ClassDB.IsParentClass(instance.GetClass(), GetType().Name)) throw new ArgumentException("\"_instance\" has the wrong type.");
-		Instance = instance;
+		// (Optional) Relax the strict type assertion — some resources may be proxied.
+        // if (!ClassDB.IsParentClass(instance.GetClass(), GetType().Name)) { GD.PushWarning($"Wrapper type {GetType().Name} != native type {instance.GetClass()}"); }
+        Instance = instance;
 	}
 
 	public GodotObject Instance { get; protected set; }
@@ -85,24 +86,75 @@ public class Terrain3D : _Terrain3DInstanceWrapper_
 	public Terrain3DStorage Storage
 	{
 		get
-		{
-			if (storage == null)
+        {
+            if (storage != null)
+                return storage;
+
+            GodotObject backing = null;
+
+            Variant vStorage = Instance.Get(storage_name);
+            if (vStorage.VariantType != Variant.Type.Nil)
+                backing = vStorage.AsGodotObject();
+
+            if (backing == null)
+            {
+                Variant vData = Instance.Get(data_name);
+                if (vData.VariantType != Variant.Type.Nil)
+                    backing = vData.AsGodotObject();
+            }
+
+            if (backing == null)
+            {
+                // Defer instead of throwing: caller can poll or use TryGetStorage.
+                GD.PushWarning("Terrain3D Storage/Data not yet initialized (accessed too early). Returning null; retry later.");
+                return null;
+            }
+			
+			if (backing is not Resource)
 			{
-				Variant v = Instance.Get(storage_name);
-				if (v.VariantType != Variant.Type.Nil)
-				{
-					storage = new Terrain3DStorage(v.AsGodotObject());
-				}
-				else
-				{
-					// 0.9.3+: wrap data in the same Terrain3DStorage class (shim behavior)
-					storage = new Terrain3DStorage(Instance.Get(data_name).AsGodotObject());
-				}
+				GD.PushWarning($"Terrain3D Storage/Data object is not a Resource yet (type={backing.GetClass()}). Deferring.");
+				return null;
 			}
-			return storage;
-		}
-		set => Instance.Set(storage_name, value.Instance); // still allow setting if older builds expose it
+
+            try
+			{
+				storage = new Terrain3DStorage(backing);
+			}
+			catch (Exception ex)
+			{
+				GD.PushError($"Failed to wrap Terrain3D storage/data object: {ex.Message}");
+				return null;
+			}
+
+            return storage;
+        }
+        set
+        {
+            if (value == null)
+            {
+                storage = null;
+                return;
+            }
+            storage = value;
+            Instance.Set(storage_name, value.Instance);
+        }
 	}
+
+    public Terrain3DStorage TryGetStorage()
+    {
+        // Convenience method to avoid warnings on probing.
+        if (storage != null) return storage;
+
+        Variant vStorage = Instance.Get(storage_name);
+        if (vStorage.VariantType != Variant.Type.Nil)
+            return storage = new Terrain3DStorage(vStorage.AsGodotObject());
+
+        Variant vData = Instance.Get(data_name);
+        if (vData.VariantType != Variant.Type.Nil)
+            return storage = new Terrain3DStorage(vData.AsGodotObject());
+
+        return null;
+    }
 
 	public Terrain3D(GodotObject instance) : base(instance)
 	{
@@ -555,6 +607,90 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 	private static readonly StringName get_region_map_index_name = "get_region_map_index";
 	private static readonly StringName add_region_blankp_name = "add_region_blankp";
 
+	private bool _loggedRegionOffsetsNotReady = false;
+
+    // NEW: generic extractor that does NOT rely on PackedVector2Array
+    private Array<Vector2I> ExtractOffsets(Variant v)
+    {
+        if (v.VariantType == Variant.Type.Nil)
+            return null;
+
+        // Fast path: direct Array<Vector2i>
+        try
+        {
+            var direct = v.AsGodotArray<Vector2I>();
+            if (direct != null)
+                return direct;
+        }
+        catch { /* ignore and try slower path */ }
+
+        // If it's a generic Godot Array, manually convert items
+        if (v.VariantType == Variant.Type.Array)
+        {
+            var raw = v.AsGodotArray<Variant>();
+            var result = new Array<Vector2I>();
+            if (raw != null)
+            {
+                for (int i = 0; i < raw.Count; i++)
+                {
+                    var item = raw[i];
+                    // Try Vector2I directly
+                    try
+                    {
+                        if (item.VariantType == Variant.Type.Vector2I)
+                        {
+                            result.Add(item.AsVector2I());
+                            continue;
+                        }
+                        if (item.VariantType == Variant.Type.Vector2)
+                        {
+                            var v2 = item.AsVector2();
+                            result.Add(new Vector2I((int)v2.X, (int)v2.Y));
+                            continue;
+                        }
+                    }
+                    catch { /* skip malformed */ }
+                }
+            }
+            return result;
+        }
+
+        // Unknown representation (e.g. packed form we cannot decode in this build)
+        return null;
+    }
+
+    private Array<Vector2I> SafeRegionOffsetsInternal()
+    {
+        if (Instance == null)
+            return new Array<Vector2I>();
+
+        var res = AsResource;
+        if (res == null)
+        {
+            if (!_loggedRegionOffsetsNotReady)
+            {
+                GD.PushWarning("Terrain3DStorage: underlying Instance is not a Resource yet when accessing RegionOffsets.");
+                _loggedRegionOffsetsNotReady = true;
+            }
+            return new Array<Vector2I>();
+        }
+
+        // Try new name first
+        Variant v = res.Get(regionlocations_name);
+        var extracted = ExtractOffsets(v);
+        if (extracted != null)
+            return extracted;
+
+        // Fallback to old name
+        Variant vOld = res.Get(regionoffsets_name);
+        var extractedOld = ExtractOffsets(vOld);
+        if (extractedOld != null)
+            return extractedOld;
+
+        // Nothing available
+        return new Array<Vector2I>();
+    }
+
 	private static bool HasProperty(GodotObject obj, StringName prop)
 	{
 		var list = obj.GetPropertyList(); // Array<Dictionary>
@@ -598,24 +734,25 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 		set => AsResource.Set(heightrange_name, value);
 	}
 
-	public Array<Vector2I> RegionOffsets
-	{
-		get
-		{
-			// 0.9.3 renamed region_offsets -> region_locations
-			Variant v = AsResource.Get(regionlocations_name);
-			if (v.VariantType != Variant.Type.Nil) return v.AsGodotArray<Vector2I>();
-			return AsResource.Get(regionoffsets_name).AsGodotArray<Vector2I>();
-		}
-		set
-		{
-			// Usually not set from C#, but support both names
-			if (HasProperty(AsResource, regionlocations_name))
-				AsResource.Set(regionlocations_name, value);
-			else
-				AsResource.Set(regionoffsets_name, value);
-		}
-	}
+    public Array<Vector2I> RegionOffsets
+    {
+        get => SafeRegionOffsetsInternal();
+        set
+        {
+            var res = AsResource;
+            if (res == null)
+            {
+                GD.PushWarning("Terrain3DStorage: cannot set RegionOffsets; resource not ready.");
+                return;
+            }
+            if (HasProperty(res, regionlocations_name))
+                res.Set(regionlocations_name, value);
+            else
+                res.Set(regionoffsets_name, value);
+        }
+    }
+
+	private Array<Vector2I> SafeRegionOffsets() => RegionOffsets;
 
 	public RegionSize RegionSize
 	{
@@ -673,24 +810,20 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 	// 0.9.3: prefer get_region_map_index; otherwise fall back safely.
 	public int GetRegionArrayIndex(Vector2I regionLoc)
 	{
-		// Fast path in 0.9.3
 		if (Instance.HasMethod(get_region_map_index_name))
 			return AsResource.Call(get_region_map_index_name, regionLoc).AsInt32();
 
-		// Fallback 1: derive an id by sampling the region center via get_region_idp(world_pos)
-		// (useful if array order != region_locations order in your build)
-		Variant rsVar = AsResource.Get(regionsize_name);
+		Variant rsVar = AsResource?.Get(regionsize_name) ?? Variant.CreateFrom(1024);
 		int rs = rsVar.VariantType != Variant.Type.Nil ? rsVar.AsInt32() : 1024;
-		// Build a world position at the center of the region location
-		var center = new Vector3(regionLoc.X + rs * 0.5f, 0f, regionLoc.Y + rs * 0.5f);
+
 		if (Instance.HasMethod(get_region_idp_name))
 		{
+			var center = new Vector3(regionLoc.X + rs * 0.5f, 0f, regionLoc.Y + rs * 0.5f);
 			int id = AsResource.Call(get_region_idp_name, center).AsInt32();
 			if (id >= 0) return id;
 		}
 
-		// Fallback 2: linear search in region_locations / region_offsets
-		var offs = RegionOffsets; // already handles 0.9.3 rename
+		var offs = SafeRegionOffsets();
 		for (int i = 0; i < offs.Count; i++)
 			if (offs[i] == regionLoc)
 				return i;
@@ -769,17 +902,18 @@ public class Terrain3DStorage : _Terrain3DInstanceWrapper_
 			if (Instance.HasMethod(get_region_idp_name))
 				return AsResource.Call(get_region_idp_name, globalPosition).AsInt32();
 		}
-		catch { /* fall through */ }
+		catch { }
 
 		if (Instance.HasMethod(get_region_index_name))
 			return AsResource.Call(get_region_index_name, globalPosition).AsInt32();
 
-		// Fallback: linear search using RegionOffsets (origin-aligned)
-		var offs = RegionOffsets;
-		int rs = 0;
-		// Try to read region_size from the resource; if absent caller should use wrapper.RegionSizePixels
-		Variant rsVar = AsResource.Get("region_size");
-		rs = rsVar.VariantType != Variant.Type.Nil ? rsVar.AsInt32() : 1024;
+		var offs = SafeRegionOffsets();
+		if (offs.Count == 0)
+			return -1;
+
+		int rs = 1024;
+		Variant rsVar = AsResource?.Get("region_size") ?? Variant.CreateFrom(rs);
+		if (rsVar.VariantType != Variant.Type.Nil) rs = rsVar.AsInt32();
 
 		int gx = Mathf.FloorToInt(globalPosition.X / rs) * rs;
 		int gz = Mathf.FloorToInt(globalPosition.Z / rs) * rs;

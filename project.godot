@@ -46,7 +46,7 @@ movie_writer/movie_file="/media/data/Syd/Videos/LayerProcGen/MountainGen.avi"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/LayerProcGen/plugin.cfg", "res://addons/godot-sqlite-4.5/demo/addons/godot-sqlite/plugin.cfg")
+enabled=PackedStringArray("res://addons/LayerProcGen/plugin.cfg", "res://addons/godot-sqlite-4.5/demo/addons/godot-sqlite/plugin.cfg", "res://addons/terrain_3d/plugin.cfg")
 
 [input]
 
