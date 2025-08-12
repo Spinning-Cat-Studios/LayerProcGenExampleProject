@@ -48,7 +48,13 @@ namespace Runevision.LayerProcGen {
 	public abstract class AbstractChunkBasedDataLayer : AbstractDataLayer {
 		public abstract int chunkW { get; }
 		public abstract int chunkH { get; }
+		protected readonly HashSet<Point> _deferred = new();
+
 		public Point chunkSize { get { return new Point(chunkW, chunkH); } }
+
+		// Call this in provider after prewarm
+		public bool Ready { get; private set; }
+		public void MarkReady() => Ready = true;
 
 		/// <summary>
 		/// Override to specify the number of generation levels in the layer. Default is 1.
@@ -88,6 +94,8 @@ namespace Runevision.LayerProcGen {
 		private Action createChunkDone;
 		private Action removeChunkDone;
 		private LayerArgumentDictionary _layerArguments = new();
+		private static readonly Dictionary<(Type req, Type prov), int> _missingCounts = new();
+		private static int _missingLogLimit = 3;
 
 		public virtual LayerArgumentDictionary layerArguments => _layerArguments;
 
@@ -256,25 +264,89 @@ namespace Runevision.LayerProcGen {
 			return (chunk != null && chunk.level >= 0);
 		}
 
+		private void RetryDeferred(int level)
+		{
+			if (_deferred.Count == 0) return;
+			Point[] toRetry;
+			lock (_deferred)
+				toRetry = _deferred.ToArray();
+
+			foreach (var idx in toRetry)
+			{
+				C c = chunks[idx];
+				if (c == null) // dropped meanwhile
+				{
+					lock (_deferred) _deferred.Remove(idx);
+					continue;
+				}
+				if (c.level >= level)
+				{
+					lock (_deferred) _deferred.Remove(idx);
+					continue;
+				}
+
+				// Attempt again
+				CreateAndRegisterChunk(idx, level);
+
+				// Remove if succeeded (level advanced)
+				if (c.level >= level)
+					lock (_deferred) _deferred.Remove(idx);
+			}
+		}
+
 		void CreateAndRegisterChunk(Point index, int level)
 		{
-			ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
-			EnsureChunkProviders(index, level, levelData);
-
+			// If aborting, bail fast.
 			if (LayerManager.instance.aborting)
 				return;
 
-			var ph = SimpleProfiler.Begin($"{GetType().Name} {level} Chunk");
 			C chunk = chunks[index];
 			if (chunk == null)
 			{
 				Logg.LogError("Chunk is null in CreateAndRegisterChunk");
+				return;
 			}
 
+			// Only gate when we intend to raise the level.
 			if (chunk.level < level)
 			{
+				// Check external dependency readiness first.
+				bool dependencyNotReady = false;
+				if (level < dependencies.Length)
+				{
+					foreach (var dep in dependencies[level])
+					{
+						// Skip if dependency is null just in case.
+						if (dep?.layer is AbstractChunkBasedDataLayer ab && !ab.Ready)
+						{
+							dependencyNotReady = true;
+							break;
+						}
+					}
+				}
+
+				if (dependencyNotReady)
+				{
+					// Track for retry.
+					lock (_deferred)
+						_deferred.Add(index);
+					return;
+				}
+
+				// Now we know dependencies are ready; gather providers & level data.
+				ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
+				EnsureChunkProviders(index, level, levelData);
+
+				if (LayerManager.instance.aborting)
+				{
+					ObjectPool<ChunkLevelData>.GlobalReturn(ref levelData);
+					return;
+				}
+
+				var ph = SimpleProfiler.Begin($"{GetType().Name} {level} Chunk");
 				if (chunk.level != level - 1)
 					Logg.LogError($"{chunk}: raising internal level from {chunk.level} to {level}");
+
 				chunk.phc = ph;
 				chunk.Create(
 					level,
@@ -282,13 +354,14 @@ namespace Runevision.LayerProcGen {
 					this.createChunkReady,
 					this.createChunkDone,
 					this.service);
+
 				lock (chunks)
 				{
 					chunk.level = level;
 					chunk.SetLevelData(levelData, level);
 				}
+				SimpleProfiler.End(ph);
 			}
-			SimpleProfiler.End(ph);
 		}
 
 		internal sealed override void RemoveChunkLevel(Point index, int level)
@@ -532,14 +605,28 @@ namespace Runevision.LayerProcGen {
 			// Process chunk creations.
 			ProcessChunkCreations(createIndices, level);
 
+			RetryDeferred(level);
+
 			if (LayerManager.instance.aborting)
 				return;
 
 			foreach (Point index in dependIndices)
 			{
 				C chunk = chunks[index];
-				chunk.IncrementUserCountOfLevel(level);
-				levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
+				if (chunk == null)
+					continue;
+
+				if (chunk.level >= level)
+				{
+					chunk.IncrementUserCountOfLevel(level);
+					levelData.providers.Add(new ChunkLevelData.ProviderStruct(chunk, level));
+				}
+				else
+				{
+					// Still waiting on dependencies; will retry on next EnsureLoadedInBounds pass.
+					// Optionally: lock (_deferred) _deferred.Add(index); (not required if already there)
+					// Optionally: Logg.LogVerbose($"Deferring provider registration for {GetType().Name} chunk {index} (have {chunk.level}, need {level})");
+				}
 			}
 		}
 
@@ -587,7 +674,13 @@ namespace Runevision.LayerProcGen {
 		/// </summary>
 		protected void WarnAboutMissingDependencies(ILC q, GridBounds requested)
 		{
-			if (q == null)
+			if (q == null) return;
+			var requesterType = q.abstractLayer.GetType();
+			var providerType = GetType();
+			var key = (requesterType, providerType);
+			int count = _missingCounts.TryGetValue(key, out var c) ? c : 0;
+			_missingCounts[key] = count + 1;
+			if (count >= _missingLogLimit)
 				return;
 			GridBounds requester = q.bounds;
 			int top = Math.Max(0, requested.max.y - requester.max.y);

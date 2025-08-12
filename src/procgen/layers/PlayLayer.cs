@@ -18,6 +18,10 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
     private LayerArgumentDictionary _pendingLayerArguments;
     private bool _playerSpawnHandlerSubscribed = false;
 
+    private bool _prewarmed; // readiness guard
+    private object _prewarmLock = new(); // optional if async
+
+
     public PlayLayer()
     {
         // GD.Print($"[PlayLayer] Default constructor called - Instance ID: {GetHashCode()}");
@@ -50,8 +54,42 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
         // Store the arguments for later use when PlayerSpawn signal is received
         _pendingLayerArguments = layerArguments;
 
-        
+
         Callable.From(_lazyEvaluationHandler.HookSignalsDeferred).CallDeferred();
+        
+        // Perform (or queue) prewarm; mark ready when done.
+        PrewarmIfNeeded();
+    }
+    
+    // Override only if consumers set arguments later via dependency propagation.
+    public override void SetLayerArguments(LayerArgumentDictionary layerArguments)
+    {
+        base.SetLayerArguments(layerArguments);
+        // If arguments influence seeded data, redo (or first‑time) prewarm before MarkReady.
+        PrewarmIfNeeded();
+    }
+
+    // Optional async variant if needed (call instead of PrewarmIfNeeded).
+    /*
+    private async Task PrewarmAsync()
+    {
+        if (_prewarmed) return;
+        lock (_prewarmLock)
+        {
+            if (_prewarmed) return;
+            _prewarmed = true;
+        }
+        // await heavy tasks...
+        MarkReady();
+    }
+    */
+
+    private void PrewarmIfNeeded()
+    {
+        if (_prewarmed) return;
+        // If you’ll add heavy sync prep (noise init, cached tables, etc.) put it here.
+        _prewarmed = true;
+        MarkReady();
     }
     
     private void SubscribeToPlayerSpawn()
@@ -67,7 +105,7 @@ public class PlayLayer : ChunkBasedDataLayer<PlayLayer, PlayChunk, LayerService>
             // GD.PrintErr("[PlayLayer] Could not find SignalBus singleton in the scene tree!");
             return;
         }
-        
+
         signalBus.PlayerSpawn += OnPlayerSpawn;
         _playerSpawnHandlerSubscribed = true;
         // GD.Print($"[PlayLayer] Subscribed to PlayerSpawn signal on SignalBus instance {signalBus.GetInstanceId()}");
