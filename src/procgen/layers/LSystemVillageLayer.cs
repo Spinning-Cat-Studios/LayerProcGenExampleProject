@@ -29,19 +29,20 @@ public class LSystemVillageLayer : ChunkBasedDataLayer<LSystemVillageLayer, LSys
 
     static readonly Action createChunkDoneDefault = static () =>
     {
-        lock (_gridDoneLock)
-        {
-            int count = ++gridDoneCounter;
-            if (count >= TotalChunks)
-            {
-                SignalBus.Instance.CallDeferred(
-                    "emit_signal",
-                    SignalBus.SignalName.AllLSystemVillageChunksGenerated
-                );
-                gridDoneCounter = 0;
-            }
-        }
+        // lock (_gridDoneLock)
+        // {
+        //     int count = ++gridDoneCounter;
+        //     if (count >= TotalChunks)
+        //     {
+        //         SignalBus.Instance.CallDeferred(
+        //             "emit_signal",
+        //             SignalBus.SignalName.AllLSystemVillageChunksGenerated
+        //         );
+        //         gridDoneCounter = 0;
+        //     }
+        // }
     };
+
     static readonly Action removeChunkDoneDefault = static () => GD.Print("🗑️  A chunk level got removed");
 
     static float GetHeightAt(Vector3 position)

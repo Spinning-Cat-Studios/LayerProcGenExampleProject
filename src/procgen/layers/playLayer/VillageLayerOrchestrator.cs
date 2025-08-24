@@ -2,14 +2,29 @@ using System;
 using Godot;
 using Runevision.LayerProcGen;
 using Runevision.Common;
+using LayerProcGenExampleProject.Services;
 
 namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 {
+    /// <summary>
+    /// VillageLayerOrchestrator manages village chunk generation using a dual-radius approach
+    /// to decouple data generation from rendering, solving the nearest neighbor topology problem.
+    /// 
+    /// Dual-Radius System:
+    /// - Data Generation Radius (300f): Larger radius where village data (including road endpoints)
+    ///   is generated and persisted to database without creating visual nodes
+    /// - Rendering Radius (150f): Smaller radius where visual nodes (houses, roads) are created
+    /// 
+    /// This ensures road topology stability because road endpoint data is always available
+    /// from a wider area for consistent nearest neighbor calculations, even when the player
+    /// moves and the rendering boundary shifts.
+    /// </summary>
     public class VillageLayerOrchestrator
     {
         private readonly PlayLayer _playLayer;
         private readonly PlayerPositionManager _playerManager;
         private bool _isVillageLayerChunksDone = false;
+        private int _lastKnownChunkCount = 0;
 
         public VillageLayerOrchestrator(PlayLayer playLayer, PlayerPositionManager playerManager)
         {
@@ -48,9 +63,13 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
         private void PerformInitialLazyLoadForVillageLayer(LSystemVillageLayer villageLayer, Vector3 playerPosition)
         {
-            // Define load distance for village layer (you can add this to PlayLayerConfiguration)
-            float villageLoadDistance = 150f; // Adjust as needed
+            var villageService = villageLayer.GetService() as VillageService;
 
+            // First pass: Generate data for larger radius (without visual nodes)
+            GenerateDataInRadius(villageLayer, villageService, playerPosition, 
+                PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE);
+
+            // Second pass: Handle visual rendering for smaller radius
             bool ShouldCreateChunk(Point chunkIndex, int level, Vector3 playerPos)
             {
                 var chunkWorldPos = new Vector3(
@@ -61,20 +80,15 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
 
                 var playerXZPos = new Vector3(playerPos.X, 0, playerPos.Z);
                 var distanceToPlayer = playerXZPos.DistanceTo(chunkWorldPos);
-                bool withinRange = distanceToPlayer <= villageLoadDistance;
-
-                // if (!withinRange)
-                // {
-                //     GD.Print($"[Initial Load] Skipping Village chunk {chunkIndex} - outside player range (distance: {distanceToPlayer:F1})");
-                // }
+                bool withinRange = distanceToPlayer <= PlayLayerConfiguration.VILLAGE_RENDERING_DISTANCE;
 
                 return withinRange;
             }
 
-            var initialBounds = GetBoundsAroundPosition(playerPosition, villageLoadDistance * 1.2f);
+            var initialBounds = GetBoundsAroundPosition(playerPosition, PlayLayerConfiguration.VILLAGE_RENDERING_DISTANCE * 1.2f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            // GD.Print($"[Initial Load] Loading Village chunks around player at {playerPosition}");
+            // GD.Print($"[Initial Load] Loading Village visual chunks around player at {playerPosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(initialBounds, 0, levelData, playerPosition, ShouldCreateChunk);
@@ -89,8 +103,74 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
             LSystemVillageLayer villageLayer,
             Vector3 referencePosition)
         {
-            float loadDistance = 150f; // You can add this to PlayLayerConfiguration
+            // Use dual-radius approach: larger radius for data generation, smaller for rendering
+            // This prevents the "nearest neighbor" topology instability problem
+            var villageService = villageLayer.GetService() as VillageService;
 
+            // First pass: Generate data for larger radius (without visual nodes)
+            // This ensures road endpoint data is available for a wider area
+            GenerateDataInRadius(villageLayer, villageService, referencePosition, 
+                PlayLayerConfiguration.VILLAGE_DATA_GENERATION_DISTANCE);
+
+            // Second pass: Handle visual rendering for smaller radius
+            // This only creates visual nodes within the closer range for performance
+            RenderChunksInRadius(villageLayer, referencePosition, 
+                PlayLayerConfiguration.VILLAGE_RENDERING_DISTANCE);
+        }
+
+        private void GenerateDataInRadius(LSystemVillageLayer villageLayer, VillageService villageService, 
+            Vector3 referencePosition, float radius)
+        {
+            if (villageService == null) return;
+
+            // Calculate chunks that should have data generated based on chunk indices
+            int centerChunkX = (int)(referencePosition.X / villageLayer.chunkW);
+            int centerChunkZ = (int)(referencePosition.Z / villageLayer.chunkH);
+            int radiusInChunks = (int)Math.Ceiling(radius / Math.Min(villageLayer.chunkW, villageLayer.chunkH));
+            
+            // Ensure minimum chunk coverage by expanding radius if necessary
+            int minRadiusInChunks = 2; // Minimum 5x5 grid for adjacencies
+            radiusInChunks = Math.Max(radiusInChunks, minRadiusInChunks);
+            
+            int dataChunksGenerated = 0;
+            int dataChunksSkipped = 0;
+            int totalTargetChunks = 0;
+            
+            for (int x = centerChunkX - radiusInChunks; x <= centerChunkX + radiusInChunks; x++)
+            {
+                for (int z = centerChunkZ - radiusInChunks; z <= centerChunkZ + radiusInChunks; z++)
+                {
+                    var chunkIndex = new Point(x, z);
+                    var chunkWorldPos = new Vector3(
+                        chunkIndex.x * villageLayer.chunkW + villageLayer.chunkW / 2,
+                        0,
+                        chunkIndex.y * villageLayer.chunkH + villageLayer.chunkH / 2
+                    );
+
+                    var playerPosXZ = new Vector3(referencePosition.X, 0, referencePosition.Z);
+                    var distanceToChunk = playerPosXZ.DistanceTo(chunkWorldPos);
+                    
+                    if (distanceToChunk <= radius)
+                    {
+                        totalTargetChunks++;
+                        
+                        // Generate data only if it doesn't exist
+                        if (!villageService.RoadChunkDataExists(chunkIndex))
+                        {
+                            villageService.GenerateChunkDataOnly(chunkIndex, villageLayer);
+                            dataChunksGenerated++;
+                        }
+                        else
+                        {
+                            dataChunksSkipped++;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RenderChunksInRadius(LSystemVillageLayer villageLayer, Vector3 referencePosition, float radius)
+        {
             bool ShouldCreateChunk(Point chunkIndex, int level, Vector3 playerPos)
             {
                 var chunkWorldPos = new Vector3(
@@ -100,13 +180,13 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                 );
 
                 var playerPosXZ = new Vector3(playerPos.X, 0, playerPos.Z);
-                return playerPosXZ.DistanceTo(chunkWorldPos) <= loadDistance;
+                return playerPosXZ.DistanceTo(chunkWorldPos) <= radius;
             }
 
-            var bounds = GetBoundsAroundPosition(referencePosition, loadDistance * 1.5f);
+            var bounds = GetBoundsAroundPosition(referencePosition, radius * 1.5f);
             ChunkLevelData levelData = ObjectPool<ChunkLevelData>.GlobalGet();
 
-            // GD.Print($"[Camera Movement] Updating Village chunks around camera at {referencePosition}");
+            // GD.Print($"[Dual-Radius] Visual rendering for chunks within {radius:F0} units of {referencePosition}");
             try
             {
                 villageLayer.EnsureLoadedInBounds(bounds, 0, levelData, referencePosition, ShouldCreateChunk);
@@ -131,6 +211,18 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                     return;
                 }
                 villageLayer.EnsureLoadedInBounds(bounds, level, levelData);
+
+                GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
+                GD.Print("Both terrain and village data are ready. Triggering final road connection.");
+
+                // Since the landscape is ready and the initial data has been generated,
+                // we can now safely fire the signal to connect the roads between villages.
+                SignalBus.Instance.CallDeferred(
+                    "emit_signal",
+                    SignalBus.SignalName.AllLSystemVillageChunksGenerated
+                );
+
+                // Set the flag to ensure this logic only runs once on startup.
                 _isVillageLayerChunksDone = true;
                 GD.Print("LSystemVillageLayer dependency loaded after LandscapeChunksReady signal.");
             }

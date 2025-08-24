@@ -9,6 +9,10 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
         public const int CHUNK_HEIGHT = 8;
         public const float PLAY_LAYER_LOAD_DISTANCE = 75f;
         public const float VILLAGE_LAYER_LOAD_DISTANCE = 150f;
+        
+        // Dual-radius system for decoupling data generation from rendering
+        public const float VILLAGE_DATA_GENERATION_DISTANCE = 400f;  // Increased radius to ensure multiple chunks
+        public const float VILLAGE_RENDERING_DISTANCE = 200f;        // Smaller radius for visual rendering
 
         public static readonly LandscapeLayerConfig[] LandscapeLayerConfigs = new[]
         {
@@ -26,8 +30,17 @@ namespace LayerProcGenExampleProject.ProcGen.Layers.PlayLayerComponents
                 "LandscapeLayerC" => 150f,
                 "LandscapeLayerB" => 100f,
                 "LandscapeLayerA" => 75f,
-                "LSystemVillageLayer" => VILLAGE_LAYER_LOAD_DISTANCE,
+                "LSystemVillageLayer" => VILLAGE_RENDERING_DISTANCE,  // Use rendering distance for visual loading
                 _ => 100f
+            };
+        }
+        
+        public static float GetDataGenerationDistanceForLayer(string layerTypeName)
+        {
+            return layerTypeName switch
+            {
+                "LSystemVillageLayer" => VILLAGE_DATA_GENERATION_DISTANCE,
+                _ => GetLoadDistanceForLayer(layerTypeName)  // Fallback to regular load distance
             };
         }
     }
